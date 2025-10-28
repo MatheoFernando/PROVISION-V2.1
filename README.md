@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 # PROVISION-V2.1
-=======
 
 ## Getting Started
 
@@ -17,5 +15,3 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
->>>>>>> b09674c (Primeiro commit)
