@@ -1,0 +1,231 @@
+"use client";
+
+import { useState } from "react";
+import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { useEmployees } from "@/infrastructure/hooks/useEmployees";
+import { Employee } from "@/infrastructure/schema/schema-employees";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmployeesCreate } from "./employees-create";
+import { EmployeesView } from "./employees-view";
+import { DeleteModal } from "@/components/ui/delete-modal";
+import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
+import { toast } from "sonner";
+import Badge from "@/components/ui/badge";
+
+const columns: ColumnDef<Employee>[] = [
+  {
+    accessorKey: "photo",
+    header: "Foto",
+    cell: ({ row }) => {
+      const photo = row.getValue("photo") as string;
+      return <div><Avatar className="h-8 w-8 rounded-sm">
+        <AvatarImage src={photo} alt="teste" className="rounded-sm" />
+        <AvatarFallback className="bg-primary/10 text-primary font-medium text-base rounded-sm">
+          f
+        </AvatarFallback>
+      </Avatar></div>;
+    },
+  },
+  {
+    accessorKey: "cod",
+    header: "Código",
+    cell: ({ row }) => {
+      const cod = row.getValue("cod") as string;
+      return <div className="text-sm text-muted-foreground">{cod}</div>;
+    },
+  },
+  {
+    accessorKey: "fullName",
+    header: "Nome Completo",
+    cell: ({ row }) => {
+      const fullName = row.getValue("fullName") as string;
+      return <div>{fullName}</div>;
+    },
+  },
+
+  {
+    accessorKey: "contactId",
+    header: "Contato",
+    cell: ({ row }) => {
+      const contactId = row.getValue("contactId") as string;
+      return <div>{contactId}</div>;
+    },
+  },
+  {
+    accessorKey: "siteId",
+    header: "Site",
+    cell: ({ row }) => {
+      const siteId = row.getValue("siteId") as string;
+      return <div>{siteId}</div>;
+    },
+  },
+  {
+    accessorKey: "departmentId",
+    header: "Departamento",
+    cell: ({ row }) => {
+      const departmentId = row.getValue("departmentId") as string;
+      return <div>{departmentId}</div>;
+    },
+  },
+  {
+    accessorKey: "userId",
+    header: "Usuário",
+    cell: ({ row }) => {
+      const userId = row.getValue("userId") as string;
+      return <div>{userId}</div>;
+    },
+  },
+  {
+    accessorKey: "functionEntityId",
+    header: "Função",
+    cell: ({ row }) => {
+      const functionEntityId = row.getValue("functionEntityId") as string;
+      return <div>{functionEntityId}</div>;
+    },
+  },
+  {
+    accessorKey: "rolesEntityId",
+    header: "Cargo",
+    cell: ({ row }) => {
+      const rolesEntityId = row.getValue("rolesEntityId") as string;
+      return <div>{rolesEntityId}</div>;
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as boolean;
+      return status ? (
+        <Badge variant="default">Ativo</Badge>
+      ) : (
+        <Badge variant="secondary">Inativo</Badge>
+      );
+    },
+  },
+
+  {
+    accessorKey: "createdAt",
+    header: "Data de Criação",
+    cell: ({ row }) => {
+      const date = row.getValue("createdAt") as Date;
+      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+    },
+  },
+];
+
+interface EmployeesTableProps {
+  mockData?: Employee[];
+}
+
+export function EmployeesTable({ mockData }: EmployeesTableProps) {
+  const { data: employees = [], isLoading } = useEmployees();
+  const deleteEmployee = useDeleteEmployee();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
+
+  // Use mock data if provided, otherwise use API data
+  const data = mockData || employees;
+
+  const filteredData = data.filter((item) =>
+    item.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleView = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsViewOpen(true);
+  };
+
+  const handleEdit = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsCreateOpen(true);
+  };
+
+  const handleDelete = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      await deleteEmployee.mutateAsync(selectedEmployee.id);
+      toast.success("Funcionário excluído com sucesso!");
+      setIsDeleteOpen(false);
+      setSelectedEmployee(undefined);
+    } catch (error) {
+      toast.error("Erro ao excluir funcionário");
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedEmployee(undefined);
+    setIsCreateOpen(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <DataTableGeneric
+        columns={columns}
+        data={filteredData}
+        isLoading={isLoading}
+        searchKey="fullName"
+        actionButton={{
+          label: "Novo Funcionário",
+          onClick: handleCreate,
+        }}
+        enableRowSelection={true}
+        includeSelection={true}
+        rowActions={[
+          {
+            label: "Visualizar",
+            icon: <Eye className="h-4 w-4 mr-2" />,
+            onClick: (employee) => handleView(employee),
+          },
+          {
+            label: "Editar",
+            icon: <Edit className="h-4 w-4 mr-2" />,
+            onClick: (employee) => handleEdit(employee),
+          },
+          {
+            label: "Excluir",
+            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            onClick: (employee) => handleDelete(employee),
+          },
+        ]}
+      />
+
+      <EmployeesCreate
+        employee={selectedEmployee}
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+      />
+
+      <EmployeesView
+        employee={selectedEmployee}
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+      />
+
+      <DeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setSelectedEmployee(undefined);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Funcionário"
+        message="Tem certeza que deseja excluir este funcionário? Esta ação não pode ser desfeita."
+        isLoading={deleteEmployee.isPending}
+      />
+    </div>
+  );
+}

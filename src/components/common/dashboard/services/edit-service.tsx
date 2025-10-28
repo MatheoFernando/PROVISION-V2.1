@@ -1,0 +1,152 @@
+"use client";
+
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  updateServiceSchema,
+  UpdateService,
+  Service,
+} from "@/infrastructure/schema/schema-service";
+import { useUpdateServiceMutation } from "@/infrastructure/hooks/useServices";
+import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
+import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
+
+interface EditServiceProps {
+  service: Service;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function EditService({ service, open, onOpenChange }: EditServiceProps) {
+  const updateServiceMutation = useUpdateServiceMutation();
+
+  const form = useForm<UpdateService>({
+    resolver: zodResolver(updateServiceSchema),
+    defaultValues: {
+      name: service.name,
+      description: service.description || "",
+      status: service.status,
+    },
+  });
+
+  useEffect(() => {
+    if (service) {
+      form.reset({
+        name: service.name,
+        description: service.description || "",
+        status: service.status,
+      });
+    }
+  }, [service, form]);
+
+  function onSubmit(data: UpdateService) {
+    updateServiceMutation.mutate(
+      { id: service.id!, data },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+        },
+      }
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Editar Serviço</DialogTitle>
+          <DialogDescription>
+            Atualize as informações do serviço.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Serviço</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite o nome do serviço" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Digite a descrição do serviço"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Serviço Ativo</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      O serviço estará disponível para uso
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={updateServiceMutation.isPending}>
+                {updateServiceMutation.isPending
+                  ? "Atualizando..."
+                  : "Atualizar Serviço"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
