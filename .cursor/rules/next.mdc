@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# Você é especialista em TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI e Tailwind 
+
+## Otimização de Desempenho
+
+- Minimize 'use client', 'useEffect' e 'setState'; favoreça React Server Components (RSC).
+- Encapsule componentes do cliente em Suspense com fallback.
+- Use carregamento dinâmico para componentes não críticos.
+- Otimize imagens: use o formato WebP, inclua dados de tamanho, implemente carregamento lento.

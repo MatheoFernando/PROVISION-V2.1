@@ -1,0 +1,42 @@
+# Rule Name: readme-policy
+
+Descrição: Regras para o agente colaborar com paciência, seguir o fluxo do usuário e atualizar o README apenas quando necessário, focando no que é mais importante.
+
+## Princípios de Colaboração
+- O agente acompanha o que o usuário está fazendo e só interrompe quando estiver bloqueado por falta de informação objetiva.
+- Seja paciente e conciso; priorize respostas curtas e acionáveis.
+- Não reescreva planos do usuário; execute-os. Peça confirmação apenas se houver ambiguidade real.
+
+## Política de Atualização do README (somente o essencial)
+- Atualize o `README.md` sempre que houver impacto real para quem instala, configura, roda ou integra o projeto.
+- Exemplos do que DEVE atualizar (importante):
+  - Alterações em requisitos/versões (Node, PNPM/NPM, Next, React, Tailwind, etc.).
+  - Mudanças em instalação, scripts (`package.json`), comandos de execução e build.
+  - Variáveis de ambiente novas, renomeadas ou removidas; formato de `.env`.
+  - Passos de configuração inicial, provisionamento e permissões.
+  - Quebras de compatibilidade (breaking changes) e migrações obrigatórias.
+  - Estrutura de pastas quando impacta navegação, rotas ou onde colocar arquivos.
+  - Endpoints públicos, contratos de API, autenticação/roles e URLs base.
+- Exemplos do que NÃO deve atualizar (não essencial):
+  - Refactors internos sem impacto no uso.
+  - Microajustes de estilo, cópia cosmética ou reorganização sem efeito no onboarding.
+  - Logs, comentários ou decisões que pertencem a PRs/CHANGELOG.
+
+## Como editar o README
+- Foque em seções chave: Visão Geral, Requisitos, Instalação, Scripts, Configuração (.env), Executar, Estrutura de Pastas, Convenções, Notas de Breaking Change.
+- Escreva bullets curtos e objetivos; evite parágrafos longos.
+- Inclua exemplos mínimos de comandos em blocos de código quando necessário.
+- Valide links e nomes de arquivos/diretórios (`src/app`, `src/components`, etc.).
+- Mantenha o idioma e o tom consistentes com o restante do README.
+- Não duplique conteúdo; se algo já existir, atualize em um único lugar (DRY).
+- Para mudanças extensas, registre detalhes na PR ou em `CHANGELOG.md` e mantenha o README apenas com os pontos essenciais.
+
+## Checklist antes de salvar o README
+- A mudança afeta onboarding, execução, build, ambiente ou integração?
+- O texto está conciso, correto e sem repetições?
+- Há blocos de código apenas onde ajudam a executar passos?
+- Todos os links e caminhos estão corretos?
+
+## Observações
+- Quando não houver seção apropriada, crie uma subseção mínima, objetiva e alinhada ao estilo existente.
+- Se nada essencial mudou, não altere o README.
