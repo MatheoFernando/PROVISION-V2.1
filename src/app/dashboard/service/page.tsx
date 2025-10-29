@@ -6,29 +6,13 @@ import { ListServices } from '@/components/common/dashboard/services/list-servic
 import { DefaultServices } from '@/components/common/dashboard/services/default-services';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { defaultServices, serviceSchema, type Service } from '@/infrastructure/schema/schema-service';
+import { type ModuleSchema } from '@/infrastructure/schema/schema-module';
+import { useModules } from '@/infrastructure/hooks/useModules';
+import { useServicesQuery } from '@/infrastructure/hooks/useServices';
 
 export default function ServicePage() {
   const { isGlobalAdmin } = useAuthStore();
-  // Modo mock: não consome hooks de dados
-  const MOCK_MODE = true;
-
-  let services: Service[] = [];
-  let isLoading = false as boolean;
-  let error: unknown = null;
-  let associations: any[] = [];
-
-  if (MOCK_MODE) {
-    // Gera ids estáveis a partir do customId para o DataTable
-    services = serviceSchema.array().parse(
-      defaultServices.map((s) => ({ ...s }))
-    );
-    isLoading = false;
-    error = null;
-    associations = [];
-  } else {
- 
-  }
+  const { data: services = [], isLoading, error } = useModules();
 
   if (isLoading) {
     return (
@@ -72,13 +56,11 @@ export default function ServicePage() {
         {isGlobalAdmin && <CreateService />}
       </div>
 
-      {isGlobalAdmin ? (
-        <ListServices services={services} isGlobalAdmin={true} />
-      ) : (
-        <div className="space-y-6">
-          <DefaultServices />
-        </div>
-      )}
+      <ListServices services={services as ModuleSchema[]} isGlobalAdmin={isGlobalAdmin} />
     </div>
   );
 }
+
+
+
+

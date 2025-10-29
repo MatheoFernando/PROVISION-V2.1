@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Loader2, Plus, Eye, EyeOff } from 'lucide-react'
 import { z } from 'zod'
 import { useUsers } from '@/infrastructure/hooks/useUsers'
-import type { User } from '@/infrastructure/schema/schema-user'
+import type { User } from '@/types/domain'
 
 interface CreateUserDialogProps {
   children?: React.ReactNode

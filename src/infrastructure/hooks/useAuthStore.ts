@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>()(
       userId: null,
       isAuthenticated: Boolean(getAccessToken()),
       //isGlobalAdmin: getIsGlobalAdminFromStorage(),
-      isGlobalAdmin: false,
+      isGlobalAdmin: true,
       setUserId: (id) => set({ userId: id }),
       setSession: ({ token, userId, refreshToken, expiresAt }) => {
         setAccessToken(token);
@@ -54,17 +54,11 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => {
         clearAccessToken();
-        if (typeof window !== 'undefined') {
-          try {
-            window.localStorage.removeItem('user');
-          } catch {
-            // ignore storage errors
-          }
-        }
+       
         set({ isAuthenticated: false, userId: null, isGlobalAdmin: false });
       },
     }),
-    { name: 'auth-store' }
+  
   )
 );
 

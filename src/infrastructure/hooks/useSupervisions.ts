@@ -1,3 +1,101 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../utils/api";
+import { toast } from "sonner";
+import { Supervision } from "../../types/domain";
+
+export function useSupervisions() {
+  return useQuery({
+    queryKey: ["supervisions"],
+    queryFn: async (): Promise<Supervision[]> => {
+      const { data } = await api.get("/supervision/getAll");
+      return (data?.data ?? data) as Supervision[];
+    },
+  });
+}
+
+export function useSupervisionsByDate(date: string) {
+  return useQuery({
+    queryKey: ["supervisions", "date", date],
+    queryFn: async (): Promise<Supervision[]> => {
+      const { data } = await api.get("/supervision/getByDate", { params: { date } });
+      return (data?.data ?? data) as Supervision[];
+    },
+    enabled: Boolean(date),
+  });
+}
+
+export function useSupervisionsBySiteId(siteId: string) {
+  return useQuery({
+    queryKey: ["supervisions", "siteId", siteId],
+    queryFn: async (): Promise<Supervision[]> => {
+      const { data } = await api.get("/supervision/getBySiteId", { params: { siteId } });
+      return (data?.data ?? data) as Supervision[];
+    },
+    enabled: Boolean(siteId),
+  });
+}
+
+export function useSupervisionsByStatus(status: string) {
+  return useQuery({
+    queryKey: ["supervisions", "status", status],
+    queryFn: async (): Promise<Supervision[]> => {
+      const { data } = await api.get("/supervision/getByStatus", { params: { status } });
+      return (data?.data ?? data) as Supervision[];
+    },
+    enabled: Boolean(status),
+  });
+}
+
+export function useCreateSupervision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Omit<Supervision, 'id' | 'createdAt' | 'updatedAt'>): Promise<Supervision> => {
+      const { data } = await api.post("/supervision/create", payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supervisions"] });
+      toast.success("Supervisão criada com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Erro ao criar supervisão");
+    },
+  });
+}
+
+export function useUpdateSupervision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<Omit<Supervision, 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Supervision> => {
+      const { data } = await api.put("/supervision", payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supervisions"] });
+      toast.success("Supervisão atualizada com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Erro ao atualizar supervisão");
+    },
+  });
+}
+
+export function useDeleteSupervision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      await api.delete(`/supervision/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supervisions"] });
+      toast.success("Supervisão excluída com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Erro ao excluir supervisão");
+    },
+  });
+}
+
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'

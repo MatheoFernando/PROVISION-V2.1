@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
-import { Equipment } from "@/infrastructure/schema/schema-equipment";
+import { Equipment } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -78,11 +78,7 @@ const columns: ColumnDef<Equipment>[] = [
   },
 ];
 
-interface EquipmentTableProps {
-  mockData?: Equipment[];
-}
-
-export function EquipmentTable({ mockData }: EquipmentTableProps) {
+export function EquipmentTable() {
   const { data: equipment = [], isLoading } = useEquipment();
   const deleteEquipment = useDeleteEquipment();
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,9 +87,7 @@ export function EquipmentTable({ mockData }: EquipmentTableProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | undefined>();
 
-  const data = mockData || equipment;
-
-  const filteredData = data.filter((item) =>
+  const filteredData = equipment.filter((item) =>
     item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.mark.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.model.toLowerCase().includes(searchTerm.toLowerCase())

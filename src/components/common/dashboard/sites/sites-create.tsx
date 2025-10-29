@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createSiteSchema, CreateSite } from "@/infrastructure/schema/schema-sites";
+import { createSiteSchema } from "@/infrastructure/schema/schema-sites";
+import { Site } from "@/types/domain";
 import { useCreateSite, useUpdateSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
 
@@ -23,7 +24,7 @@ export function SitesCreate({ site, isOpen, onClose }: SitesCreateProps) {
   const createSite = useCreateSite();
   const updateSite = useUpdateSite();
 
-  const form = useForm<CreateSite>({
+  const form = useForm<Omit<Site, 'id' | 'createdAt' | 'updatedAt'>>({
     resolver: zodResolver(createSiteSchema),
     defaultValues: site || {
       cod: "",
@@ -40,7 +41,7 @@ export function SitesCreate({ site, isOpen, onClose }: SitesCreateProps) {
     },
   });
 
-  const onSubmit = async (data: CreateSite) => {
+  const onSubmit = async (data: Omit<Site, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       setIsSubmitting(true);
       

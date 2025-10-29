@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createEmployeeSchema, CreateEmployee } from "@/infrastructure/schema/schema-employees";
+import { createEmployeeSchema } from "@/infrastructure/schema/schema-employees";
+import { Employee } from "@/types/domain";
 import { useCreateEmployee, useUpdateEmployee } from "@/infrastructure/hooks/useEmployees";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ export function EmployeesCreate({ employee, isOpen, onClose }: EmployeesCreatePr
   const updateEmployee = useUpdateEmployee();
   const { data: sites = [] } = useSites();
 
-  const form = useForm<CreateEmployee>({
+  const form = useForm<Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: employee || {
       companyId: "",
@@ -40,7 +41,7 @@ export function EmployeesCreate({ employee, isOpen, onClose }: EmployeesCreatePr
     },
   });
 
-  const onSubmit = async (data: CreateEmployee) => {
+  const onSubmit = async (data: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       setIsSubmitting(true);
       

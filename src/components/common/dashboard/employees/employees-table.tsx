@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
-import { Employee } from "@/infrastructure/schema/schema-employees";
+import { Employee } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -118,11 +118,7 @@ const columns: ColumnDef<Employee>[] = [
   },
 ];
 
-interface EmployeesTableProps {
-  mockData?: Employee[];
-}
-
-export function EmployeesTable({ mockData }: EmployeesTableProps) {
+export function EmployeesTable() {
   const { data: employees = [], isLoading } = useEmployees();
   const deleteEmployee = useDeleteEmployee();
   const [searchTerm, setSearchTerm] = useState("");
@@ -131,10 +127,7 @@ export function EmployeesTable({ mockData }: EmployeesTableProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
 
-  // Use mock data if provided, otherwise use API data
-  const data = mockData || employees;
-
-  const filteredData = data.filter((item) =>
+  const filteredData = employees.filter((item) =>
     item.fullName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -154,10 +147,10 @@ export function EmployeesTable({ mockData }: EmployeesTableProps) {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee || !selectedEmployee.id) return;
 
     try {
-      await deleteEmployee.mutateAsync(selectedEmployee.id);
+      await deleteEmployee.mutateAsync(selectedEmployee.id as string);
       toast.success("Funcionário excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedEmployee(undefined);

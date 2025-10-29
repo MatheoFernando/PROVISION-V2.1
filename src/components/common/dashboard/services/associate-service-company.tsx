@@ -34,7 +34,8 @@ import {
   type CreateCompanyModule,
 } from "@/infrastructure/schema/schema-company-module";
 import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
-import { useServicesQuery } from "@/infrastructure/hooks/useServices";
+import { useModules } from "@/infrastructure/hooks/useModules";
+import { type ModuleSchema } from "@/infrastructure/schema/schema-module";
 
 interface AssociateServiceCompanyProps {
   open?: boolean;
@@ -56,11 +57,11 @@ export function AssociateServiceCompany({
     isControlled ? onOpenChange?.(value) : setInternalOpen(value);
 
   const { data: companies = [] } = useCompaniesQuery();
-  const { data: services = [] } = useServicesQuery();
+  const { data: services = [] } = useModules();
 
   const resolvedModule = useMemo(() => {
     if (!moduleId) return undefined;
-    return services.find((s) => s.id === moduleId);
+    return services.find((s: ModuleSchema) => s.id === moduleId);
   }, [moduleId, services]);
 
   const form = useForm<CreateCompanyModule>({
@@ -108,8 +109,8 @@ export function AssociateServiceCompany({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
+                      {companies.filter((c) => Boolean(c.id)).map((company) => (
+                        <SelectItem key={company.id} value={company.id as string}>
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4" />
                             {company.businessName}
@@ -158,7 +159,7 @@ export function AssociateServiceCompany({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {services.map((service) => (
+                        {services.map((service: ModuleSchema) => (
                           <SelectItem key={service.id} value={service.id!}>
                             <div className="flex items-center gap-2">
                               <Briefcase className="h-4 w-4" />

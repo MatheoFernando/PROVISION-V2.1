@@ -24,20 +24,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { useCreateServiceMutation } from "@/infrastructure/hooks/useServices";
-import {
-  createServiceSchema,
-  type CreateService,
-} from "@/infrastructure/schema/schema-service";
+import { useCreateModule } from "@/infrastructure/hooks/useModules";
+import { moduleSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
+import { z } from "zod";
 import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
 
 export function CreateService() {
   const [open, setOpen] = useState(false);
-  const createServiceMutation = useCreateServiceMutation();
+  const createModuleMutation = useCreateModule();
 
-  const form = useForm<CreateService>({
-    resolver: zodResolver(createServiceSchema),
+  const createModulePayloadSchema = moduleSchema.omit({ id: true, createdAt: true, updatedAt: true })
+  type CreateModulePayload = z.infer<typeof createModulePayloadSchema>
+
+  const form = useForm<CreateModulePayload>({
+    resolver: zodResolver(createModulePayloadSchema),
     defaultValues: {
       name: "",
       status: true,
@@ -45,8 +46,8 @@ export function CreateService() {
     },
   });
 
-  function onSubmit(data: CreateService) {
-    createServiceMutation.mutate(data, {
+  function onSubmit(data: CreateModulePayload) {
+    createModuleMutation.mutate(data, {
       onSuccess: () => {
         form.reset();
         setOpen(false);
@@ -131,8 +132,8 @@ export function CreateService() {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createServiceMutation.isPending} className="px-6 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white">
-                {createServiceMutation.isPending
+              <Button type="submit" disabled={createModuleMutation.isPending} className="px-6 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white">
+                {createModuleMutation.isPending
                   ? "Criando..."
                   : "Criar Serviço"}
               </Button>

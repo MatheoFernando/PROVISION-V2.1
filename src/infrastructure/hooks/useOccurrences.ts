@@ -1,32 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/infrastructure/utils/api';
-import { mockOccurrences } from '@/infrastructure/schema/schema-occurrence';
-import type { Occurrence, CreateOccurrence, UpdateOccurrence } from '@/infrastructure/schema/schema-occurrence';
+import type { Occorrence } from '@/types/domain';
 
 export function useOccurrences() {
   return useQuery({
     queryKey: ['occurrences'],
-    queryFn: async (): Promise<Occurrence[]> => {
-      try {
-        const { data } = await api.get('/occurrence/GetAll');
-        return data?.data ?? [];
-      } catch {
-        // Sempre retorna mock quando não há dados da API
-        return mockOccurrences;
-      }
+    queryFn: async (): Promise<Occorrence[]> => {
+      const { data } = await api.get('/occorrence/getAll');
+      return data?.data ?? data;
     },
-    // Sempre mostra dados mockados imediatamente
-    initialData: mockOccurrences,
   });
 }
 
 export function useOccurrence(id: string) {
   return useQuery({
     queryKey: ['occurrence', id],
-    queryFn: async (): Promise<Occurrence | null> => {
-      const { data } = await api.get(`/occurrence/GetById/${id}`);
-      return data?.data ?? null;
+    queryFn: async (): Promise<Occorrence | null> => {
+      const { data } = await api.get(`/occorrence/getAll`, { params: { id } });
+      const list = data?.data ?? [];
+      return Array.isArray(list) ? (list.find((o: any) => o.id === id) ?? null) : null;
     },
     enabled: !!id,
   });
@@ -36,9 +29,9 @@ export function useCreateOccurrenceMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateOccurrence): Promise<Occurrence> => {
-      const { data: response } = await api.post('/occurrence/Create', data);
-      return response?.data;
+    mutationFn: async (data: Omit<Occorrence, 'id' | 'createdAt' | 'updatedAt'>): Promise<Occorrence> => {
+      const { data: response } = await api.post('/occorrence/create', data);
+      return response?.data ?? response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
@@ -55,9 +48,9 @@ export function useUpdateOccurrenceMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateOccurrence }): Promise<Occurrence> => {
-      const { data: response } = await api.put(`/occurrence/Update/${id}`, data);
-      return response?.data;
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Occorrence, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Occorrence> => {
+      const { data: response } = await api.put(`/occorrence`, { id, ...data });
+      return response?.data ?? response;
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
@@ -76,7 +69,7 @@ export function useDeleteOccurrenceMutation() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/occurrence/Delete/${id}`);
+      await api.delete(`/occorrence/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
@@ -86,6 +79,39 @@ export function useDeleteOccurrenceMutation() {
       console.error('Erro ao excluir ocorrência:', error);
       toast.error('Erro ao excluir ocorrência. Tente novamente.');
     },
+  });
+}
+
+export function useOccurrencesByDate(date: string) {
+  return useQuery({
+    queryKey: ['occurrences', 'date', date],
+    queryFn: async (): Promise<Occorrence[]> => {
+      const { data } = await api.get('/occorrence/getByDate', { params: { date } });
+      return data?.data ?? data;
+    },
+    enabled: Boolean(date),
+  });
+}
+
+export function useOccurrencesBySiteId(siteId: string) {
+  return useQuery({
+    queryKey: ['occurrences', 'siteId', siteId],
+    queryFn: async (): Promise<Occorrence[]> => {
+      const { data } = await api.get('/occorrence/getBySiteId', { params: { siteId } });
+      return data?.data ?? data;
+    },
+    enabled: Boolean(siteId),
+  });
+}
+
+export function useOccurrencesByStatus(status: string) {
+  return useQuery({
+    queryKey: ['occurrences', 'status', status],
+    queryFn: async (): Promise<Occorrence[]> => {
+      const { data } = await api.get('/occorrence/getByStatus', { params: { status } });
+      return data?.data ?? data;
+    },
+    enabled: Boolean(status),
   });
 }
 

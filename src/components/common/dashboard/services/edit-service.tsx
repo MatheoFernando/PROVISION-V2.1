@@ -22,26 +22,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  updateServiceSchema,
-  UpdateService,
-  Service,
-} from "@/infrastructure/schema/schema-service";
-import { useUpdateServiceMutation } from "@/infrastructure/hooks/useServices";
+import { moduleSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
+import { useUpdateModule } from "@/infrastructure/hooks/useModules";
 import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
 
 interface EditServiceProps {
-  service: Service;
+  service: ModuleSchema;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function EditService({ service, open, onOpenChange }: EditServiceProps) {
-  const updateServiceMutation = useUpdateServiceMutation();
+  const updateModuleMutation = useUpdateModule();
 
-  const form = useForm<UpdateService>({
-    resolver: zodResolver(updateServiceSchema),
+  const form = useForm<Partial<ModuleSchema>>({
+    resolver: zodResolver(moduleSchema.partial()),
     defaultValues: {
       name: service.name,
       description: service.description || "",
@@ -59,15 +55,12 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
     }
   }, [service, form]);
 
-  function onSubmit(data: UpdateService) {
-    updateServiceMutation.mutate(
-      { id: service.id!, data },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-        },
-      }
-    );
+  function onSubmit(data: Partial<ModuleSchema>) {
+    updateModuleMutation.mutate({ id: service.id!, ...data }, {
+      onSuccess: () => {
+        onOpenChange(false);
+      },
+    });
   }
 
   return (
@@ -138,8 +131,8 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={updateServiceMutation.isPending}>
-                {updateServiceMutation.isPending
+              <Button type="submit" disabled={updateModuleMutation.isPending}>
+                {updateModuleMutation.isPending
                   ? "Atualizando..."
                   : "Atualizar Serviço"}
               </Button>

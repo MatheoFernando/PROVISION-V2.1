@@ -1,5 +1,4 @@
 import { EmployeesTable } from "@/components/common/dashboard/employees/employees-table";
-import { mockEmployees } from "@/infrastructure/schema/schema-employees";
 
 export default function EmployeesPage() {
   return (
@@ -13,7 +12,11 @@ export default function EmployeesPage() {
         </div>
       </div>
       
-      <EmployeesTable mockData={mockEmployees} />
+      <EmployeesTable />
     </div>
   );
 }
+
+
+
+

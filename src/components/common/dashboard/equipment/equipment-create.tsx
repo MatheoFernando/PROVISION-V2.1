@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createEquipmentSchema, CreateEquipment } from "@/infrastructure/schema/schema-equipment";
+import { createEquipmentSchema } from "@/infrastructure/schema/schema-equipment";
+import { Equipment } from "@/types/domain";
 import { useCreateEquipment, useUpdateEquipment } from "@/infrastructure/hooks/useEquipment";
 import { useTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
 import { useSites } from "@/infrastructure/hooks/useSites";
@@ -27,7 +28,7 @@ export function EquipmentCreate({ equipment, isOpen, onClose }: EquipmentCreateP
   const { data: typeEquipment = [] } = useTypeEquipment();
   const { data: sites = [] } = useSites();
 
-  const form = useForm<CreateEquipment>({
+  const form = useForm<Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>>({
     resolver: zodResolver(createEquipmentSchema),
     defaultValues: equipment || {
       serialNumber: "",
@@ -41,7 +42,7 @@ export function EquipmentCreate({ equipment, isOpen, onClose }: EquipmentCreateP
     },
   });
 
-  const onSubmit = async (data: CreateEquipment) => {
+  const onSubmit = async (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       setIsSubmitting(true);
       

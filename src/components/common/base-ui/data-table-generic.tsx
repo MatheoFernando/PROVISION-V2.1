@@ -217,7 +217,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length + (hasSelectionColumn ? 1 : 0)} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={columns.length + (hasSelectionColumn ? 1 : 0)} className="h-24 w-full text-center text-muted-foreground">
                   Sem resultados.
                 </TableCell>
               </TableRow>

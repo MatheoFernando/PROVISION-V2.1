@@ -1,5 +1,4 @@
 import { CarsTable } from "@/components/common/dashboard/cars/cars-table";
-import { defaultCars } from "@/infrastructure/schema/schema-cars";
 
 export default function CarsPage() {
   return (
@@ -13,7 +12,11 @@ export default function CarsPage() {
         </div>
       </div>
       
-      <CarsTable mockData={defaultCars} />
+      <CarsTable />
     </div>
   );
 }
+
+
+
+

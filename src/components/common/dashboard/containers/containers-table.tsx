@@ -5,7 +5,7 @@ import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { useContainers } from "@/infrastructure/hooks/useContainers";
-import { Container } from "@/infrastructure/schema/schema-containers";
+import { Container } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -74,11 +74,7 @@ const columns: ColumnDef<Container>[] = [
   },
 ];
 
-interface ContainersTableProps {
-  mockData?: Container[];
-}
-
-export function ContainersTable({ mockData }: ContainersTableProps) {
+export function ContainersTable() {
   const { data: containers = [], isLoading } = useContainers();
   const deleteContainer = useDeleteContainer();
   const [searchTerm, setSearchTerm] = useState("");
@@ -87,10 +83,7 @@ export function ContainersTable({ mockData }: ContainersTableProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedContainer, setSelectedContainer] = useState<Container | undefined>();
 
-  // Use mock data if provided, otherwise use API data
-  const data = mockData || containers;
-
-  const filteredData = data.filter((item) =>
+  const filteredData = containers.filter((item) =>
     item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.mark.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.model.toLowerCase().includes(searchTerm.toLowerCase())
@@ -112,10 +105,10 @@ export function ContainersTable({ mockData }: ContainersTableProps) {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedContainer) return;
+    if (!selectedContainer || !selectedContainer.id) return;
 
     try {
-      await deleteContainer.mutateAsync(selectedContainer.id);
+      await deleteContainer.mutateAsync(selectedContainer.id as string);
       toast.success("Container excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedContainer(undefined);

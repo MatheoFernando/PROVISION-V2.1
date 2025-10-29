@@ -1,5 +1,4 @@
 import api, { setAccessToken } from '@/infrastructure/utils/api';
-import { useAuthStore } from '@/infrastructure/hooks/useAuthStore';
 
 export type LoginRequest = {
   phone: string;
@@ -28,19 +27,6 @@ export async function login(request: LoginRequest): Promise<LoginEnvelope> {
   const { data } = await api.post<LoginEnvelope>('/authentication/login', request);
   if (data?.data?.accessToken) {
     setAccessToken(data.data.accessToken);
-    
-      try {
-        const user = data?.data?.user;
-        const payload = {
-          isGlobalAdmin: Boolean(user?.isGlobalAdmin),
-        };
-        window.localStorage.setItem('user', JSON.stringify(payload));
-        
-        // Atualizar o store
-        useAuthStore.getState().setIsGlobalAdmin(Boolean(user?.isGlobalAdmin));
-      } catch {
-        // ignore storage errors
-      }
     }
  
   return data;

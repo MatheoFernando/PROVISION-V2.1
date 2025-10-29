@@ -3,7 +3,6 @@
 import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { toast } from "sonner"
-import { z } from "zod"
 import { Eye, Edit, Trash2, User, Building, Settings, Building2, MoreHorizontal, Shield, UserX } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
@@ -43,30 +42,11 @@ import {
 } from "@/components/ui/tabs"
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
 import { IconDotsVertical } from "@tabler/icons-react"
+import { useUsers } from '@/infrastructure/hooks/useUsers'
+import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
+import type { User as UserEntity, Company } from '@/types/domain'
 
-// Schemas para diferentes tipos de dados
-export const userSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  email: z.string(),
-  role: z.string(),
-  status: z.string(),
-  lastLogin: z.string(),
-  department: z.string(),
-})
-
-export const companySchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  industry: z.string(),
-  employees: z.number(),
-  status: z.string(),
-  location: z.string(),
-  revenue: z.string(),
-})
-
-type User = z.infer<typeof userSchema>
-type Company = z.infer<typeof companySchema>
+type User = UserEntity
 
 
 // Componente para ações com dropdown
@@ -74,13 +54,13 @@ function ActionsButtons({
   item, 
   tabType 
 }: { 
-  item: User | Company
+  item: any
   tabType: 'users' | 'companies'
 }) {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false)
 
   const handleAction = (action: string) => {
-    const itemName = item.name
+    const itemName = tabType === 'users' ? (item?.phone ?? 'Utilizador') : (item?.businessName ?? 'Empresa')
     
     switch (action) {
       case 'permissions':
@@ -147,13 +127,13 @@ function PermissionsDrawer({
   isOpen,
   onOpenChange
 }: { 
-  item: User | Company
+  item: any
   tabType: 'users' | 'companies'
   isOpen: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const isMobile = useIsMobile()
-  const itemName = item.name
+  const itemName = tabType === 'users' ? (item?.phone ?? 'Utilizador') : (item?.businessName ?? 'Empresa')
   
   // Estado para os dados editáveis
   const [permissions, setPermissions] = React.useState("read")
@@ -177,11 +157,10 @@ function PermissionsDrawer({
       // Por enquanto, vamos usar dados baseados no tipo
       if (tabType === 'users') {
         const user = item as User
-        setStatus(user.status === "Ativo" ? "active" : "inactive")
-        setPermissions(user.role === "Admin" ? "admin" : "read")
+        setStatus(user.status ? "active" : "inactive")
+        setPermissions(user.isGlobalAdmin ? "admin" : "read")
       } else {
-        const company = item as Company
-        setStatus(company.status === "Ativa" ? "active" : "inactive")
+        setStatus(item?.status ? "active" : "inactive")
         setPermissions("read")
       }
     }
@@ -327,38 +306,29 @@ function PermissionsDrawer({
 // Definições das colunas para cada tipo
 const createUserColumns = (): ColumnDef<User>[] => [
   {
-    accessorKey: "name",
-    header: "Nome",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.name}</div>
-    ),
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
-    accessorKey: "role",
-    header: "Função",
-    cell: ({ row }) => (
-      <Badge variant="outline">{row.original.role}</Badge>
-    ),
+    accessorKey: "phone",
+    header: "Telefone",
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const isActive = row.original.status === "Ativo"
+      const isActive = Boolean(row.original.status)
       return (
         <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {row.original.status}
+          {isActive ? 'Ativo' : 'Inativo'}
         </Badge>
       )
     },
   },
   {
-    accessorKey: "lastLogin",
-    header: "Último Login",
+    accessorKey: "isGlobalAdmin",
+    header: "Tipo",
+    cell: ({ row }) => (
+      <Badge variant={row.original.isGlobalAdmin ? 'default' : 'secondary'} className={row.original.isGlobalAdmin ? 'bg-blue-500' : 'bg-gray-200 text-gray-700'}>
+        {row.original.isGlobalAdmin ? 'Super Admin' : 'Admin'}
+      </Badge>
+    ),
   },
   {
     id: "actions",
@@ -374,35 +344,31 @@ const createUserColumns = (): ColumnDef<User>[] => [
 
 const createCompanyColumns = (): ColumnDef<Company>[] => [
   {
-    accessorKey: "name",
+    accessorKey: "businessName",
     header: "Nome da Empresa",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.name}</div>
+      <div className="font-medium">{row.original.businessName}</div>
     ),
   },
   {
-    accessorKey: "industry",
-    header: "Indústria",
-  },
-  {
-    accessorKey: "employees",
-    header: "Funcionários",
+    accessorKey: "nif",
+    header: "NIF",
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const isActive = row.original.status === "Ativa"
+      const isActive = Boolean(row.original.status)
       return (
         <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {row.original.status}
+          {isActive ? 'Ativa' : 'Inativa'}
         </Badge>
       )
     },
   },
   {
-    accessorKey: "location",
-    header: "Localização",
+    accessorKey: "email",
+    header: "Email",
   },
   {
     id: "actions",
@@ -417,69 +383,9 @@ const createCompanyColumns = (): ColumnDef<Company>[] => [
 ]
 
 
-// Dados de exemplo
-const usersData: User[] = [
-  {
-    id: 1,
-    name: "João Silva",
-    email: "joao@empresa.com",
-    role: "Admin",
-    status: "Ativo",
-    lastLogin: "2024-01-15",
-    department: "TI",
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    email: "maria@empresa.com",
-    role: "User",
-    status: "Ativo",
-    lastLogin: "2024-01-14",
-    department: "Vendas",
-  },
-  {
-    id: 3,
-    name: "Pedro Costa",
-    email: "pedro@empresa.com",
-    role: "Manager",
-    status: "Inativo",
-    lastLogin: "2024-01-10",
-    department: "Marketing",
-  },
-]
-
-const companiesData: Company[] = [
-  {
-    id: 1,
-    name: "TechCorp Solutions",
-    industry: "Tecnologia",
-    employees: 150,
-    status: "Ativa",
-    location: "São Paulo",
-    revenue: "R$ 2.5M",
-  },
-  {
-    id: 2,
-    name: "InnovaTech",
-    industry: "Software",
-    employees: 75,
-    status: "Ativa",
-    location: "Rio de Janeiro",
-    revenue: "R$ 1.2M",
-  },
-  {
-    id: 3,
-    name: "DataFlow Systems",
-    industry: "Consultoria",
-    employees: 200,
-    status: "Pendente",
-    location: "Belo Horizonte",
-    revenue: "R$ 3.8M",
-  },
-]
-
-
 function Management() {
+  const { users, isLoading: usersLoading } = useUsers()
+  const { data: companies, isLoading: companiesLoading } = useCompaniesQuery()
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
@@ -504,12 +410,13 @@ function Management() {
         
         <TabsContent value="users" className="mt-6">
           <DataTableGeneric
-            data={usersData}
+            data={users}
             columns={createUserColumns()}
-            searchKey="name"
-            placeholder="Pesquisar usuários..."
+            searchKey="phone"
+            placeholder="Pesquisar utilizadores..."
             enableRowSelection={true}
             includeSelection={true}
+            isLoading={usersLoading}
             actionButton={{
               label: "Adicionar Utilizador",
               onClick: () => toast.success("Funcionalidade em desenvolvimento"),
@@ -519,12 +426,13 @@ function Management() {
         
         <TabsContent value="companies" className="mt-6">
           <DataTableGeneric
-            data={companiesData}
+            data={companies ?? []}
             columns={createCompanyColumns()}
-            searchKey="name"
+            searchKey="businessName"
             placeholder="Pesquisar empresas..."
             enableRowSelection={true}
             includeSelection={true}
+            isLoading={companiesLoading}
             actionButton={{
               label: "Adicionar Empresa",
               onClick: () => toast.success("Funcionalidade em desenvolvimento"),

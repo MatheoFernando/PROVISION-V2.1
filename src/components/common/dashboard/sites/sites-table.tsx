@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { useSites } from "@/infrastructure/hooks/useSites";
-import { Site } from "@/infrastructure/schema/schema-sites";
+import { Site } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -168,10 +168,10 @@ export function SitesTable() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedSite) return;
+    if (!selectedSite || !selectedSite.id) return;
 
     try {
-      await deleteSite.mutateAsync(selectedSite.id);
+      await deleteSite.mutateAsync(selectedSite.id as string);
       toast.success("Site excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedSite(undefined);

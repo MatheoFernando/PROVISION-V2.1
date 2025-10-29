@@ -1,50 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { TypeEquipment, CreateTypeEquipment, UpdateTypeEquipment } from "../schema/schema-type-equipment";
+import { TypeEquipment } from "../../types/domain";
 
 export function useTypeEquipment() {
   return useQuery({
     queryKey: ["type-equipment"],
     queryFn: async (): Promise<TypeEquipment[]> => {
-      // Mock data para tipos de equipamento
-      const mockTypeEquipment: TypeEquipment[] = [
-        {
-          id: "type-1",
-          name: "Desktop",
-          description: "Computadores de mesa para uso em escritório",
-          companyId: "company-1",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "type-2",
-          name: "Notebook",
-          description: "Computadores portáteis para mobilidade",
-          companyId: "company-1",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "type-3",
-          name: "Servidor",
-          description: "Equipamentos para processamento e armazenamento de dados",
-          companyId: "company-1",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "type-4",
-          name: "Impressora",
-          description: "Equipamentos para impressão de documentos",
-          companyId: "company-1",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-      
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return mockTypeEquipment;
+      const { data } = await api.get("/typeEquipment/getAll");
+      return (data?.data ?? data) as TypeEquipment[];
     },
   });
 }
@@ -53,8 +16,8 @@ export function useCreateTypeEquipment() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: CreateTypeEquipment): Promise<TypeEquipment> => {
-      const response = await api.post("/type-equipment", data);
+    mutationFn: async (data: Omit<TypeEquipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<TypeEquipment> => {
+      const response = await api.post("/typeEquipment/create", data);
       return response.data;
     },
     onSuccess: () => {
@@ -67,8 +30,8 @@ export function useUpdateTypeEquipment() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateTypeEquipment }): Promise<TypeEquipment> => {
-      const response = await api.put(`/type-equipment/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<TypeEquipment, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<TypeEquipment> => {
+      const response = await api.put(`/typeEquipment`, { id, ...data });
       return response.data;
     },
     onSuccess: () => {
@@ -82,7 +45,7 @@ export function useDeleteTypeEquipment() {
   
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/type-equipment/${id}`);
+      await api.delete(`/typeEquipment/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["type-equipment"] });

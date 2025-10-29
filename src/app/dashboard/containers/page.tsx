@@ -1,5 +1,4 @@
 import { ContainersTable } from "@/components/common/dashboard/containers/containers-table";
-import { defaultContainers } from "@/infrastructure/schema/schema-containers";
 
 export default function ContainersPage() {
   return (
@@ -13,7 +12,11 @@ export default function ContainersPage() {
         </div>
       </div>
       
-      <ContainersTable mockData={defaultContainers} />
+      <ContainersTable />
     </div>
   );
 }
+
+
+
+

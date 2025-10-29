@@ -2,13 +2,23 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/infrastructure/utils/api'
+import { useCompaniesQuery, useDeleteCompanyMutation } from '@/infrastructure/hooks/useCompanies'
 import type { ColumnDef } from '@tanstack/react-table'
-import {Company } from '@/infrastructure/schema/schema-company'
+import type { Company } from '@/types/domain'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DataTableGeneric } from '../../base-ui/data-table-generic'
 import { Eye, Edit, Trash2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { DeleteModal } from '@/components/ui/delete-modal'
+
+function getPrimaryAddress(company: any) {
+  return company?.address ?? company?.addresses?.[0] ?? undefined
+}
+
+function getPrimaryContact(company: any) {
+  return company?.contact ?? company?.contacts?.[0] ?? undefined
+}
 
 const columns: ColumnDef<Company, unknown>[] = [
   {
@@ -25,7 +35,7 @@ const columns: ColumnDef<Company, unknown>[] = [
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-sm text-muted-foreground">{company.cod}</span>
+            <span className="text-sm text-foreground font-medium leading-none">{company.businessName}</span>
           </div>
         </div>
       )
@@ -48,8 +58,9 @@ const columns: ColumnDef<Company, unknown>[] = [
   { 
     accessorKey: 'email', 
     header: 'Email',
-    cell: ({ getValue }) => {
-      const email = getValue<string>()
+    cell: ({ row }) => {
+      const c: any = row.original as any
+      const email: string | undefined = getPrimaryContact(c)?.email
       return email ? (
         <span className="text-sm text-gray-700 whitespace-nowrap">{email}</span>
       ) : (
@@ -60,8 +71,9 @@ const columns: ColumnDef<Company, unknown>[] = [
   { 
     accessorKey: 'country', 
     header: 'País',
-    cell: ({ getValue }) => {
-      const country = getValue<string>()
+    cell: ({ row }) => {
+      const c: any = row.original as any
+      const country: string | undefined = getPrimaryAddress(c)?.country
       return country ? (
         <span className="text-sm text-gray-700 whitespace-nowrap">{country}</span>
       ) : (
@@ -72,8 +84,9 @@ const columns: ColumnDef<Company, unknown>[] = [
   { 
     accessorKey: 'municipality', 
     header: 'Município',
-    cell: ({ getValue }) => {
-      const municipality = getValue<string>()
+    cell: ({ row }) => {
+      const c: any = row.original as any
+      const municipality: string | undefined = getPrimaryAddress(c)?.municipality
       return municipality ? (
         <span className="text-sm text-gray-700 whitespace-nowrap">{municipality}</span>
       ) : (
@@ -86,106 +99,25 @@ const columns: ColumnDef<Company, unknown>[] = [
 
 function ListCompany() {
   const router = useRouter()
+  const { data, isLoading, isError } = useCompaniesQuery()
+  const { mutateAsync: deleteAsync } = useDeleteCompanyMutation()
 
-  const mockData: Company[] = [
-    {
-      id: '1',
-      cod: 'EMP001',
-      businessName: 'Tech Solutions Ltda',
-      taxName: 'Tech Solutions - Tecnologia e Inovação Ltda',
-      nif: '123456789',
-      status: true,
-      photo: null,
-      email: 'contato@techsolutions.com',
-      country: 'Brasil',
-      municipality: 'São Paulo',
-    },
-    {
-      id: '2',
-      cod: 'EMP002',
-      businessName: 'Global Commerce S.A.',
-      taxName: 'Global Commerce - Importação e Exportação S.A.',
-      nif: '987654321',
-      status: true,
-      photo: null,
-      email: 'info@globalcommerce.com',
-      country: 'Brasil',
-      municipality: 'Rio de Janeiro',
-    },
-    {
-      id: '3',
-      cod: 'EMP003',
-      businessName: 'Digital Marketing Agency',
-      taxName: 'Digital Marketing Agency - Comunicação Digital Ltda',
-      nif: '456789123',
-      status: false,
-      photo: null,
-      email: 'contato@digitalmarketing.com',
-      country: 'Brasil',
-      municipality: 'Belo Horizonte',
-    },
-    {
-      id: '4',
-      cod: 'EMP004',
-      businessName: 'Green Energy Corp',
-      taxName: 'Green Energy - Energias Renováveis Corp',
-      nif: '789123456',
-      status: true,
-      photo: null,
-      email: 'info@greenenergy.com',
-      country: 'Brasil',
-      municipality: 'Curitiba',
-    },
-    {
-      id: '5',
-      cod: 'EMP005',
-      businessName: 'Food & Beverage Group',
-      taxName: 'Food & Beverage - Alimentos e Bebidas Group',
-      nif: '321654987',
-      status: true,
-      photo: null,
-      email: 'contato@foodbeverage.com',
-      country: 'Brasil',
-      municipality: 'Porto Alegre',
-    },
-  ]
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['companies'],
-    queryFn: async (): Promise<Company[]> => {
-      try {
-        const { data } = await api.get('/company/GetAll')
-        console.log("teste" , data.data)
-        return data?.data ?? []
-      } catch {
-        // Sempre retorna mock quando não há dados da API
-        return mockData
-      }
-    },
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: 1,
-    // Sempre mostra dados mockados imediatamente
-    initialData: mockData,
-  })
-
-  // Sempre mostra dados mockados quando não há dados da API
-  const displayData = data && data.length > 0 ? data : mockData
+  const [viewOpen, setViewOpen] = React.useState(false)
+  const [selectedCompany, setSelectedCompany] = React.useState<Company | null>(null)
+  const [deleteOpen, setDeleteOpen] = React.useState(false)
 
   const handleView = (company: Company) => {
-    console.log('Visualizar empresa:', company)
-    router.push(`/dashboard/companies/id=${company.id}`)
+    setSelectedCompany(company)
+    setViewOpen(true)
   }
 
   const handleEdit = (company: Company) => {
-    console.log('Editar empresa:', company)
-    router.push(`/dashboard/company/form?id=${company.id}`)
+    router.push(`/dashboard/companies/create?id=${company.id}`)
   }
 
-  const handleDelete = (company: Company) => {
-    console.log('Excluir empresa:', company)
+  const handleDelete = async (company: Company) => {
+    setSelectedCompany(company)
+    setDeleteOpen(true)
   }
 
 
@@ -193,7 +125,7 @@ function ListCompany() {
   return (
     <div className="space-y-6">
       <DataTableGeneric
-        data={displayData}
+        data={data ?? []}
         columns={columns}
         searchKey="businessName"
         placeholder="Pesquisar empresa..."
@@ -224,6 +156,84 @@ function ListCompany() {
             variant: 'ghost'
           }
         ]}
+      />
+
+  
+      <Dialog open={viewOpen} onOpenChange={(o) => { if (!o) { setViewOpen(false); setSelectedCompany(null) } }}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedCompany && (
+                <>
+                  <Avatar className="h-10 w-10 rounded-sm">
+                    <AvatarImage src={selectedCompany.photo || undefined} alt={selectedCompany.businessName} className='rounded-sm'/>
+                    <AvatarFallback className="rounded-sm">
+                      {selectedCompany.businessName?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate">{selectedCompany.businessName}</span>
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>Informações da empresa</DialogDescription>
+          </DialogHeader>
+          {selectedCompany && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">Código</div>
+                  <div className="text-foreground font-medium">{selectedCompany.cod}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">NIF</div>
+                  <div className="text-foreground font-medium">{selectedCompany.nif}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">Nome Fiscal</div>
+                  <div className="text-foreground">{selectedCompany.taxName}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">Email</div>
+                  <div className="text-foreground">{getPrimaryContact(selectedCompany as any)?.email ?? '-'}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">País</div>
+                  <div className="text-foreground">{getPrimaryAddress(selectedCompany as any)?.country ?? '-'}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">Município</div>
+                  <div className="text-foreground">{getPrimaryAddress(selectedCompany as any)?.municipality ?? '-'}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-muted-foreground">Estado</div>
+                  <div className="text-foreground">{selectedCompany.status ? 'Ativa' : 'Inativa'}</div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => { setViewOpen(false); setSelectedCompany(null) }} className="cursor-pointer">Fechar</Button>
+                <Button onClick={() => { setViewOpen(false); if (selectedCompany?.id) router.push(`/dashboard/companies/create?id=${selectedCompany.id}`) }} className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer">Editar</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+  
+      <DeleteModal
+        isOpen={deleteOpen}
+        onClose={() => { setDeleteOpen(false); setSelectedCompany(null) }}
+        onConfirm={async () => {
+          if (!selectedCompany?.id) return
+          try {
+            await deleteAsync(selectedCompany.id)
+          } finally {
+            setDeleteOpen(false)
+            setSelectedCompany(null)
+          }
+        }}
+        title="Excluir empresa"
+        message={`Tem certeza que deseja excluir a empresa ${selectedCompany?.businessName ?? ''} ? Esta ação não pode ser desfeita.`}
       />
        </div>
   )

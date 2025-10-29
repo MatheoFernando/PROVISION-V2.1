@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createCarSchema, CreateCar } from "@/infrastructure/schema/schema-cars";
+import { createCarSchema } from "@/infrastructure/schema/schema-cars";
+import { Car } from "@/types/domain";
 import { useCreateCar, useUpdateCar } from "@/infrastructure/hooks/useCars";
 import { toast } from "sonner";
 
@@ -22,7 +23,7 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
   const createCar = useCreateCar();
   const updateCar = useUpdateCar();
 
-  const form = useForm<CreateCar>({
+  const form = useForm<Omit<Car, 'id' | 'createdAt' | 'updatedAt'>>({
     resolver: zodResolver(createCarSchema),
     defaultValues: car || {
       cod: "",
@@ -34,7 +35,7 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
     },
   });
 
-  const onSubmit = async (data: CreateCar) => {
+  const onSubmit = async (data: Omit<Car, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       setIsSubmitting(true);
       

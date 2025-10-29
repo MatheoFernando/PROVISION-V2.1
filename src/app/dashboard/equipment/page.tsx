@@ -2,8 +2,6 @@
 
 import { EquipmentTable } from "@/components/common/dashboard/equipment/equipment-table";
 import { TypeEquipmentTable } from "@/components/common/dashboard/type-equipment/type-equipment-table";
-import { mockEquipments } from "@/infrastructure/schema/schema-equipment";
-import { defaultTypeEquipments } from "@/infrastructure/schema/schema-type-equipment";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function EquipmentPage() {
@@ -25,13 +23,17 @@ export default function EquipmentPage() {
         </TabsList>
         
         <TabsContent value="equipments" className="mt-6">
-          <EquipmentTable mockData={mockEquipments} />
+          <EquipmentTable />
         </TabsContent>
         
         <TabsContent value="types" className="mt-6">
-          <TypeEquipmentTable mockData={defaultTypeEquipments} />
+          <TypeEquipmentTable />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+
+
+

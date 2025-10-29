@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,21 +18,20 @@ import {
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/infrastructure/utils/api";
+import { companySchema } from "@/infrastructure/schema/schema-company";
+import { z } from "zod";
+import type { Company } from "@/types/domain";
 import {
-  companiesSchema,
-  companyUpsertSchema,
-  type UpsertCompanyFormData,
-  type Company,
-} from "@/infrastructure/schema/schema-company";
-import { useCreateCompanyMutation, useUpdateCompanyMutation } from "@/infrastructure/hooks/useCompanies";
+  useCreateCompanyMutation,
+  useUpdateCompanyMutation,
+} from "@/infrastructure/hooks/useCompanies";
 
 function CompanyFormPage() {
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get("id") ?? undefined;
-
-  const form = useForm<UpsertCompanyFormData>({
-    resolver: zodResolver(companyUpsertSchema),
+  const form = useForm({
+    resolver: zodResolver(companySchema),
     defaultValues: {
       id,
       photo: "",
@@ -41,6 +40,7 @@ function CompanyFormPage() {
       taxName: "",
       nif: "",
       status: true,
+      hasExistedSince: undefined,
       contactId: undefined,
       addressId: undefined,
       contact: { phoneNumbers: [{ phone: "" }], email: "" },
@@ -64,10 +64,11 @@ function CompanyFormPage() {
   const { data: companies, isLoading: loadingCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: async (): Promise<Company[]> => {
-      const response = await api.get("/company/GetAll");
-      const parsed = companiesSchema.safeParse(response.data);
+      const response = await api.get("/company");
+      const listSchema = z.array(companySchema);
+      const parsed = listSchema.safeParse(response.data);
       if (!parsed.success) throw new Error("Erro ao carregar as empresas");
-      return parsed.data;
+      return parsed.data as Company[];
     },
     staleTime: Infinity,
     refetchOnMount: false,
@@ -83,6 +84,16 @@ function CompanyFormPage() {
 
   useEffect(() => {
     if (!existingCompany) return;
+    const ec: any = existingCompany as any
+    const primaryAddress = ec?.address ?? ec?.addresses?.[0] ?? {
+      houseHold: "",
+      commune: "",
+      municipality: "",
+      province: "",
+      country: "",
+    }
+    const primaryContact = ec?.contact ?? ec?.contacts?.[0] ?? { email: "", phoneNumbers: [] }
+
     form.reset({
       id: existingCompany.id,
       cod: existingCompany.cod,
@@ -90,13 +101,25 @@ function CompanyFormPage() {
       taxName: existingCompany.taxName,
       nif: existingCompany.nif,
       status: existingCompany.status,
-      photo: existingCompany.photo ?? undefined,
-      contactId: undefined,
-      addressId: undefined,
-    });
+      photo: existingCompany.photo ?? "",
+      hasExistedSince: existingCompany.hasExistedSince,
+      contactId: existingCompany.contactId ?? undefined,
+      addressId: existingCompany.addressId ?? undefined,
+      contact: {
+        email: primaryContact?.email ?? "",
+        phoneNumbers: primaryContact?.phoneNumbers ?? [],
+      },
+      address: {
+        houseHold: primaryAddress?.houseHold ?? "",
+        commune: primaryAddress?.commune ?? "",
+        municipality: primaryAddress?.municipality ?? "",
+        province: primaryAddress?.province ?? "",
+        country: primaryAddress?.country ?? "",
+      },
+    })
   }, [existingCompany, form]);
 
-  const onSubmit: SubmitHandler<UpsertCompanyFormData> = async (values) => {
+  const onSubmit = async (values: z.infer<typeof companySchema>) => {
     try {
       if (isEditing) {
         await updateAsync({
@@ -119,8 +142,18 @@ function CompanyFormPage() {
           nif: values.nif ?? "",
           photo: values.photo,
           status: values.status ?? true,
-          address: values.address,
-          contact: values.contact,
+          hasExistedSince: values.hasExistedSince!,
+          address: {
+            houseHold: values.address?.houseHold ?? "",
+            commune: values.address?.commune ?? "",
+            municipality: values.address?.municipality ?? "",
+            province: values.address?.province ?? "",
+            country: values.address?.country ?? "",
+          },
+          contact: {
+            email: values.contact?.email ?? "",
+            phoneNumbers: values.contact?.phoneNumbers ?? [],
+          },
         });
         toast.success("Empresa criada com sucesso");
       }
@@ -175,17 +208,14 @@ function CompanyFormPage() {
                     name="photo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-slate-700">
-                          Logo da Empresa
-                        </FormLabel>
                         <FormControl>
                           <div className="mt-2">
                             {photoValue ? (
-                              <div className="relative aspect-square w-full rounded-lg border-2 border-slate-200 overflow-hidden bg-slate-50">
+                              <div className="relative aspect-square w-full h-60 rounded-lg border-2 border-slate-200 overflow-hidden bg-slate-50">
                                 <img
                                   src={photoValue}
                                   alt="Logo"
-                                  className="w-44 h-64 object-cover"
+                                  className="w-44 h-44 object-contain text-center mx-auto"
                                 />
                                 <button
                                   type="button"
@@ -287,6 +317,7 @@ function CompanyFormPage() {
                     <FormField
                       control={form.control}
                       name="nif"
+                      disabled={isEditing}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-medium text-slate-700">
@@ -303,9 +334,54 @@ function CompanyFormPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="hasExistedSince"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-slate-700">
+                            Data de Fundação
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                              value={
+                                field.value ? field.value.substring(0, 10) : ""
+                              }
+                              onChange={(e) =>
+                                field.onChange(
+                                  new Date(e.target.value).toISOString()
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address.houseHold"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-slate-700">
+                            Endereço Completo
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Rua, número, andar"
+                              className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
-                  <div className="pt-6 border-t border-slate-200">
+                  <div className="pt-6 border-t border-slate-200 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -353,22 +429,18 @@ function CompanyFormPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
-                  </div>
 
-                  <div className="pt-6 border-t border-slate-200">
-                    <div className="space-y-4">
                       <FormField
                         control={form.control}
-                        name="address.houseHold"
+                        name="address.province"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm font-medium text-slate-700">
-                              Endereço Completo
+                              Província
                             </FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Rua, número, andar"
+                                placeholder="Província"
                                 className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
                                 {...field}
                               />
@@ -377,89 +449,68 @@ function CompanyFormPage() {
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="address.province"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium text-slate-700">
-                                Província
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Província"
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
-                        <FormField
-                          control={form.control}
-                          name="address.municipality"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium text-slate-700">
-                                Município
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Município"
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="address.municipality"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              Município
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Município"
+                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                      <div className="grid grid-cols-2  gap-4">
-                        <FormField
-                          control={form.control}
-                          name="address.commune"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium text-slate-700">
-                                Comuna
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Comuna"
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <div className="grid grid-cols-2  gap-4">
+                      <FormField
+                        control={form.control}
+                        name="address.commune"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              Comuna
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Comuna"
+                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name="address.country"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium text-slate-700">
-                                País
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="País"
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="address.country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              País
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="País"
+                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
                 </div>

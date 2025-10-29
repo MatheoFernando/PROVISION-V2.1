@@ -1,23 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-
-interface Address {
-  id?: string;
-  houseHold?: string;
-  commune?: string;
-  municipality?: string;
-  province?: string;
-  country?: string;
-  companyId?: string;
-}
+import { Address } from "../../types/domain";
 
 export function useAddresses(companyId?: string) {
   return useQuery({
     queryKey: ["addresses", companyId],
     queryFn: async (): Promise<Address[]> => {
       const response= await api.get("/address/getAll");
-      return response.data?.data ;
+      return response.data?.data as Address[];
     },
   });
 }
@@ -26,7 +17,7 @@ export function useAddressesByHouseHold(houseHold: string) {
   return useQuery({
     queryKey: ["addresses", "houseHold", houseHold],
     queryFn: async (): Promise<Address[]> => {
-      const { data } = await api.get(`/address/getByHouseHold?houseHold=${houseHold}`);
+      const { data } = await api.get(`/address/getByHouseHold`, { params: { houseHold } });
       return (data?.data ?? []) as Address[];
     },
     enabled: !!houseHold,
@@ -37,7 +28,7 @@ export function useCreateAddress() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (payload: Partial<Address>): Promise<Address> => {
+    mutationFn: async (payload: Omit<Address, 'id' | 'createdAt' | 'updatedAt'>): Promise<Address> => {
       const response = await api.post("/address/create", payload);
       return response.data;
     },
@@ -55,7 +46,7 @@ export function useUpdateAddress() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: Partial<Address> & { id: string }): Promise<Address> => {
+    mutationFn: async (data: Partial<Omit<Address, 'id' | 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Address> => {
       const response = await api.put("/address", data);
       return response.data;
     },

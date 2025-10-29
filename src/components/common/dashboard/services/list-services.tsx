@@ -13,38 +13,38 @@ import { Badge } from "@/components/ui/badge";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { EditService } from "./edit-service";
 import { AssociateServiceCompany } from "./associate-service-company";
-import { Service } from "@/infrastructure/schema/schema-service";
-import { useUpdateServiceMutation, useDeleteServiceMutation } from "@/infrastructure/hooks/useServices";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
-import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
+import { useUpdateModule, useDeleteModule } from "@/infrastructure/hooks/useModules";
+import { type ModuleSchema } from "@/infrastructure/schema/schema-module";
+
 
 interface ListServicesProps {
-  services: Service[];
+  services: ModuleSchema[];
   isGlobalAdmin: boolean;
 }
 
 export function ListServices({ services, isGlobalAdmin }: ListServicesProps) {
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [associateService, setAssociateService] = useState<Service | null>(
+  const [editingService, setEditingService] = useState<ModuleSchema | null>(null);
+  const [associateService, setAssociateService] = useState<ModuleSchema | null>(
     null
   );
-  const updateServiceMutation = useUpdateServiceMutation();
-  const deleteServiceMutation = useDeleteServiceMutation();
+  const updateModuleMutation = useUpdateModule();
+  const deleteModuleMutation = useDeleteModule();
 
-  function handleToggleActive(service: Service) {
-    updateServiceMutation.mutate({
+  function handleToggleActive(service: ModuleSchema) {
+    const payload: Partial<ModuleSchema> & { id: string } = {
       id: service.id!,
-      data: { status: !service.status },
-    });
+      status: !service.status,
+    }
+    updateModuleMutation.mutate(payload);
   }
 
-  function handleDelete(service: Service) {
+  function handleDelete(service: ModuleSchema) {
     if (confirm("Tem certeza que deseja excluir este serviço?")) {
-      deleteServiceMutation.mutate(service.id!);
+      deleteModuleMutation.mutate(service.id!);
     }
   }
 
-  const columns = useMemo<ColumnDef<Service>[]>(
+  const columns = useMemo<ColumnDef<ModuleSchema>[]>(
     () => [
       {
         accessorKey: "name",
@@ -88,13 +88,13 @@ export function ListServices({ services, isGlobalAdmin }: ListServicesProps) {
       {
         label: "Atribuir a empresa",
         icon: <Building2 className="h-3 w-3" />,
-        onClick: (service: Service) => setAssociateService(service),
+        onClick: (service: ModuleSchema) => setAssociateService(service),
         variant: "ghost" as const,
       },
       {
         label: "Editar",
         icon: <Edit className="h-3 w-3" />,
-        onClick: (service: Service) => setEditingService(service),
+        onClick: (service: ModuleSchema) => setEditingService(service),
         variant: "ghost" as const,
       },
       {

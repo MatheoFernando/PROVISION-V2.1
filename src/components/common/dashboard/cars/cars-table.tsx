@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { useCars } from "@/infrastructure/hooks/useCars";
-import { Car } from "@/infrastructure/schema/schema-cars";
+import { Car } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -65,11 +65,7 @@ const columns: ColumnDef<Car>[] = [
   },
 ];
 
-interface CarsTableProps {
-  mockData?: Car[];
-}
-
-export function CarsTable({ mockData }: CarsTableProps) {
+export function CarsTable() {
   const { data: cars = [], isLoading } = useCars();
   const deleteCar = useDeleteCar();
   const [searchTerm, setSearchTerm] = useState("");
@@ -78,10 +74,7 @@ export function CarsTable({ mockData }: CarsTableProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Car | undefined>();
 
-  // Use mock data if provided, otherwise use API data
-  const data = mockData || cars;
-
-  const filteredData = data.filter((item) =>
+  const filteredData = cars.filter((item) =>
     item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.mark.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -102,10 +95,10 @@ export function CarsTable({ mockData }: CarsTableProps) {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedCar) return;
+    if (!selectedCar || !selectedCar.id) return;
 
     try {
-      await deleteCar.mutateAsync(selectedCar.id);
+      await deleteCar.mutateAsync(selectedCar.id as string);
       toast.success("Veículo excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedCar(undefined);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
 import { useCustomers } from "@/infrastructure/hooks/useCustomers";
-import { Customer } from "@/infrastructure/schema/schema-customers";
+import { Customer } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -105,16 +105,22 @@ export function CustomersTable() {
 
   const handleView = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setIsCreateOpen(false);
+    setIsDeleteOpen(false);
     setIsViewOpen(true);
   };
 
   const handleEdit = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setIsViewOpen(false);
+    setIsDeleteOpen(false);
     setIsCreateOpen(true);
   };
 
   const handleDelete = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setIsCreateOpen(false);
+    setIsViewOpen(false);
     setIsDeleteOpen(true);
   };
 
@@ -122,7 +128,7 @@ export function CustomersTable() {
     if (!selectedCustomer) return;
 
     try {
-      await deleteCustomer.mutateAsync(selectedCustomer.id);
+      await deleteCustomer.mutateAsync(selectedCustomer.id as string);
       toast.success("Cliente excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedCustomer(undefined);
@@ -133,6 +139,8 @@ export function CustomersTable() {
 
   const handleCreate = () => {
     setSelectedCustomer(undefined);
+    setIsViewOpen(false);
+    setIsDeleteOpen(false);
     setIsCreateOpen(true);
   };
 

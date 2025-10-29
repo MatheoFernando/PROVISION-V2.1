@@ -2,28 +2,22 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/infrastructure/utils/api'
-import type { User, CreateUserPayload, UpdateUserPayload } from '@/infrastructure/schema/schema-user'
+import type { User, CreateUserPayload, UpdateUserPayload } from '@/types/domain'
 import { toast } from 'sonner'
 
-export function useUsersQuery() {
+export function useUsersQuery(companyId?: string) {
   return useQuery<User[]>({
-    queryKey: ['users'],
+    queryKey: ['users', companyId ?? 'current-company'],
     queryFn: async (): Promise<User[]> => {
-      try {
-        const { data } = await api.get('/user/GetAll')
-        return data?.data ?? []
-      } catch {
-        // Sempre retorna mock quando não há dados da API
-        return []
-      }
+      const { data } = await api.get('/users/getAllByCompanyId', companyId ? { params: { companyId } } : undefined)
+      return data?.data ?? data ?? []
     },
-    staleTime: Infinity,
+    enabled: true,
+    staleTime: 5 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
-    // Sempre mostra dados mockados imediatamente
-    initialData: [],
   })
 }
 
@@ -34,7 +28,7 @@ export function useCreateUser() {
   return useMutation<{ message: string; data?: User }, unknown, CreateUserPayload>({
     mutationKey: ['user-create'],
     mutationFn: async (payload: CreateUserPayload) => {
-      const { data } = await api.post('/user/create', payload)
+      const { data } = await api.post('/users/create', payload)
       return data
     },
     onSuccess: () => {
@@ -53,8 +47,7 @@ export function useUpdateUser() {
   return useMutation<{ message: string; data?: User }, unknown, UpdateUserPayload>({
     mutationKey: ['user-update'],
     mutationFn: async (payload: UpdateUserPayload) => {
-      const { id, ...updateData } = payload
-      const { data } = await api.put(`/user/update/${id}`, updateData)
+      const { data } = await api.put('/users', payload)
       return data
     },
     onSuccess: () => {
@@ -73,7 +66,7 @@ export function useDeleteUser() {
   return useMutation<{ message: string }, unknown, string>({
     mutationKey: ['user-delete'],
     mutationFn: async (userId: string) => {
-      const { data } = await api.delete(`/user/delete/${userId}`)
+      const { data } = await api.delete(`/users/${userId}`)
       return data
     },
     onSuccess: () => {
@@ -86,8 +79,8 @@ export function useDeleteUser() {
   })
 }
 
-export function useUsers() {
-  const usersQuery = useUsersQuery()
+export function useUsers(companyId?: string) {
+  const usersQuery = useUsersQuery(companyId)
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()

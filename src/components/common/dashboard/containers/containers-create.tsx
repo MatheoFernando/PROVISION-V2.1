@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createContainerSchema, CreateContainer } from "@/infrastructure/schema/schema-containers";
+import { createContainerSchema } from "@/infrastructure/schema/schema-containers";
+import { Container } from "@/types/domain";
 import { useCreateContainer, useUpdateContainer } from "@/infrastructure/hooks/useContainers";
 import { toast } from "sonner";
 
@@ -22,7 +23,7 @@ export function ContainersCreate({ container, isOpen, onClose }: ContainersCreat
   const createContainer = useCreateContainer();
   const updateContainer = useUpdateContainer();
 
-  const form = useForm<CreateContainer>({
+  const form = useForm<Omit<Container, 'id' | 'createdAt' | 'updatedAt'>>({
     resolver: zodResolver(createContainerSchema),
     defaultValues: container || {
       cod: "",
@@ -35,7 +36,7 @@ export function ContainersCreate({ container, isOpen, onClose }: ContainersCreat
     },
   });
 
-  const onSubmit = async (data: CreateContainer) => {
+  const onSubmit = async (data: Omit<Container, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       setIsSubmitting(true);
       

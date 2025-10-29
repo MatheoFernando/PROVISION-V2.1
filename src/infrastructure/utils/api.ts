@@ -1,7 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const ACCESS_TOKEN_KEY = 'accessToken';
 
 export const getAccessToken = (): string | undefined => {
@@ -9,7 +8,7 @@ export const getAccessToken = (): string | undefined => {
 };
 
 export const setAccessToken = (token: string): void => {
-  Cookies.set(ACCESS_TOKEN_KEY, token, { sameSite: 'lax', path: '/' });
+  Cookies.set(ACCESS_TOKEN_KEY, token);
 };
 
 export const clearAccessToken = (): void => {
@@ -17,8 +16,7 @@ export const clearAccessToken = (): void => {
 };
 
 export const api: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL
 });
 
 api.interceptors.request.use((config) => {
