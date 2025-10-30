@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building2, Briefcase } from "lucide-react";
+import { Briefcase, Loader2 } from "lucide-react";
+import { api } from "@/infrastructure/utils/api";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,9 +35,9 @@ import {
   createCompanyModuleSchema,
   type CreateCompanyModule,
 } from "@/infrastructure/schema/schema-company-module";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 import { useModules } from "@/infrastructure/hooks/useModules";
 import { type ModuleSchema } from "@/infrastructure/schema/schema-module";
+import { CompanySelect } from "@/components/common/base-ui/selects/company-select";
 
 interface AssociateServiceCompanyProps {
   open?: boolean;
@@ -56,7 +58,6 @@ export function AssociateServiceCompany({
   const setOpenState = (value: boolean) =>
     isControlled ? onOpenChange?.(value) : setInternalOpen(value);
 
-  const { data: companies = [] } = useCompaniesQuery();
   const { data: services = [] } = useModules();
 
   const resolvedModule = useMemo(() => {
@@ -74,9 +75,23 @@ export function AssociateServiceCompany({
   });
 
   function onSubmit(data: CreateCompanyModule) {
-    console.log('Dados para criar associação:', data);
-   
+    (async () => {
+      setSubmitting(true);
+      try {
+        const payload = { ...data, status: String(data.status) } as any;
+        const { data: resp } = await api.post('/company-modules', payload);
+        toast.success('Associação criada com sucesso');
+        form.reset();
+        setOpenState(false);
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || 'Erro ao criar associação');
+      } finally {
+        setSubmitting(false);
+      }
+    })();
   }
+
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (moduleId) form.setValue("moduleId", moduleId);
@@ -86,9 +101,9 @@ export function AssociateServiceCompany({
     <Dialog open={openState} onOpenChange={setOpenState}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Associar Módulo a Empresa</DialogTitle>
+          <DialogTitle>Associar Serviço a Empresa</DialogTitle>
           <DialogDescription>
-            Vincule um módulo a uma ou mais empresas.
+            Vincule um serviço a uma ou mais empresas.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -99,40 +114,25 @@ export function AssociateServiceCompany({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Empresa</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma empresa" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {companies.filter((c) => Boolean(c.id)).map((company) => (
-                        <SelectItem key={company.id} value={company.id as string}>
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4" />
-                            {company.businessName}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <CompanySelect 
+                      value={field.value} 
+                      onChange={field.onChange} 
+                      required 
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             {moduleId ? (
               <FormItem>
-                <FormLabel>Serviço</FormLabel>
+                <FormLabel>Serviços</FormLabel>
                 <div className="flex items-center gap-2 rounded-md border p-2">
                   <Briefcase className="h-4 w-4" />
                   <div className="flex flex-col">
                     <span>
-                      {moduleName ||
-                        resolvedModule?.name ||
-                        "Serviço selecionado"}
+                      {moduleName || resolvedModule?.name || "Serviço selecionado"}
                     </span>
                     {resolvedModule?.description && (
                       <span className="text-xs text-muted-foreground">
@@ -154,7 +154,7 @@ export function AssociateServiceCompany({
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={submitting}>
                           <SelectValue placeholder="Selecione um módulo" />
                         </SelectTrigger>
                       </FormControl>
@@ -196,6 +196,7 @@ export function AssociateServiceCompany({
                     <Switch
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      disabled={submitting}
                     />
                   </FormControl>
                 </FormItem>
@@ -207,18 +208,23 @@ export function AssociateServiceCompany({
                 variant="outline"
                 className="cursor-pointer"
                 onClick={() => setOpenState(false)}
+                disabled={submitting}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className="px-6 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white"
-                // disabled={createAssociationMutation.isPending}
+                className={`px-6 bg-blue-600 hover:bg-blue-700 text-white ${submitting ? 'cursor-wait opacity-90' : 'cursor-pointer'}`}
+                disabled={submitting}
               >
-                {/* {createAssociationMutation.isPending
-                  ? "Atribuindo..."
-                  : "Atribuir"} */}
-                Atribuir
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Atribuindo...
+                  </>
+                ) : (
+                  'Atribuir'
+                )}
               </Button>
             </div>
           </form>

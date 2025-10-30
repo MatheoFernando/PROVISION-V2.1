@@ -1,0 +1,54 @@
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Plus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
+
+interface CompanySelectProps {
+  value?: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+}
+
+export function CompanySelect({ value, onChange, required = false }: CompanySelectProps) {
+  const { data: companies = [], isLoading } = useCompaniesQuery();
+  const [search, setSearch] = useState("");
+
+  const filtered = search
+    ? companies.filter((c: any) => c.businessName?.toLowerCase().includes(search.toLowerCase()))
+    : companies;
+
+  return (
+    <Select value={value} onValueChange={onChange} disabled={isLoading} required={required}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Selecione a empresa" />
+      </SelectTrigger>
+      <SelectContent>
+        <div className="px-3 pt-2 pb-1 border-b bg-background sticky top-0 z-10">
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Pesquisar empresa..."
+            className="h-8 text-sm placeholder:font-normal"
+            disabled={isLoading || companies.length === 0}
+            autoFocus
+          />
+        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-12">
+            <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-sm text-muted-foreground p-4">Nenhum dado encontrado</div>
+        ) : (
+          filtered.map((company: any) => (
+            <SelectItem key={company.id} value={company.id!}>
+              {company.businessName}
+            </SelectItem>
+          ))
+        )}
+      </SelectContent>
+    </Select>
+  );
+}

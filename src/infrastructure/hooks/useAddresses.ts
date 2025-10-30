@@ -7,9 +7,11 @@ export function useAddresses(companyId?: string) {
   return useQuery({
     queryKey: ["addresses", companyId],
     queryFn: async (): Promise<Address[]> => {
-      const response= await api.get("/address/getAll");
-      return response.data?.data as Address[];
+      if (!companyId) return [];
+      const response = await api.get("/address/getAll");
+      return response.data || [];
     },
+    enabled: !!companyId, 
   });
 }
 

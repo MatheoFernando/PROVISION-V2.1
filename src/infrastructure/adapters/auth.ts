@@ -1,4 +1,5 @@
 import api, { setAccessToken } from '@/infrastructure/utils/api';
+import Cookies from 'js-cookie';
 
 export type LoginRequest = {
   phone: string;
@@ -27,8 +28,16 @@ export async function login(request: LoginRequest): Promise<LoginEnvelope> {
   const { data } = await api.post<LoginEnvelope>('/authentication/login', request);
   if (data?.data?.accessToken) {
     setAccessToken(data.data.accessToken);
+  }
+  if (data?.data?.refreshToken) {
+    Cookies.set('refreshToken', data.data.refreshToken);
+  }
+
+  if (data?.data?.user?.companyId) {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('companyId', data.data.user.companyId);
     }
- 
+  }
   return data;
 }
 

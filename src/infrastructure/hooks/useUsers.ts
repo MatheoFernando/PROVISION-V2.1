@@ -71,7 +71,7 @@ export function useDeleteUser() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('Utilizador deletado com sucesso')
+      toast.success('Utilizador eliminado com sucesso')
     },
     onError: () => {
       toast.error('Erro ao deletar utilizador')

@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { Site } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { SitesCreate } from "./sites-create";
 import { SitesView } from "./sites-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Site>[] = [
   {
@@ -140,6 +140,7 @@ const columns: ColumnDef<Site>[] = [
 
 export function SitesTable() {
   const { data: sites = [], isLoading } = useSites();
+  const router = useRouter();
   const deleteSite = useDeleteSite();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -147,10 +148,6 @@ export function SitesTable() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
 
-  const filteredData = sites.filter((item) =>
-    item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleView = (site: Site) => {
     setSelectedSite(site);
@@ -189,12 +186,12 @@ export function SitesTable() {
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
+        data={sites}
         isLoading={isLoading}
         searchKey="name"
         actionButton={{
           label: "Novo Site",
-          onClick: handleCreate,
+          onClick: () => router.push("/dashboard/sites/create"),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -217,12 +214,7 @@ export function SitesTable() {
         ]}
       />
 
-      <SitesCreate
-        site={selectedSite}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
-
+   
       <SitesView
         site={selectedSite}
         isOpen={isViewOpen}

@@ -9,5 +9,8 @@ export const createCustomerSchema = z.object({
   nif: z.string().min(9, "NIF deve ter pelo menos 9 caracteres"),
   companyId: z.string(),
   status: z.boolean(),
-  photo: z.string().optional(),
+  photo: z.string(),
+  Address:z.string()
 });
+
+export type CreateCustomerPayload = z.infer<typeof createCustomerSchema>;

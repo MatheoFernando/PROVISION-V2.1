@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
+import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import { OccurrenceDialog } from "./occurrence-dialog"
 import { EditOccurrenceModal } from "./occurrence-modals"
 import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences"

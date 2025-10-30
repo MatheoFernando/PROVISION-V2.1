@@ -7,22 +7,13 @@ export function useRoles() {
   return useQuery({
     queryKey: ["roles"],
     queryFn: async (): Promise<Role[]> => {
-      const { data } = await api.get("/roles/getByName", { params: { name: "" } });
+      const { data } = await api.get("/roles/getByName");
       return (data?.data ?? data) as Role[];
     },
   });
 }
 
-export function useRolesByName(name: string) {
-  return useQuery({
-    queryKey: ["roles", "name", name],
-    queryFn: async (): Promise<Role[]> => {
-      const { data } = await api.get("/roles/getByName", { params: { name } });
-      return (data?.data ?? data) as Role[];
-    },
-    enabled: Boolean(name && name.trim().length > 0),
-  });
-}
+
 
 export function useCreateRole() {
   const queryClient = useQueryClient();

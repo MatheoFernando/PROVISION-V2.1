@@ -10,9 +10,9 @@ import {
   Briefcase,
   Hammer,
   Package,
-  Truck,
   UserCheck,
   Building,
+  Car,
 } from "lucide-react";
 
 export interface NavItem {
@@ -48,13 +48,13 @@ export const allNavItems: NavItem[] = [
     title: "Utilizadores",
     url: "/dashboard/users",
     icon: Users,
-    requiresGlobalAdmin: true,
+    requiresGlobalAdmin: false,
   },
   {
     title: "Empresas",
     url: "/dashboard/companies",
     icon: Building2,
-    requiresGlobalAdmin: true,
+    requiresGlobalAdmin: false,
   },
   {
     title: "Configurações",
@@ -75,9 +75,9 @@ export const allNavItems: NavItem[] = [
     requiresGlobalAdmin: false,
   },
   {
-    title: "Veículos",
+    title: "Veiculos",
     url: "/dashboard/cars",
-    icon: Truck,
+    icon: Car,
     requiresGlobalAdmin: false,
   },
  

@@ -35,7 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Columns, Plus, Eye, MoreHorizontal} from "lucide-react"
+import { Columns, Plus, Eye, MoreHorizontal, CircleAlert } from "lucide-react"
 
 interface ActionButton<TData> {
   label: string
@@ -181,7 +181,12 @@ export function DataTableGeneric<TData extends RowData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan} className="text-muted-foreground font-medium text-sm whitespace-nowrap">
+                  <TableHead
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    className="text-muted-foreground font-medium text-sm whitespace-nowrap"
+                    style={{ minWidth: header.getSize() ?? 120 }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -194,8 +199,8 @@ export function DataTableGeneric<TData extends RowData, TValue>({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index} className="border-b border-border">
-                  {Array.from({ length: columnsWithSelection.length }).map((_, cellIndex) => (
-                    <TableCell key={cellIndex} className="py-0.5">
+                  {table.getHeaderGroups()?.[0]?.headers.map((header, cellIndex) => (
+                    <TableCell key={cellIndex} className="py-0.5" style={{ minWidth: header.getSize() ?? 120 }}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
@@ -203,13 +208,13 @@ export function DataTableGeneric<TData extends RowData, TValue>({
               ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow 
-                  key={row.id} 
-                  data-state={row.getIsSelected() && "selected"} 
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
                   className="border-b border-border  hover:bg-muted/50 data-[state=selected]:bg-muted"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-0.5 text-sm text-foreground">
+                  {row.getVisibleCells().map((cell, cellIndex) => (
+                    <TableCell key={cell.id} className="py-0.5 text-sm text-foreground" style={{ minWidth: cell.column.getSize?.() ?? 120 }}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -217,8 +222,14 @@ export function DataTableGeneric<TData extends RowData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length + (hasSelectionColumn ? 1 : 0)} className="h-24 w-full text-center text-muted-foreground">
-                  Sem resultados.
+                <TableCell
+                  colSpan={columnsWithSelection.length}
+                  className="h-24 w-full text-center text-muted-foreground"
+                >
+                  <div className="flex flex-col items-center justify-center gap-2 w-full">
+                    <CircleAlert className="mx-auto mb-1 text-muted-foreground size-8" aria-hidden="true" />
+                    <span>Sem resultados.</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

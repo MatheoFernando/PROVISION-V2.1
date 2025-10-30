@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { Car } from "../../types/domain";
+import { z } from "zod";
+import { createCarSchema } from "../schema/schema-cars";
+
+type CreateCarInput = z.infer<typeof createCarSchema>;
 
 export function useCars() {
   return useQuery({
@@ -15,8 +19,8 @@ export function useCars() {
 export function useCreateCar() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: async (data: Omit<Car, 'id' | 'createdAt' | 'updatedAt'>): Promise<Car> => {
+  return useMutation<Car, unknown, CreateCarInput>({
+    mutationFn: async (data: CreateCarInput): Promise<Car> => {
       const response = await api.post("/car/create", data);
       return response.data;
     },

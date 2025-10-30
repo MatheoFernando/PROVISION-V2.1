@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { Site } from "../../types/domain";
+import type { Site } from "../../types/domain";
+import type { CreateSite } from "../schema/schema-sites";
 
 export function useSites() {
   return useQuery({
@@ -15,8 +16,8 @@ export function useSites() {
 export function useCreateSite() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: async (data: Omit<Site, 'id' | 'createdAt' | 'updatedAt'>): Promise<Site> => {
+  return useMutation<Site, unknown, CreateSite>({
+    mutationFn: async (data) => {
       const response = await api.post("/site/create", data);
       return response.data;
     },

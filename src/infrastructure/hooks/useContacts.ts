@@ -34,8 +34,8 @@ export function useCreateContact() {
       const response = await api.post("/contact/create", payload);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    onSuccess: (_created, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["contacts", (variables as any).companyId] });
       toast.success("Contato criado com sucesso!");
     },
     onError: (error: any) => {

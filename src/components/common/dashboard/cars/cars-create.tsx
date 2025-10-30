@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createCarSchema } from "@/infrastructure/schema/schema-cars";
 import { Car } from "@/types/domain";
 import { useCreateCar, useUpdateCar } from "@/infrastructure/hooks/useCars";
@@ -57,14 +56,7 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {car ? "Editar Veículo" : "Novo Veículo"}
-          </DialogTitle>
-        </DialogHeader>
-        
+
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -162,7 +154,6 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+   
   );
 }

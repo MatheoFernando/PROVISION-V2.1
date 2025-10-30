@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { Employee } from "../../types/domain";
+import { z } from "zod";
+import { createEmployeeSchema } from "../schema/schema-employees";
+
+type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
 export function useEmployees() {
   return useQuery({
@@ -15,8 +19,8 @@ export function useEmployees() {
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: async (data: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<Employee> => {
+  return useMutation<Employee, unknown, CreateEmployeeInput>({
+    mutationFn: async (data: CreateEmployeeInput): Promise<Employee> => {
       const response = await api.post("/employees", data);
       return response.data;
     },

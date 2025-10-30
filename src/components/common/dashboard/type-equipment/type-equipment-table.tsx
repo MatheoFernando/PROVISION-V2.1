@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
 import { TypeEquipment } from "@/infrastructure/schema/schema-type-equipment";
 import { ColumnDef } from "@tanstack/react-table";

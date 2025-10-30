@@ -6,7 +6,7 @@ import { useCompaniesQuery, useDeleteCompanyMutation } from '@/infrastructure/ho
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Company } from '@/types/domain'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { DataTableGeneric } from '../../base-ui/data-table-generic'
+import { DataTableGeneric } from '../../base-ui/data-table'
 import { Eye, Edit, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

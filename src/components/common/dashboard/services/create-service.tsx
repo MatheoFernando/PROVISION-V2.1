@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +25,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useCreateModule } from "@/infrastructure/hooks/useModules";
-import { moduleSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
+import { moduleSchema } from "@/infrastructure/schema/schema-module";
 import { z } from "zod";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
-import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
 
 export function CreateService() {
   const [open, setOpen] = useState(false);
@@ -55,6 +53,8 @@ export function CreateService() {
     });
   }
 
+  const isPending = createModuleMutation.isPending;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -79,7 +79,7 @@ export function CreateService() {
                 <FormItem>
                   <FormLabel>Nome do Serviço</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite o nome do serviço" {...field} />
+                    <Input placeholder="Digite o nome do serviço" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,6 +96,7 @@ export function CreateService() {
                       placeholder="Digite a descrição do serviço "
                       className="resize-none"
                       {...field}
+                      disabled={isPending}
                     />
                   </FormControl>
                   <FormMessage />
@@ -118,6 +119,7 @@ export function CreateService() {
                     <Switch
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      disabled={isPending}
                     />
                   </FormControl>
                 </FormItem>
@@ -132,10 +134,18 @@ export function CreateService() {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createModuleMutation.isPending} className="px-6 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white">
-                {createModuleMutation.isPending
-                  ? "Criando..."
-                  : "Criar Serviço"}
+              <Button type="submit" disabled={isPending} className={`px-6 bg-blue-600 hover:bg-blue-700 text-white ${isPending ? 'cursor-wait opacity-90' : 'cursor-pointer'}`}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Serviço
+                  </>
+                )}
               </Button>
             </div>
           </form>

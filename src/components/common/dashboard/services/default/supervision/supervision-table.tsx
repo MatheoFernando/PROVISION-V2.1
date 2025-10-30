@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
+import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import { SupervisionDialog } from "./supervision-dialog"
 import { EditSupervisionModal } from "./supervision-modals"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"

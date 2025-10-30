@@ -1,10 +1,10 @@
 "use client"
 
-import React from 'react'
+import React, { useActionState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { type User } from '@/types/domain'
 import { Badge } from '@/components/ui/badge'
-import { DataTableGeneric } from '../../base-ui/data-table-generic'
+import { DataTableGeneric } from '../../base-ui/data-table'
 import CreateUserDialog from './create-users'
 import { Edit, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -12,6 +12,7 @@ import { useUsers } from '../../../../infrastructure/hooks/useUsers'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
 
 const columns: ColumnDef<User, unknown>[] = [
   { accessorKey: 'phone', header: 'Telefone' , cell: ({ row }) => {
@@ -45,12 +46,11 @@ const columns: ColumnDef<User, unknown>[] = [
 ]
 
 function ListUsers() {
-  const router = useRouter()
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  
-  const { users, isLoading, isError, deleteUser, isDeleting } = useUsers()
+  const companyId = useAuthStore((state) => state.companyId) || "";
+  const { users, isLoading, isError, deleteUser, isDeleting } = useUsers(companyId)
 
   const handleEdit = (user: User) => {
     setSelectedUser(user)
@@ -74,32 +74,33 @@ function ListUsers() {
 
   return (
     <div className="space-y-6">
-      <DataTableGeneric
-        data={users}
-        columns={columns}
-        searchKey="phone"
-        placeholder="Pesquisar por telefone..."
-        isLoading={isLoading}
-        actionButton={{
-          label: 'Novo Utilizador',
-          component: <CreateUserDialog />
-        } as any}
-        rowActions={[
-          {
-            label: 'Editar',
-            icon: <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-            onClick: handleEdit,
-            variant: 'ghost'
-          },
-          {
-            label: 'Excluir',
-            icon: <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-            onClick: handleDeleteClick,
-            variant: 'ghost'
-          }
-        ]}
-      />
-
+    
+        <DataTableGeneric
+          data={users}
+          columns={columns}
+          searchKey="phone"
+          placeholder="Pesquisar por telefone..."
+          isLoading={isLoading}
+          actionButton={{
+            label: 'Novo Utilizador',
+            component: <CreateUserDialog />
+          } as any}
+          rowActions={[
+            {
+              label: 'Editar',
+              icon: <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+              onClick: handleEdit,
+              variant: 'ghost'
+            },
+            {
+              label: 'Excluir',
+              icon: <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+              onClick: handleDeleteClick,
+              variant: 'ghost'
+            }
+          ]}
+        />
+   
       <CreateUserDialog
         user={selectedUser}
         isEdit={true}
@@ -132,7 +133,7 @@ function ListUsers() {
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Excluindo...' : 'Excluir'}
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>

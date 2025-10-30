@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCars } from "@/infrastructure/hooks/useCars";
 import { Car } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CarsCreate } from "./cars-create";
 import { CarsView } from "./cars-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteCar } from "@/infrastructure/hooks/useCars";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Car>[] = [
   {
@@ -67,6 +67,7 @@ const columns: ColumnDef<Car>[] = [
 
 export function CarsTable() {
   const { data: cars = [], isLoading } = useCars();
+  const router = useRouter();
   const deleteCar = useDeleteCar();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -121,7 +122,7 @@ export function CarsTable() {
         searchKey="cod"
         actionButton={{
           label: "Novo Veículo",
-          onClick: handleCreate,
+          onClick: () => router.push("/dashboard/cars/create"),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -144,11 +145,7 @@ export function CarsTable() {
         ]}
       />
 
-      <CarsCreate
-        car={selectedCar}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
+   
 
       <CarsView
         car={selectedCar}

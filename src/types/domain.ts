@@ -113,6 +113,8 @@ export interface User {
   isGlobalAdmin: boolean;
   createdAt?: string;
   updatedAt?: string;
+  roleId?: string;
+  password?: string;
 }
 
 export interface CreateUserPayload {

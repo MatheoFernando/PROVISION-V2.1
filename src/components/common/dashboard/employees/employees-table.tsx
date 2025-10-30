@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { Employee } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { EmployeesCreate } from "./employees-create";
 import { EmployeesView } from "./employees-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
 import { toast } from "sonner";
 import Badge from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Employee>[] = [
   {
@@ -120,6 +120,7 @@ const columns: ColumnDef<Employee>[] = [
 
 export function EmployeesTable() {
   const { data: employees = [], isLoading } = useEmployees();
+  const router = useRouter();
   const deleteEmployee = useDeleteEmployee();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -173,7 +174,7 @@ export function EmployeesTable() {
         searchKey="fullName"
         actionButton={{
           label: "Novo Funcionário",
-          onClick: handleCreate,
+          onClick: () => router.push("/dashboard/employees/create"),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -196,12 +197,7 @@ export function EmployeesTable() {
         ]}
       />
 
-      <EmployeesCreate
-        employee={selectedEmployee}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
-
+  
       <EmployeesView
         employee={selectedEmployee}
         isOpen={isViewOpen}

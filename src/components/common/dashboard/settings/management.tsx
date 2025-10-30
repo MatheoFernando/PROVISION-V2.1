@@ -40,7 +40,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
+import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import { IconDotsVertical } from "@tabler/icons-react"
 import { useUsers } from '@/infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'

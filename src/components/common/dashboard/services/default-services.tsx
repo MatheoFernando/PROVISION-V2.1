@@ -14,7 +14,6 @@ export function DefaultServices() {
   
   if (isGlobalAdmin) return null;
 
-  // Filtrar serviços criados (que não são padrão)
   const customServices = useMemo(() => {
     return createdServices.filter(service => 
       !defaultServices.some(defaultService => defaultService.name === service.name)
@@ -23,7 +22,6 @@ export function DefaultServices() {
 
   return (
     <div className="space-y-6">
-      {/* Serviços Padrão */}
       <Card>
         <CardHeader>
           <CardTitle>Serviços Padrão</CardTitle>
@@ -50,7 +48,6 @@ export function DefaultServices() {
         </CardContent>
       </Card>
 
-      {/* Serviços Criados */}
       {customServices.length > 0 && (
         <Card>
           <CardHeader>

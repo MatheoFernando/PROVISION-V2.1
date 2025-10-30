@@ -1,0 +1,124 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useRoles, useCreateRole } from "@/infrastructure/hooks/useRoles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import { createRoleSchema } from "@/infrastructure/schema/schema-role";
+import type { Role } from "@/types/domain";
+import { z } from "zod";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
+type RoleForm = z.infer<typeof createRoleSchema>;
+
+interface RoleSelectProps {
+  value?: string;
+  onChange: (value: string) => void;
+}
+
+export function RoleSelect({ value, onChange }: RoleSelectProps) {
+  const [open, setOpen] = useState(false);
+  const { companyId } = useAuthStore();
+  const { data: roles = [], isLoading } = useRoles();
+  const createRole = useCreateRole();
+  const form = useForm<RoleForm>({
+    resolver: zodResolver(createRoleSchema),
+    defaultValues: { name: "", companyId: companyId ?? "" },
+  });
+
+  function handleSubmit(data: RoleForm) {
+    createRole.mutate(
+      {
+        ...data,
+        companyId: companyId ?? "",
+        description: data.description ?? "",
+      },
+      {
+        onSuccess: (created: Role) => {
+          setOpen(false);
+          onChange(created.id!);
+          form.reset();
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <Select value={value} onValueChange={onChange} disabled={isLoading || !companyId}>
+        <SelectTrigger className="w-full shadow-sm">
+          <SelectValue placeholder={isLoading ? 'Carregando papéis...' : 'Selecione papel'} />
+        </SelectTrigger>
+        <SelectContent>
+          {roles.map((r: Role) => (
+            <SelectItem key={r.id} value={r.id!} className="cursor-pointer">
+              {r.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="text-blue-600 border-blue-200 hover:bg-blue-50 focus-visible:ring-blue-500 cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
+        <Plus className="w-4 h-4" />
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm w-full px-4 py-6 rounded-lg">
+          <DialogHeader className="mb-2 text-blue-700 font-semibold text-lg">Criar Papel</DialogHeader>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-2 w-full"
+            autoComplete="off"
+          >
+            <div className="flex flex-col gap-1">
+              <label htmlFor="name" className="text-sm text-blue-900 font-medium mb-2 block">Nome</label>
+              <input
+                id="name"
+                {...form.register("name")}
+                className="border border-blue-300 rounded focus:border-blue-500 focus-visible:ring-blue-400 px-2 py-2 text-sm transition w-full"
+                placeholder="Nome do papel"
+                autoFocus
+              />
+              {form.formState.errors.name && (
+                <span className="text-red-500 text-xs mt-1">
+                  {form.formState.errors.name.message}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="description" className="text-sm text-blue-900 font-medium block mb-2">Descrição</label>
+              <textarea
+                id="description"
+                {...form.register("description")}
+                placeholder="Descrição (opcional)"
+                className="border border-blue-300 rounded focus:border-blue-500 focus-visible:ring-blue-400 px-2 py-2 text-sm transition resize-none w-full min-h-[70px]"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button
+                type="submit"
+                disabled={createRole.status === "pending"}
+                className="bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500/80 px-6 py-2 rounded transition cursor-pointer"
+              >
+                {createRole.status === "pending" ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

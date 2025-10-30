@@ -1,0 +1,170 @@
+import { useState } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Dialog, DialogHeader, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus,  Loader2, Trash } from "lucide-react";
+import {
+  useContacts,
+  useCreateContact,
+} from "@/infrastructure/hooks/useContacts";
+import type { Contact } from "@/types/domain";
+import { contactSchema } from "@/infrastructure/schema/schema-contact";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+type ContactForm = z.infer<typeof contactSchema>;
+
+interface ContactSelectProps {
+  value?: string;
+  onChange: (value: string) => void;
+  companyId?: string;
+}
+
+export function ContactSelect({ value, onChange, companyId }: ContactSelectProps) {
+  const [open, setOpen] = useState(false);
+  const { data: contacts = [], isLoading } = useContacts(companyId);
+  const createContact = useCreateContact();
+
+  const form = useForm<ContactForm>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      phoneNumbers: [{ phone: "" }],
+      email: "",
+      companyId: companyId || undefined,
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "phoneNumbers",
+  });
+
+  function handleSubmit(data: ContactForm) {
+    createContact.mutate(data, {
+      onSuccess: (created: Contact) => {
+        setOpen(false);
+        onChange(created.id!);
+        form.reset();
+      },
+    });
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex items-end gap-2 mb-2">
+        <div className="flex-1">
+          <Select value={value} onValueChange={onChange} disabled={isLoading}>
+            <SelectTrigger id="contact_id" className="w-full">
+              <SelectValue placeholder="Selecione um contato" />
+            </SelectTrigger>
+            <SelectContent>
+              {(Array.isArray(contacts) ? contacts : []).map((c: Contact) => (
+                <SelectItem key={c.id} value={c.id!}>
+                  {c.email} - {(Array.isArray(c.phoneNumbers) ? c.phoneNumbers : []).map((p: { phone: string }) => p.phone).join(", ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex items-center gap-2 px-3 py-2 rounded-md shrink-0 cursor-pointer"
+          onClick={() => setOpen(true)}
+        >
+          <Plus className="w-4 h-4" />
+      
+        </Button>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>Criar Contato</DialogHeader>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-3 mt-2">
+            <div>
+              <Label htmlFor="contact_email" className="mb-2 block">Email</Label>
+              <Input
+                id="contact_email"
+                {...form.register("email")}
+                placeholder="Email"
+                className="mb-2"
+              />
+              {form.formState.errors.email && (
+                <span className="text-red-500 text-xs">
+                  {form.formState.errors.email.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <div className="flex items-end justify-between mb-2">
+                <Label className="block">Telefones</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="ml-2 cursor-pointer"
+                  onClick={() => append({ phone: "" })}
+                  aria-label="Adicionar telefone"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {fields.map((field, idx) => (
+                  <div key={field.id} className="flex gap-2 items-center">
+                    <Input
+                      {...form.register(`phoneNumbers.${idx}.phone` as const)}
+                      placeholder={`Telefone ${idx + 1}`}
+                      className="w-full mb-0"
+                      type="number"
+                    />
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                        aria-label="Remover telefone"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {form.formState.errors.phoneNumbers && (
+                <span className="text-red-500 text-xs">
+                  {(form.formState.errors.phoneNumbers as any)?.message}
+                </span>
+              )}
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button
+                type="submit"
+                disabled={createContact.status === "pending"}
+                className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {createContact.status === "pending" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                  </>
+                ) : (
+                  "Salvar"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

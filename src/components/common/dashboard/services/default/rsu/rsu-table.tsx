@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
+import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import { RsuDialog } from "./rsu-dialog"
 import { EditRsuModal } from "./rsu-modals"
 import { useDeleteRsuMutation } from "@/infrastructure/hooks/useRsu"

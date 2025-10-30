@@ -1,65 +1,63 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/infrastructure/utils/api';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import {
+  clearAccessToken,
+  setAccessToken,
+} from "@/infrastructure/utils/api";
 
 type AuthState = {
-  userId: string | null;
-  isAuthenticated: boolean;
-  refreshToken?: string | null;
-  expiresAt?: string | null;
   isGlobalAdmin: boolean;
-  clearUserLocal: () => void;
-  setUserId: (id: string | null) => void;
+  companyId: string | null;
+  setCompanyId: (companyId: string | null) => void;
+  setSession: (args: {
+    token: string;
+    userId: string;
+    companyId?: string;
+  }) => void;
   setToken: (token: string | null) => void;
-  setSession: (args: { token: string; userId: string; refreshToken?: string; expiresAt?: string }) => void;
-  setIsGlobalAdmin: (isGlobalAdmin: boolean) => void;
   logout: () => void;
 };
 
-
-function getIsGlobalAdminFromStorage(): boolean {
-  return true;
+function readCompanyId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem("companyId");
+  } catch {
+    return null;
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      userId: null,
-      isAuthenticated: Boolean(getAccessToken()),
-      //isGlobalAdmin: getIsGlobalAdminFromStorage(),
-      isGlobalAdmin: true,
-      setUserId: (id) => set({ userId: id }),
-      setSession: ({ token, userId, refreshToken, expiresAt }) => {
-        setAccessToken(token);
-        set({ isAuthenticated: true, userId, refreshToken: refreshToken ?? null, expiresAt: expiresAt ?? null });
+      isGlobalAdmin: false,
+      companyId: readCompanyId(),
+      setCompanyId: (companyId) => {
+        if (typeof window !== "undefined") {
+          if (companyId) window.localStorage.setItem("companyId", companyId);
+          else window.localStorage.removeItem("companyId");
+        }
+        set({ companyId });
       },
-      setIsGlobalAdmin: (isGlobalAdmin) => set({ isGlobalAdmin }),
+      setSession: ({ token, userId, companyId }) => {
+        setAccessToken(token);
+        if (companyId && typeof window !== "undefined") {
+          window.localStorage.setItem("companyId", companyId);
+        }
+      },
       setToken: (token) => {
         if (token) {
           setAccessToken(token);
-          set({ isAuthenticated: true });
         } else {
           clearAccessToken();
-          set({ isAuthenticated: false, userId: null, isGlobalAdmin: false });
-        }
-      },
-      clearUserLocal: () => {
-        if (typeof window !== 'undefined') {
-          try {
-            window.localStorage.removeItem('user');
-          } catch {
-            // ignore storage errors
-          }
         }
       },
       logout: () => {
         clearAccessToken();
-       
-        set({ isAuthenticated: false, userId: null, isGlobalAdmin: false });
+        if (typeof window !== "undefined")
+          window.localStorage.removeItem("companyId");
       },
     }),
-  
+    { name: "auth", storage: undefined }
   )
 );
-
-

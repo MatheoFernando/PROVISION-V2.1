@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useContainers } from "@/infrastructure/hooks/useContainers";
 import { Container } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ContainersCreate } from "./containers-create";
 import { ContainersView } from "./containers-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteContainer } from "@/infrastructure/hooks/useContainers";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Container>[] = [
   {
@@ -76,6 +76,7 @@ const columns: ColumnDef<Container>[] = [
 
 export function ContainersTable() {
   const { data: containers = [], isLoading } = useContainers();
+  const router = useRouter();
   const deleteContainer = useDeleteContainer();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -131,7 +132,7 @@ export function ContainersTable() {
         searchKey="cod"
         actionButton={{
           label: "Novo Container",
-          onClick: handleCreate,
+          onClick: () => router.push("/dashboard/containers/create"),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -154,11 +155,7 @@ export function ContainersTable() {
         ]}
       />
 
-      <ContainersCreate
-        container={selectedContainer}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
+ 
 
       <ContainersView
         container={selectedContainer}

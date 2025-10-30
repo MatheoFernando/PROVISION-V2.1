@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { Equipment } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { EquipmentCreate } from "./equipment-create";
 import { EquipmentView } from "./equipment-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEquipment } from "@/infrastructure/hooks/useEquipment";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Equipment>[] = [
   {
@@ -81,6 +81,7 @@ const columns: ColumnDef<Equipment>[] = [
 export function EquipmentTable() {
   const { data: equipment = [], isLoading } = useEquipment();
   const deleteEquipment = useDeleteEquipment();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -135,7 +136,7 @@ export function EquipmentTable() {
         searchKey="serialNumber"
         actionButton={{
           label: "Novo Equipamento",
-          onClick: handleCreate,
+          onClick: () => router.push("/dashboard/equipment/create"),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -158,11 +159,7 @@ export function EquipmentTable() {
         ]}
       />
 
-      <EquipmentCreate
-        equipment={selectedEquipment}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
+   
 
       <EquipmentView
         equipment={selectedEquipment}

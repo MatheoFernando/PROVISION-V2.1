@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { Container } from "../../types/domain";
+import { z } from "zod";
+import { createContainerSchema } from "../schema/schema-containers";
+
+type CreateContainerInput = z.infer<typeof createContainerSchema>;
 
 export function useContainers() {
   return useQuery({
@@ -15,8 +19,8 @@ export function useContainers() {
 export function useCreateContainer() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: async (data: Omit<Container, 'id' | 'createdAt' | 'updatedAt'>): Promise<Container> => {
+  return useMutation<Container, unknown, CreateContainerInput>({
+    mutationFn: async (data: CreateContainerInput): Promise<Container> => {
       const response = await api.post("/container/create", data);
       return response.data;
     },

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCustomers } from "@/infrastructure/hooks/useCustomers";
 import { Customer } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
@@ -10,11 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CustomersCreate } from "./customers-create";
 import { CustomersView } from "./customers-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteCustomer } from "@/infrastructure/hooks/useCustomers";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Customer>[] = [
   {
@@ -90,6 +90,7 @@ const columns: ColumnDef<Customer>[] = [
 export function CustomersTable() {
   const { data: customers = [], isLoading } = useCustomers();
   const deleteCustomer = useDeleteCustomer();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -153,7 +154,7 @@ export function CustomersTable() {
         searchKey="name"
         actionButton={{
           label: "Novo Cliente",
-          onClick: handleCreate,
+          onClick: () => router.push("/dashboard/customers/create"),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -161,7 +162,7 @@ export function CustomersTable() {
           {
             label: "Visualizar",
             icon: <Eye className="h-4 w-4 mr-2" />,
-            onClick: (customer) => handleView(customer),
+           onClick: (customer) => handleView(customer),
           },
           {
             label: "Editar",
@@ -176,11 +177,7 @@ export function CustomersTable() {
         ]}
       />
 
-      <CustomersCreate
-        customer={selectedCustomer}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
+   
 
       <CustomersView
         customer={selectedCustomer}

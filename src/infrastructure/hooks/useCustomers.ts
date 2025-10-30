@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { Customer } from "../../types/domain";
+import { toast } from "sonner";
 
 export function useCustomers() {
   return useQuery({
@@ -16,12 +17,18 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Customer> => {
+    mutationFn: async (data: Customer): Promise<Customer> => {
       const response = await api.post("/customer/create", data);
-      return response.data;
+      const createdCustomer = response.data?.data || response.data; 
+      return createdCustomer as Customer;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Cliente criado com sucesso!");
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || error.message || "Erro desconhecido ao criar cliente";
+      toast.error(message);
     },
   });
 }
@@ -36,6 +43,11 @@ export function useUpdateCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Cliente atualizado com sucesso!");
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || error.message || "Erro desconhecido ao atualizar cliente";
+      toast.error(message);
     },
   });
 }
@@ -49,6 +61,11 @@ export function useDeleteCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Cliente deletado com sucesso!");
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || error.message || "Erro desconhecido ao deletar cliente";
+      toast.error(message);
     },
   });
 }
