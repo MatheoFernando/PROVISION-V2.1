@@ -10,12 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { usePermissions, useCreatePermission } from "@/infrastructure/hooks/usePermissions";
 import { createPermissionSchema } from "@/infrastructure/schema/schema-permission";
 import type { CreatePermissionForm } from "@/infrastructure/schema/schema-permission";
 import type { Permission } from "@/types/domain";
+import { Input } from "@/components/ui/input";
 
 interface PermissionSelectProps {
   value?: string;
@@ -24,6 +25,7 @@ interface PermissionSelectProps {
 
 export function PermissionSelect({ value, onChange }: PermissionSelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const { companyId } = useAuthStore();
   const { data: permissions = [], isLoading } = usePermissions(companyId ?? undefined);
   const createPermission = useCreatePermission();
@@ -47,20 +49,44 @@ export function PermissionSelect({ value, onChange }: PermissionSelectProps) {
     );
   }
 
+  const list = Array.isArray(permissions) ? permissions : [];
+  const filtered = list.filter((p: Permission) => String(p?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+
   return (
-    <div className="flex items-center gap-2 w-full">
-      <Select value={value} onValueChange={onChange} disabled={isLoading || !companyId}>
-        <SelectTrigger className="w-full shadow-sm">
-          <SelectValue placeholder={isLoading ? "Carregando permissões..." : "Selecione permissão"} />
-        </SelectTrigger>
-        <SelectContent>
-          {permissions.map((p: Permission) => (
-            <SelectItem key={p.id} value={p.id!} className="cursor-pointer">
-              {p.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex items-stretch gap-2 w-full">
+      <div className="flex-1 min-w-0 relative">
+        <Select value={value} onValueChange={onChange} disabled={isLoading || !companyId}>
+          <SelectTrigger className="w-full shadow-sm ">
+            <SelectValue placeholder={isLoading ? "Carregando permissões..." : "Selecione permissão"} />
+          </SelectTrigger>
+          {isLoading && (
+            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          )}
+          <SelectContent className="w-[var(--radix-select-trigger-width)]">
+            <div className="p-2 sticky top-0 bg-popover">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filtrar permissões..."
+                className="w-full"
+                disabled={isLoading || list.length === 0}
+              />
+            </div>
+            {filtered.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">
+               Não há dados disponíveis.</div>
+            ) : (
+              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                {filtered.map((p: Permission) => (
+                  <SelectItem key={p.id} value={p.id!} className="cursor-pointer">
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
       <Button
         type="button"
         variant="outline"

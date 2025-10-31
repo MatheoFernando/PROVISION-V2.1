@@ -101,7 +101,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
       globalFilter,
       pagination,
     },
-    enableRowSelection,
+    enableRowSelection: includeSelection || enableRowSelection,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -141,30 +141,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         </div>
 
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9">
-                <Columns className="mr-2 size-4" /> Colunas
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {typeof column.columnDef.header === 'string' 
-                      ? column.columnDef.header 
-                      : column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+       
           {actionButton && (
             actionButton.component || (
               <Button size="sm" className="h-9 bg-blue-600 cursor-pointer hover:bg-blue-700 dark:text-white" onClick={actionButton.onClick}>
@@ -177,14 +154,14 @@ export function DataTableGeneric<TData extends RowData, TValue>({
 
       <div className="w-full overflow-x-auto pb-0 mb-0">
         <Table className="w-full min-w-max ">
-          <TableHeader className="bg-muted/50">
+          <TableHeader className="bg-muted/30 ">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     colSpan={header.colSpan}
-                    className="text-muted-foreground font-medium text-sm whitespace-nowrap"
+                    className="text-slate-600 font-medium text-sm  whitespace-nowrap"
                     style={{ minWidth: header.getSize() ?? 120 }}
                   >
                     {header.isPlaceholder
@@ -312,7 +289,7 @@ export function createActionsColumn<TData extends RowData>(actions: ActionButton
     cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
             <span className="sr-only">Abrir menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>

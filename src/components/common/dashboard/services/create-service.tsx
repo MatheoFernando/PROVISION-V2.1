@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -35,8 +34,12 @@ export function CreateService() {
   const createModulePayloadSchema = moduleSchema.omit({ id: true, createdAt: true, updatedAt: true })
   type CreateModulePayload = z.infer<typeof createModulePayloadSchema>
 
-  const form = useForm<CreateModulePayload>({
-    resolver: zodResolver(createModulePayloadSchema),
+  const form = useForm<CreateModulePayload, any, CreateModulePayload>({
+    resolver: zodResolver(createModulePayloadSchema) as Resolver<
+      z.input<typeof createModulePayloadSchema>,
+      any,
+      z.output<typeof createModulePayloadSchema>
+    >,
     defaultValues: {
       name: "",
       status: true,
@@ -66,26 +69,32 @@ export function CreateService() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Criar Novo Serviço</DialogTitle>
-          <DialogDescription>
-            Adicione um novo serviço ao sistema.
-          </DialogDescription>
+         
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+            <FormField<CreateModulePayload>
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome do Serviço</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite o nome do serviço" {...field} disabled={isPending} />
+                    <Input
+                      placeholder="Digite o nome do serviço"
+                      value={field.value as string}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                      disabled={isPending}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<CreateModulePayload>
               control={form.control}
               name="description"
               render={({ field }) => (
@@ -95,7 +104,11 @@ export function CreateService() {
                     <Textarea
                       placeholder="Digite a descrição do serviço "
                       className="resize-none"
-                      {...field}
+                      value={field.value as string}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                       disabled={isPending}
                     />
                   </FormControl>
@@ -104,7 +117,7 @@ export function CreateService() {
               )}
             />
 
-            <FormField
+            <FormField<CreateModulePayload>
               control={form.control}
               name="status"
               render={({ field }) => (
@@ -117,7 +130,8 @@ export function CreateService() {
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      className="cursor-pointer"
+                      checked={Boolean(field.value)}
                       onCheckedChange={field.onChange}
                       disabled={isPending}
                     />

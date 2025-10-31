@@ -11,11 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { createRoleSchema } from "@/infrastructure/schema/schema-role";
 import type { Role } from "@/types/domain";
 import { z } from "zod";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { Input } from "@/components/ui/input";
 
 type RoleForm = z.infer<typeof createRoleSchema>;
 
@@ -26,6 +27,7 @@ interface RoleSelectProps {
 
 export function RoleSelect({ value, onChange }: RoleSelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const { companyId } = useAuthStore();
   const { data: roles = [], isLoading } = useRoles();
   const createRole = useCreateRole();
@@ -51,20 +53,43 @@ export function RoleSelect({ value, onChange }: RoleSelectProps) {
     );
   }
 
+  const list = Array.isArray(roles) ? roles : [];
+  const filtered = list.filter((r: Role) => String(r?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+
   return (
-    <div className="flex items-center gap-2 w-full">
-      <Select value={value} onValueChange={onChange} disabled={isLoading || !companyId}>
-        <SelectTrigger className="w-full shadow-sm">
-          <SelectValue placeholder={isLoading ? 'Carregando papéis...' : 'Selecione papel'} />
-        </SelectTrigger>
-        <SelectContent>
-          {roles.map((r: Role) => (
-            <SelectItem key={r.id} value={r.id!} className="cursor-pointer">
-              {r.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+  <div className="flex items-stretch gap-2 w-full">
+      <div className="flex-1 min-w-0 relative">
+        <Select value={value} onValueChange={onChange} disabled={isLoading || !companyId}>
+          <SelectTrigger className="w-full shadow-sm ">
+            <SelectValue placeholder={isLoading ? 'Carregando papéis...' : 'Selecione papel'} />
+          </SelectTrigger>
+          {isLoading && (
+            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          )}
+          <SelectContent className="w-[var(--radix-select-trigger-width)]">
+            <div className="p-2 sticky top-0 bg-popover">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filtrar papéis..."
+                className="w-full"
+                disabled={isLoading || list.length === 0}
+              />
+            </div>
+            {filtered.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+            ) : (
+              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                {filtered.map((r: Role) => (
+                  <SelectItem key={r.id} value={r.id!} className="cursor-pointer">
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
       <Button
         type="button"
         variant="outline"

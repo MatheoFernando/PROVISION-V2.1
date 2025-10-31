@@ -24,8 +24,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { moduleSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
 import { useUpdateModule } from "@/infrastructure/hooks/useModules";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
-import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
 
 interface EditServiceProps {
   service: ModuleSchema;
@@ -41,7 +39,12 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
     defaultValues: {
       name: service.name,
       description: service.description || "",
-      status: service.status,
+      status: (() => {
+        const raw = service.status as unknown;
+        return typeof raw === 'string'
+          ? raw.toLowerCase() === 'true' || raw === '1'
+          : Boolean(service.status);
+      })(),
     },
   });
 
@@ -50,7 +53,12 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
       form.reset({
         name: service.name,
         description: service.description || "",
-        status: service.status,
+        status: (() => {
+          const raw = service.status as unknown;
+          return typeof raw === 'string'
+            ? raw.toLowerCase() === 'true' || raw === '1'
+            : Boolean(service.status);
+        })(),
       });
     }
   }, [service, form]);
@@ -95,6 +103,7 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
                     <Textarea
+                    className="resize-none"
                       placeholder="Digite a descrição do serviço"
                       {...field}
                     />
@@ -116,7 +125,12 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      className="cursor-pointer"
+                      checked={
+                        typeof field.value === 'string'
+                          ? field.value=== 'true' || field.value === '1'
+                          : Boolean(field.value)
+                      }
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -128,10 +142,11 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                className="cursor-pointer"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={updateModuleMutation.isPending}>
+              <Button type="submit" disabled={updateModuleMutation.isPending} className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white">
                 {updateModuleMutation.isPending
                   ? "Atualizando..."
                   : "Atualizar Serviço"}

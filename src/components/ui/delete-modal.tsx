@@ -57,7 +57,7 @@ export function DeleteModal({
               className="flex-1 rounded-lg bg-red-500 hover:bg-red-600 text-white cursor-pointer"
               disabled={isLoading}
             >
-              {isLoading ? "Excluindo..." : "Excluir"}
+              {isLoading ? "Excluindo..." : "Eliminar"}
             </Button>
           </div>
         </div>

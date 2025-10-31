@@ -20,6 +20,7 @@ import type { Address } from "@/types/domain";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 type AddressForm = z.infer<typeof addressSchema>;
 
@@ -35,7 +36,10 @@ export function AddressSelect({
   companyId,
 }: AddressSelectProps) {
   const [open, setOpen] = useState(false);
-  const { data: addresses = [], isLoading } = useAddresses(companyId);
+  const [query, setQuery] = useState("");
+  const authCompanyId = useAuthStore((s) => s.companyId);
+  const effectiveCompanyId = companyId ?? authCompanyId ?? undefined;
+  const { data: addresses = [], isLoading } = useAddresses(effectiveCompanyId);
   
   const createAddress = useCreateAddress();
   const form = useForm<AddressForm>({
@@ -46,7 +50,7 @@ export function AddressSelect({
       municipality: "",
       province: "",
       country: "Angola",
-      companyId: companyId || undefined,
+      companyId: effectiveCompanyId || undefined,
     },
   });
 
@@ -61,31 +65,68 @@ export function AddressSelect({
     });
   }
 
+  const filtered = (Array.isArray(addresses) ? addresses : []).filter((a: Address) =>
+    [a.houseHold, a.commune, a.municipality, a.province, a.country]
+      .join(" ")
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  );
+
   return (
-    <div className="flex items-center gap-2">
-      <Select value={value} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Selecione um endereço" />
-        </SelectTrigger>
-        <SelectContent>
-          {addresses.length === 0 && (
-            <div className="text-center text-muted-foreground py-2 text-sm">
-              Nenhum endereço encontrado.
-            </div>
+    <div className="flex items-stretch gap-2 w-full">
+      <div className="flex-1 min-w-0 relative">
+        <Select
+          value={value}
+          onValueChange={(val) => {
+            const selected = (Array.isArray(addresses) ? addresses : []).find((a: Address) => a.id === val);
+            console.log("Endereço selecionado:", {
+              id: val,
+              houseHold: selected?.houseHold ?? null,
+              commune: selected?.commune ?? null,
+              municipality: selected?.municipality ?? null,
+              province: selected?.province ?? null,
+              country: selected?.country ?? null,
+            });
+            onChange(val);
+          }}
+          disabled={isLoading}
+        >
+          <SelectTrigger className="w-full ">
+            <SelectValue placeholder="Selecione um endereço" />
+          </SelectTrigger>
+          {isLoading && (
+            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
-          {addresses.map((a: Address) => a.id && (
-            <SelectItem key={a.id} value={a.id}>
-              {a.houseHold || '-'} - {a.commune || '-'} / {a.municipality || '-'}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectContent className="w-[var(--radix-select-trigger-width)]">
+            <div className="p-2 sticky top-0 bg-popover">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filtrar endereços..."
+                className="w-full"
+              />
+            </div>
+            {filtered.length === 0 && (
+              <div className="text-center text-muted-foreground py-2 text-sm">
+         Não há dados disponíveis
+              </div>
+            )}
+            <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+              {filtered.map((a: Address) => a.id && (
+                <SelectItem key={a.id} value={a.id} className="cursor-pointer">
+                  {a.houseHold || '-'} - {a.commune || '-'} / {a.municipality || '-'}
+                </SelectItem>
+              ))}
+            </div>
+          </SelectContent>
+        </Select>
+      </div>
       <Button
         type="button"
         variant="outline"
         size="icon"
         onClick={() => setOpen(true)}
-        className="cursor-pointer"
+        className="cursor-pointer shrink-0"
       >
         <Plus className="w-4 h-4" />
       </Button>

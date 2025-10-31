@@ -30,7 +30,11 @@ export function useCreateModule() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<ModuleSchema, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const { data } = await api.post("/modules/create", payload);
+      const body = {
+        ...payload,
+        status: String(payload.status),
+      } as unknown as Record<string, unknown>;
+      const { data } = await api.post("/modules/create", body);
       return data;
     },
     onSuccess: () => {
@@ -47,7 +51,11 @@ export function useUpdateModule() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<ModuleSchema> & { id: string }) => {
-      const { data } = await api.put("/modules", payload);
+      const body = {
+        ...payload,
+        ...(typeof payload.status === 'boolean' ? { status: String(payload.status) } : {}),
+      } as unknown as Record<string, unknown>;
+      const { data } = await api.put("/modules", body);
       return data;
     },
     onSuccess: () => {

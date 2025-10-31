@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Edit, Trash2,  Building2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { EditService } from "./edit-service";
-import { AssociateServiceCompany } from "./associate-service-company";
 import { useUpdateModule, useDeleteModule } from "@/infrastructure/hooks/useModules";
 import { type ModuleSchema } from "@/infrastructure/schema/schema-module";
 import { CreateService } from "./create-service";
@@ -83,12 +82,16 @@ export function ListServices({ services }: ListServicesProps) {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-          const status = row.getValue("status") as boolean;
+          const rawStatus = row.getValue("status") as unknown;
+          const isActive = typeof rawStatus === 'string'
+            ? rawStatus.toLowerCase() === 'true' || rawStatus === '1'
+            : Boolean(rawStatus);
           return (
             <Badge
-              variant={status ? "default" : "destructive"}
+              className={`${isActive ? "bg-green-200 text-green-600" : "bg-orange-200 text-red-600"} `}
+              variant={isActive ? "default" : "destructive"}
             >
-              {status ? "Ativo" : "Inativo"}
+              {isActive ? "Ativo" : "Inativo"}
             </Badge>
           );
         },
@@ -111,12 +114,7 @@ export function ListServices({ services }: ListServicesProps) {
       onClick: handleDeleteClick,
       variant: 'ghost' as const,
     },
-    {
-      label: 'Atribuir',
-      icon: <Building2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-      onClick: handleAssign,
-      variant: 'ghost' as const,
-    },
+   
   ];
 
   return (
@@ -128,6 +126,7 @@ export function ListServices({ services }: ListServicesProps) {
           searchKey="name"
           placeholder="Pesquisar serviços..."
           rowActions={rowActions}
+          includeSelection={true}
           actionButton={{
             label: 'Novo Serviços',
             component: <CreateService />
@@ -144,27 +143,15 @@ export function ListServices({ services }: ListServicesProps) {
         />
       )}
 
-      {associateService && (
-        <AssociateServiceCompany
-          open={!!associateService}
-          onOpenChange={(open) => {
-            if (!open) {
-              setAssociateService(null);
-              setProcessing(null);
-            }
-          }}
-          moduleId={associateService.id!}
-          moduleName={associateService.name}
-        />
-      )}
+  
 
       <DeleteModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         isLoading={processing?.action === 'delete'}
-        title="Excluir serviço"
-        message={`Tem certeza que deseja excluir o serviço ${deleteTarget?.name} ? Esta ação não pode ser desfeita.`}
+        title="Eliminar serviço"
+        message={`Tem certeza que deseja eliminar o serviço ${deleteTarget?.name} ? Esta ação não pode ser desfeita.`}
       />
     </div>
   );

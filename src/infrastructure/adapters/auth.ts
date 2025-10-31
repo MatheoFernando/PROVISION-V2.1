@@ -1,5 +1,6 @@
 import api, { setAccessToken } from '@/infrastructure/utils/api';
 import Cookies from 'js-cookie';
+import { useAuthStore } from '@/infrastructure/hooks/useAuthStore';
 
 export type LoginRequest = {
   phone: string;
@@ -33,10 +34,18 @@ export async function login(request: LoginRequest): Promise<LoginEnvelope> {
     Cookies.set('refreshToken', data.data.refreshToken);
   }
 
-  if (data?.data?.user?.companyId) {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('companyId', data.data.user.companyId);
-    }
+  if (data?.data?.user) {
+    const { id, companyId, isGlobalAdmin } = data.data.user;
+    Cookies.set('isGlobalAdmin', String(isGlobalAdmin));
+    if (companyId) Cookies.set('companyId', companyId);
+    Cookies.set('userId', id);
+ 
+    useAuthStore.getState().setSession({
+      token: data.data.accessToken,
+      userId: id,
+      companyId,
+      isGlobalAdmin,
+    });
   }
   return data;
 }

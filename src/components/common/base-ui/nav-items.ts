@@ -1,5 +1,4 @@
-"use client";
-
+// src/components/common/base-ui/nav-items.ts
 import {
   type LucideIcon,
   Home,
@@ -15,15 +14,14 @@ import {
   Car,
 } from "lucide-react";
 
-export interface NavItem {
+export interface BaseNavItem {
   title: string;
-  url?: string;
-  icon?: LucideIcon;
+  url: string;
   requiresGlobalAdmin?: boolean;
-  items?: NavItem[];
+  icon?: LucideIcon;
 }
 
-export const allNavItems: NavItem[] = [
+export const allNavItems: BaseNavItem[] = [
   { title: "Início", url: "/dashboard", icon: Home },
   { title: "Serviço", url: "/dashboard/service", icon: Briefcase },
   {
@@ -48,18 +46,12 @@ export const allNavItems: NavItem[] = [
     title: "Utilizadores",
     url: "/dashboard/users",
     icon: Users,
-    requiresGlobalAdmin: false,
+    requiresGlobalAdmin: true,
   },
   {
     title: "Empresas",
     url: "/dashboard/companies",
     icon: Building2,
-    requiresGlobalAdmin: false,
-  },
-  {
-    title: "Configurações",
-    url: "/dashboard/settings",
-    icon: Settings2,
     requiresGlobalAdmin: true,
   },
   {
@@ -75,12 +67,19 @@ export const allNavItems: NavItem[] = [
     requiresGlobalAdmin: false,
   },
   {
+    title: "Configurações",
+    url: "/dashboard/settings",
+    requiresGlobalAdmin: true,
+    icon: Settings2,
+  },
+  {
     title: "Veiculos",
     url: "/dashboard/cars",
-    icon: Car,
     requiresGlobalAdmin: false,
+    icon: Car,
   },
- 
-
-
 ];
+
+export const adminOnlyPaths: string[] = allNavItems
+  .filter((item) => Boolean(item.requiresGlobalAdmin))
+  .map((item) => item.url);

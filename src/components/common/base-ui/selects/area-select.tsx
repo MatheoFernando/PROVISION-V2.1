@@ -37,6 +37,7 @@ export function AreaSelect({
   employeeId,
 }: AreaSelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const { data: areas = [], isLoading } = useAreas();
   const createArea = useCreateArea();
   const form = useForm<AreaForm>({
@@ -54,26 +55,49 @@ export function AreaSelect({
       },
     });
   }
+  const list = Array.isArray(areas) ? areas : [];
+  const filtered = list.filter((a: Area) => String(a?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+
   return (
-    <div className="flex items-center gap-2">
-      <Select value={value} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Selecione a área" />
-        </SelectTrigger>
-        <SelectContent>
-          {areas.map((a: Area) => (
-            <SelectItem key={a.id} value={a.id!}>
-              {a.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex items-stretch gap-2 w-full">
+      <div className="flex-1 min-w-0 relative">
+        <Select value={value} onValueChange={onChange} disabled={isLoading}>
+          <SelectTrigger className="w-full ">
+            <SelectValue placeholder="Selecione a área" />
+          </SelectTrigger>
+          {isLoading && (
+            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          )}
+          <SelectContent className="w-[var(--radix-select-trigger-width)]">
+            <div className="p-2 sticky top-0 bg-popover">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filtrar áreas..."
+                className="w-full"
+                disabled={isLoading || list.length === 0}
+              />
+            </div>
+            {filtered.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+            ) : (
+              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                {filtered.map((a: Area) => (
+                  <SelectItem key={a.id} value={a.id!}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
       <Button
         type="button"
         variant="outline"
         size="icon"
         onClick={() => setOpen(true)}
-        className="cursor-pointer"
+        className="cursor-pointer shrink-0"
       >
         <Plus className="w-4 h-4" />
       </Button>

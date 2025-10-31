@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import {  Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 
@@ -20,35 +19,38 @@ export function CompanySelect({ value, onChange, required = false }: CompanySele
     : companies;
 
   return (
-    <Select value={value} onValueChange={onChange} disabled={isLoading} required={required}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="Selecione a empresa" />
-      </SelectTrigger>
-      <SelectContent>
-        <div className="px-3 pt-2 pb-1 border-b bg-background sticky top-0 z-10">
-          <Input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Pesquisar empresa..."
-            className="h-8 text-sm placeholder:font-normal"
-            disabled={isLoading || companies.length === 0}
-            autoFocus
-          />
-        </div>
-        {isLoading ? (
-          <div className="flex justify-center items-center h-12">
-            <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-sm text-muted-foreground p-4">Nenhum dado encontrado</div>
-        ) : (
-          filtered.map((company: any) => (
-            <SelectItem key={company.id} value={company.id!}>
-              {company.businessName}
-            </SelectItem>
-          ))
+    <div className="relative">
+      <Select value={value} onValueChange={onChange} disabled={isLoading} required={required}>
+        <SelectTrigger className="w-full ">
+          <SelectValue placeholder="Selecione a empresa" />
+        </SelectTrigger>
+        {isLoading && (
+          <Loader2 className="animate-spin w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2" />
         )}
-      </SelectContent>
-    </Select>
+        <SelectContent>
+          <div className="px-3 pt-2 pb-1 border-b bg-background sticky top-0 z-10">
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Pesquisar empresa..."
+              className="h-8 text-sm placeholder:font-normal"
+              disabled={isLoading || companies.length === 0}
+              autoFocus
+            />
+          </div>
+          {filtered.length === 0 ? (
+            <div className="text-sm text-muted-foreground p-4">Nenhum dado</div>
+          ) : (
+            <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+              {filtered.map((company: any) => (
+                <SelectItem key={company.id} value={company.id!}>
+                  {company.businessName}
+                </SelectItem>
+              ))}
+            </div>
+          )}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

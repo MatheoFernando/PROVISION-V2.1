@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { Customer } from "../../types/domain";
+import { CreateCustomerPayload } from "../schema/schema-customers";
 import { toast } from "sonner";
 
 export function useCustomers() {
@@ -17,8 +18,18 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: Customer): Promise<Customer> => {
-      const response = await api.post("/customer/create", data);
+    mutationFn: async (data: CreateCustomerPayload): Promise<Customer> => {
+      const payload = {
+        cod: data.cod,
+        name: data.name,
+        taxName: data.taxName,
+        nif: data.nif,
+        photo: data.photo ?? "",
+        companyId: data.companyId,
+        address: { id: data.addressId },
+        contact: { id: data.contactId },
+      };
+      const response = await api.post("/customer/create", payload);
       const createdCustomer = response.data?.data || response.data; 
       return createdCustomer as Customer;
     },

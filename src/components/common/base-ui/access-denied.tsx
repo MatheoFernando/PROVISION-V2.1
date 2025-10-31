@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, ArrowLeft } from "lucide-react"
+import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
@@ -34,12 +34,11 @@ export function AccessDenied({
           </p>
         </div>
         <div className="p-4">
-          <Button onClick={handleRedirect} className="w-full bg-blue-500 hover:bg-blue-600 cursor-pointer">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Dashboard
+          <Button onClick={handleRedirect} className="w-full  cursor-pointer" variant="link">
+           Voltar ao Dashboard
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }

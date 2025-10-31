@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useCreateSector, useSectors } from "@/infrastructure/hooks/useSectors";
 import { Sector } from "@/types/domain";
 import { sectorSchema } from "@/infrastructure/schema/schema-sector";
@@ -34,6 +34,7 @@ export function SectorSelect({
   zoneId,
 }: SectorSelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   const { data: sectors = [], isLoading } = useSectors();
   const createSector = useCreateSector();
@@ -52,25 +53,49 @@ export function SectorSelect({
     });
   }
 
+  const list = Array.isArray(sectors) ? sectors : [];
+  const filtered = list.filter((s: Sector) => String(s?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+
   return (
-    <div className="flex items-center gap-2">
-      <Select value={value} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Selecione o setor" />
-        </SelectTrigger>
-        <SelectContent>
-          {sectors.map((s) => (
-            <SelectItem key={s.id} value={s.id!}>
-              {s.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex items-stretch gap-2 w-full">
+      <div className="flex-1 min-w-0 relative">
+        <Select value={value} onValueChange={onChange} disabled={isLoading}>
+          <SelectTrigger className="w-full ">
+            <SelectValue placeholder="Selecione o setor" />
+          </SelectTrigger>
+          {isLoading && (
+            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          )}
+          <SelectContent className="w-[var(--radix-select-trigger-width)]">
+            <div className="p-2 sticky top-0 bg-popover">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filtrar setores..."
+                className="w-full"
+                disabled={isLoading || list.length === 0}
+              />
+            </div>
+            {filtered.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+            ) : (
+              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                {filtered.map((s: Sector) => (
+                  <SelectItem key={s.id} value={s.id!}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
       <Button
         type="button"
         variant="outline"
         size="icon"
         onClick={() => setOpen(true)}
+        className="shrink-0"
       >
         <Plus className="w-4 h-4" />
       </Button>
