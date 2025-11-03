@@ -43,22 +43,22 @@ export function KeyboardSearch() {
             type="button"
             variant="outline"
             size="sm"
-            className="inline-flex items-center cursor-pointer gap-1 sm:gap-2  border-white/20 bg-white/10 hover:bg-white/20 px-2 sm:px-3 transition-colors duration-200"
+            className="inline-flex items-center cursor-pointer gap-1 sm:gap-2  border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 px-2 sm:px-3 transition-colors duration-200"
             aria-label="Abrir busca"
             onClick={() => setOpen(true)}
           >
-            <SearchIcon className="h-4 w-4" />
+            <SearchIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
   
           </Button>
         </div>
       ) : (
-        <InputGroup className="py-2 md:py-3 border-white/20 rounded-md bg-white/10 hover:bg-white/20 transition-colors duration-200">
-          <InputGroupInput placeholder="Pesquisar..." className="py-2 md:py-3 placeholder:text-white/70 text-white border-none bg-transparent focus:bg-white/5"/>
+        <InputGroup className="py-2 md:py-3 border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-200">
+          <InputGroupInput placeholder="Pesquisar..." className="py-2 md:py-3  text-white border-none bg-transparent focus:bg-white/5 placeholder:text-gray-500 dark:placeholder:text-gray-400"/>
           <InputGroupAddon>
-            <SearchIcon className="text-white/80"/>
+            <SearchIcon className="text-gray-500 dark:text-gray-400"/>
           </InputGroupAddon>
           <InputGroupAddon align="inline-end">
-            <Kbd className="bg-transparent border border-white/30 text-white/80 p-2 md:p-3 text-xs">CTRL k</Kbd>
+            <Kbd className="bg-transparent border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 p-2 md:p-3 text-xs">CTRL k</Kbd>
           </InputGroupAddon>
         </InputGroup>
       )}

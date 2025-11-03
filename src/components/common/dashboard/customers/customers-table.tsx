@@ -55,9 +55,9 @@ const columns: ColumnDef<Customer>[] = [
     cell: ({ row }) => {
       const status = row.getValue("status") as boolean;
       return status ? (
-        <Badge variant="default">Ativo</Badge>
+        <Badge variant="default" className="bg-green-400 text-white">Ativo</Badge>
       ) : (
-        <Badge variant="secondary">Inativo</Badge>
+        <Badge variant="secondary" className="bg-red-400 text-white">Inativo</Badge>
       );
     },
   },

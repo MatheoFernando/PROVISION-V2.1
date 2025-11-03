@@ -4,6 +4,7 @@ import {
   User,
   LogOut,
   Settings,
+  ChevronDown,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -49,25 +50,25 @@ export function NavUser({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-white/10 data-[state=open]:text-white cursor-pointer hover:bg-white/5 transition-colors duration-200"
+         
+              className="data-[state=open]:bg-white/10 data-[state=open]:text-white cursor-pointer hover:bg-white/5 transition-colors duration-200 px-0   gap-0.5 "
             >
-                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg">
+                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg ">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg bg-primary text-primary-foreground font-medium uppercase">
-                    {user?.name.slice(0 , 2)}
+                  <AvatarFallback className="rounded-full  text-gray-500 dark:text-gray-400 bg-white font-medium uppercase border">
+                  <User className="size-5" />
                   </AvatarFallback>
                 </Avatar>
-         
+                <ChevronDown className="text-gray-500" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "bottom"}
-            align="center"
+            align="start"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
+            <DropdownMenuLabel className="p-2 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 {user.avatar ? (
                   <Avatar className="h-8 w-8 rounded-lg">
@@ -77,7 +78,7 @@ export function NavUser({
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border ">
                     <AvatarIcon className="size-4" />
                   </div>
                 )}
@@ -89,18 +90,15 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <User />
-                Perfil
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings />
+           
+              <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500">
+                <Settings className="hover:bg-blue-100 hover:text-blue-500" />
                 Configurações
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
+            <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500">
+              <LogOut className=" hover:bg-blue-100 hover:text-blue-500" />
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>

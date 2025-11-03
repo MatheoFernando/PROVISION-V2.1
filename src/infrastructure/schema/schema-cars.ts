@@ -5,7 +5,7 @@ export const createCarSchema = z.object({
   mark: z.string().min(1, "Marca é obrigatória"),
   capacity: z.number().positive("Capacidade deve ser positiva"),
   containerId: z.string(),
-  status: z.boolean(),
   companyId: z.string(),
+  model:z.string().min(1, "Modelo é obrigatório"),
   geoLocationEntityId: z.string(),
 });

@@ -1,25 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
+import { TypeEquipmentSelect } from "@/components/common/base-ui/selects/type-equipment-select";
 import { createEquipmentSchema } from "@/infrastructure/schema/schema-equipment";
 import { z } from "zod";
 import { useCreateEquipment } from "@/infrastructure/hooks/useEquipment";
 import { toast } from "sonner";
-import { Plus, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Switch } from "@/components/ui/switch";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
 
@@ -27,24 +21,7 @@ export default function Page() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [companies, setCompanies] = useState([
-    { id: "1", name: "Empresa ABC" },
-    { id: "2", name: "Empresa XYZ" },
-  ]);
-  const [sites, setSites] = useState([
-    { id: "1", name: "Site Luanda Centro" },
-    { id: "2", name: "Site Viana Industrial" },
-  ]);
-  const [typeEquipments, setTypeEquipments] = useState([
-    { id: "1", name: "Computador" },
-    { id: "2", name: "Impressora" },
-    { id: "3", name: "Scanner" },
-  ]);
-
-  const [companySearch, setCompanySearch] = useState("");
-  const [siteSearch, setSiteSearch] = useState("");
-  const [sitesSearch, setSitesSearch] = useState("");
-  const [typeEquipmentSearch, setTypeEquipmentSearch] = useState("");
+  const companyId = useAuthStore((s) => s.companyId) ?? "";
 
   const createEquipment = useCreateEquipment();
 
@@ -52,15 +29,16 @@ export default function Page() {
     resolver: zodResolver(createEquipmentSchema),
     defaultValues: {
       serialNumber: "",
-      status: false,
       mark: "",
       model: "",
-      siteId: "",
       typeEquipmentId: "",
-      companyId: "",
-      sitesId: "",
+      companyId: companyId,
     },
   });
+
+  useEffect(() => {
+    if (companyId) form.setValue("companyId", companyId);
+  }, [companyId, form]);
 
   const onSubmit = async (data: CreateEquipmentInput) => {
     try {
@@ -80,18 +58,7 @@ export default function Page() {
     }
   };
 
-  const filteredCompanies = companies.filter((c) =>
-    c.name.toLowerCase().includes(companySearch.toLowerCase())
-  );
-  const filteredSites = sites.filter((s) =>
-    s.name.toLowerCase().includes(siteSearch.toLowerCase())
-  );
-  const filteredSitesSecondary = sites.filter((s) =>
-    s.name.toLowerCase().includes(sitesSearch.toLowerCase())
-  );
-  const filteredTypeEquipments = typeEquipments.filter((t) =>
-    t.name.toLowerCase().includes(typeEquipmentSearch.toLowerCase())
-  );
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -162,151 +129,27 @@ export default function Page() {
                     <Label htmlFor="typeEquipmentId" className="text-slate-700">
                       Tipo de Equipamento *
                     </Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={form.watch("typeEquipmentId")}
-                        onValueChange={(value) =>
-                          form.setValue("typeEquipmentId", value)
-                        }
-                      >
-                        <SelectTrigger className="rounded-lg w-full">
-                          <SelectValue placeholder="Selecione o tipo de equipamento" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <div className="p-2">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Pesquisar tipo..."
-                                value={typeEquipmentSearch}
-                                onChange={(e) =>
-                                  setTypeEquipmentSearch(e.target.value)
-                                }
-                                className="pl-8 rounded-lg"
-                              />
-                            </div>
-                          </div>
-                          {filteredTypeEquipments.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {type.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-lg"
-                        onClick={() => {
-                          /* Abrir modal para adicionar tipo */
-                        }}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <TypeEquipmentSelect
+                      value={form.watch("typeEquipmentId")}
+                      onChange={(v) => form.setValue("typeEquipmentId", v)}
+                      companyId={companyId}
+                    />
                     {form.formState.errors.typeEquipmentId && (
                       <p className="text-sm text-red-500">
                         {form.formState.errors.typeEquipmentId.message}
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="companyId" className="text-slate-700">
-                      Empresa *
-                    </Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={form.watch("companyId")}
-                        onValueChange={(value) =>
-                          form.setValue("companyId", value)
-                        }
-                      >
-                        <SelectTrigger className="rounded-lg w-full">
-                          <SelectValue placeholder="Selecione a empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <div className="p-2">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Pesquisar empresa..."
-                                value={companySearch}
-                                onChange={(e) =>
-                                  setCompanySearch(e.target.value)
-                                }
-                                className="pl-8 rounded-lg"
-                              />
-                            </div>
-                          </div>
-                          {filteredCompanies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-lg"
-                        onClick={() => {
-                          /* Abrir modal para adicionar empresa */
-                        }}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {form.formState.errors.companyId && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.companyId.message}
-                      </p>
-                    )}
-                  </div>
+                  <input type="hidden" value={companyId} {...form.register("companyId")} />
 
                   <div className="space-y-2">
                     <Label htmlFor="siteId" className="text-slate-700">
-                      Site Principal *
+                      Site  *
                     </Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={form.watch("siteId")}
-                        onValueChange={(value) =>
-                          form.setValue("siteId", value)
-                        }
-                      >
-                        <SelectTrigger className="rounded-lg w-full">
-                          <SelectValue placeholder="Selecione o site principal" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <div className="p-2">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Pesquisar site..."
-                                value={siteSearch}
-                                onChange={(e) => setSiteSearch(e.target.value)}
-                                className="pl-8 rounded-lg"
-                              />
-                            </div>
-                          </div>
-                          {filteredSites.map((site) => (
-                            <SelectItem key={site.id} value={site.id}>
-                              {site.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-lg"
-                        onClick={() => {
-                          /* Abrir modal para adicionar site */
-                        }}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <SiteSelect
+                      value={form.watch("siteId")}
+                      onChange={(v) => form.setValue("siteId", v)}
+                    />
                     {form.formState.errors.siteId && (
                       <p className="text-sm text-red-500">
                         {form.formState.errors.siteId.message}
@@ -314,77 +157,6 @@ export default function Page() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="sitesId" className="text-slate-700">
-                      Sites Secundários *
-                    </Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={form.watch("sitesId")}
-                        onValueChange={(value) =>
-                          form.setValue("sitesId", value)
-                        }
-                      >
-                        <SelectTrigger className="rounded-lg w-full">
-                          <SelectValue placeholder="Selecione sites secundários" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <div className="p-2">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Pesquisar sites..."
-                                value={sitesSearch}
-                                onChange={(e) => setSitesSearch(e.target.value)}
-                                className="pl-8 rounded-lg"
-                              />
-                            </div>
-                          </div>
-                          {filteredSitesSecondary.map((site) => (
-                            <SelectItem key={site.id} value={site.id}>
-                              {site.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-lg"
-                        onClick={() => {
-                          /* Abrir modal para adicionar site */
-                        }}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {form.formState.errors.sitesId && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.sitesId.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status" className="text-slate-700">
-                      Ativo *
-                    </Label>
-                    <div className="flex items-center gap-3 py-2">
-                      <Switch
-                        id="status"
-                        checked={!!form.watch("status")}
-                        onCheckedChange={(v) => form.setValue("status", v)}
-                        className="cursor-pointer"
-                      />
-                      <span className="text-slate-600 text-sm">
-                        {form.watch("status") ? "Ativo" : "Inativo"}
-                      </span>
-                    </div>
-                    {form.formState.errors.status && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.status.message as string}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>

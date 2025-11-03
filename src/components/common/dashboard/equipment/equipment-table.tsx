@@ -12,7 +12,6 @@ import { ptBR } from "date-fns/locale";
 import { EquipmentView } from "./equipment-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEquipment } from "@/infrastructure/hooks/useEquipment";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Equipment>[] = [
@@ -40,18 +39,7 @@ const columns: ColumnDef<Equipment>[] = [
       return <div>{model}</div>;
     },
   },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
-      );
-    },
-  },
+ 
   {
     accessorKey: "siteId",
     header: "Site",
@@ -110,15 +98,12 @@ export function EquipmentTable() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedEquipment) return;
-
+    if (!selectedEquipment?.id) return;
     try {
       await deleteEquipment.mutateAsync(selectedEquipment.id);
-      toast.success("Equipamento excluído com sucesso!");
+    } finally {
       setIsDeleteOpen(false);
       setSelectedEquipment(undefined);
-    } catch (error) {
-      toast.error("Erro ao excluir equipamento");
     }
   };
 

@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   }>) {
     return (
       <SidebarProvider defaultOpen={true}>
-        <div className="flex flex-col h-screen w-full overflow-hidden">
+        <div className="flex flex-col h-screen w-full overflow-y-auto bg-background text-foreground">
           <Header />
-          <div className="flex flex-1 min-h-0">
+          <div className="flex flex-1 ">
             <AppSidebar />
             <SidebarTrigger
               className="hidden md:flex fixed z-20
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
               size-10 [&>svg]:size-6 hover:bg-muted hover:scale-100 cursor-pointer"
             />
             <SidebarInset className="flex-1 min-w-0">
-              <div className="flex flex-1 flex-col gap-6 p-4 md:px-12 pt-8 bg-background min-h-0 overflow-hidden">
+              <div className="flex flex-1 flex-col gap-6 p-4 md:px-12 pt-8  ">
                 <BreadcrumbClient />
-                <div className="flex-1 min-h-0 overflow-auto">
+                <div className="flex-1  ">
                   {children}
                 </div>
               </div>

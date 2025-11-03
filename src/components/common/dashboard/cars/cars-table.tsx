@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import {  Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCars } from "@/infrastructure/hooks/useCars";
 import { Car } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CarsView } from "./cars-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteCar } from "@/infrastructure/hooks/useCars";
 import { toast } from "sonner";
@@ -80,10 +79,7 @@ export function CarsTable() {
     item.mark.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleView = (car: Car) => {
-    setSelectedCar(car);
-    setIsViewOpen(true);
-  };
+
 
   const handleEdit = (car: Car) => {
     setSelectedCar(car);
@@ -127,11 +123,7 @@ export function CarsTable() {
         enableRowSelection={true}
         includeSelection={true}
         rowActions={[
-          {
-            label: "Visualizar",
-            icon: <Eye className="h-4 w-4 mr-2" />,
-            onClick: (car) => handleView(car),
-          },
+     
           {
             label: "Editar",
             icon: <Edit className="h-4 w-4 mr-2" />,
@@ -146,12 +138,6 @@ export function CarsTable() {
       />
 
    
-
-      <CarsView
-        car={selectedCar}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-      />
 
       <DeleteModal
         isOpen={isDeleteOpen}

@@ -7,58 +7,59 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createCarSchema } from "@/infrastructure/schema/schema-cars";
-import { Car } from "@/types/domain";
-import { useCreateCar, useUpdateCar } from "@/infrastructure/hooks/useCars";
-import { toast } from "sonner";
+import { z } from "zod";
+import { useCreateCar } from "@/infrastructure/hooks/useCars";
+import { ContainerSelect } from "@/components/common/base-ui/selects/container-select";
+import { CreateContainerModal } from "@/components/common/dashboard/containers/containers-create-modal";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useRouter } from "next/navigation";
 
-interface CarsCreateProps {
-  car?: any;
-  isOpen: boolean;
-  onClose: () => void;
-}
 
-export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
+
+type CreateCarInput = z.infer<typeof createCarSchema>;
+
+export function CarsCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createCar = useCreateCar();
-  const updateCar = useUpdateCar();
+  const [isCreateContainerOpen, setIsCreateContainerOpen] = useState(false);
+  const { companyId } = useAuthStore();
+  const router = useRouter();
 
-  const form = useForm<Omit<Car, 'id' | 'createdAt' | 'updatedAt'>>({
+  const form = useForm<CreateCarInput>({
     resolver: zodResolver(createCarSchema),
-    defaultValues: car || {
+    defaultValues: {
       cod: "",
       mark: "",
+      model: "",
       capacity: 0,
       containerId: "",
-      companyId: "",
+      companyId: companyId ?? "",
       geoLocationEntityId: "",
     },
   });
 
-  const onSubmit = async (data: Omit<Car, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const onSubmit = async (data: CreateCarInput) => {
     try {
       setIsSubmitting(true);
-      
-      if (car) {
-        await updateCar.mutateAsync({ id: car.id, data });
-        toast.success("Veículo atualizado com sucesso!");
-      } else {
-        await createCar.mutateAsync(data);
-        toast.success("Veículo criado com sucesso!");
-      }
-      
-      onClose();
+      await createCar.mutateAsync(data as any);
       form.reset();
     } catch (error) {
-      toast.error("Erro ao salvar veículo");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900">
+          Nova viatura
+        </h1>
+      </div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cod">Código *</Label>
               <Input
@@ -88,6 +89,20 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="model">Modelo *</Label>
+              <Input
+                id="model"
+                {...form.register("model")}
+                placeholder="Digite o modelo"
+              />
+              {form.formState.errors.model  && (
+                <p className="text-sm text-red-500">
+                  {(form.formState.errors as any)?.model?.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="capacity">Capacidade (L) *</Label>
               <Input
                 id="capacity"
@@ -103,35 +118,21 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="containerId">ID do Container *</Label>
-              <Input
-                id="containerId"
-                {...form.register("containerId")}
-                placeholder="Digite o ID do container"
+              <Label>Container *</Label>
+              <ContainerSelect
+                value={form.watch("containerId")}
+                onChange={(v) => form.setValue("containerId", v)}
+                required
+                onCreateClick={() => setIsCreateContainerOpen(true)}
               />
               {form.formState.errors.containerId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.containerId.message}
-                </p>
+                <p className="text-sm text-red-500">{form.formState.errors.containerId.message}</p>
               )}
             </div>
 
+        
             <div className="space-y-2">
-              <Label htmlFor="companyId">ID da Empresa *</Label>
-              <Input
-                id="companyId"
-                {...form.register("companyId")}
-                placeholder="Digite o ID da empresa"
-              />
-              {form.formState.errors.companyId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.companyId.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="geoLocationEntityId">ID da Localização Geográfica *</Label>
+              <Label htmlFor="geoLocationEntityId">Localização  *</Label>
               <Input
                 id="geoLocationEntityId"
                 {...form.register("geoLocationEntityId")}
@@ -146,14 +147,21 @@ export function CarsCreate({ car, isOpen, onClose }: CarsCreateProps) {
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" className="rounded-lg px-6 cursor-pointer" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : car ? "Atualizar" : "Criar"}
+            <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6">
+              {isSubmitting ? "Salvando..." : "Criar"}
             </Button>
           </div>
+          </div>
         </form>
-   
+
+        <CreateContainerModal
+          isOpen={isCreateContainerOpen}
+          onClose={() => setIsCreateContainerOpen(false)}
+        />
+    </div>
+    </div>
   );
 }

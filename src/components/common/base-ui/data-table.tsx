@@ -36,6 +36,11 @@ import {
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Columns, Plus, Eye, MoreHorizontal, CircleAlert } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { type DateRange } from "react-day-picker"
+import { Toolbar } from "./data-table/toolbar"
+import { TableView } from "./data-table/table-view"
+import { CardGrid } from "./data-table/card-grid"
 
 interface ActionButton<TData> {
   label: string
@@ -55,6 +60,7 @@ interface DataTableProps<TData extends RowData, TValue> {
   toolbar?: (table: ReactTable<TData>) => React.ReactNode
   includeSelection?: boolean
   isLoading?: boolean
+  dateKey?: keyof TData & string
 }
 
 export function DataTableGeneric<TData extends RowData, TValue>({
@@ -68,6 +74,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   toolbar,
   includeSelection = false,
   isLoading = false,
+  dateKey,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -75,6 +82,23 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [viewAsCard, setViewAsCard] = React.useState(false)
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false)
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
+  const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(undefined)
+
+  const dataWithDateFilter = React.useMemo(() => {
+    if (!dateRange || !dateRange.from || !dateRange.to) return data
+    const from = new Date(dateRange.from)
+    const to = new Date(dateRange.to)
+    return data.filter((row: any) => {
+      const value = (row as any)[(dateKey as unknown as string)]
+      if (!value) return false
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return false
+      return d >= from && d <= to
+    })
+  }, [data, dateRange])
 
   const columnsWithSelection = React.useMemo<ColumnDef<TData, any>[]>(() => {
     let finalColumns = columns
@@ -91,7 +115,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   }, [columns, includeSelection, rowActions])
 
   const table = useReactTable<TData>({
-    data,
+    data: dataWithDateFilter,
     columns: columnsWithSelection,
     state: {
       sorting,
@@ -113,111 +137,51 @@ export function DataTableGeneric<TData extends RowData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     globalFilterFn: (row, _columnId, filter) => {
-      if (!searchKey) return true
-      const value = row.original?.[searchKey]
-      return String(value ?? "").toLowerCase().includes(String(filter).toLowerCase())
+      const needle = String(filter).toLowerCase()
+      if (!needle) return true
+      if (searchKey) {
+        const value = row.original?.[searchKey]
+        return String(value ?? "").toLowerCase().includes(needle)
+      }
+      // Sem searchKey: procura em todos os campos do objeto
+      const values = Object.values(row.original as Record<string, unknown>)
+      return values.some((v) => String(v ?? "").toLowerCase().includes(needle))
     },
   })
 
   const hasSelectionColumn = enableRowSelection
 
   return (
-    <div className="w-full max-w-full space-y-4 bg-background border border-border rounded-lg shadow-sm py-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4">
-        <div className="flex w-full items-center gap-3">
-          <div className="flex w-full max-w-xs items-center gap-2">
-            <Input
-              value={globalFilter ?? ""}
-              onChange={(e) => table.setGlobalFilter(e.target.value)}
-              placeholder={placeholder}
-              className="h-9 dar"
-            />
-          </div>
-          {toolbar && (
-            <div className="flex items-center gap-3">
-              {toolbar(table)}
-            </div>
-          )}
-        </div>
+    <div className="w-full max-w-full space-y-4 ">
+      <Toolbar
+        table={table}
+        placeholder={placeholder}
+        globalFilter={globalFilter}
+        setGlobalFilter={setGlobalFilter}
+        actionButton={actionButton}
+        toolbar={toolbar}
+        view={viewAsCard ? "cards" : "table"}
+        onChangeView={(v) => setViewAsCard(v === "cards")}
+        isFilterOpen={isFilterOpen}
+        setIsFilterOpen={setIsFilterOpen}
+        tempDateRange={tempDateRange}
+        setTempDateRange={setTempDateRange}
+        onApplyDateRange={() => { setDateRange(tempDateRange); setIsFilterOpen(false) }}
+        onClearDateRange={() => { setTempDateRange(undefined); setDateRange(undefined) }}
+      />
 
-        <div className="flex items-center gap-2">
+      {!viewAsCard && (
+        <TableView table={table} isLoading={isLoading} colSpan={columnsWithSelection.length} />
+      )}
+
+      {viewAsCard && (
+        <CardGrid table={table} isLoading={isLoading} />
+      )}
+
+   
+
+      <div className="flex items-center justify-end px-4 pt-4 border-t border-border">
        
-          {actionButton && (
-            actionButton.component || (
-              <Button size="sm" className="h-9 bg-blue-600 cursor-pointer hover:bg-blue-700 dark:text-white" onClick={actionButton.onClick}>
-                <Plus className="mr-2 size-4 dark:text-white" /> {actionButton.label}
-              </Button>
-            )
-          )}
-        </div>
-      </div>
-
-      <div className="w-full overflow-x-auto pb-0 mb-0">
-        <Table className="w-full min-w-max ">
-          <TableHeader className="bg-muted/30 ">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} >
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    className="text-slate-600 font-medium text-sm  whitespace-nowrap"
-                    style={{ minWidth: header.getSize() ?? 120 }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index} className="border-b border-border">
-                  {table.getHeaderGroups()?.[0]?.headers.map((header, cellIndex) => (
-                    <TableCell key={cellIndex} className="py-0.5" style={{ minWidth: header.getSize() ?? 120 }}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-border  hover:bg-muted/50 data-[state=selected]:bg-muted"
-                >
-                  {row.getVisibleCells().map((cell, cellIndex) => (
-                    <TableCell key={cell.id} className="py-0.5 text-sm text-foreground" style={{ minWidth: cell.column.getSize?.() ?? 120 }}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columnsWithSelection.length}
-                  className="h-24 w-full text-center text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center justify-center gap-2 w-full">
-                    <CircleAlert className="mx-auto mb-1 text-muted-foreground size-8" aria-hidden="true" />
-                    <span>Sem resultados.</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-between px-4 pt-4 border-t border-border">
-        <div className="text-muted-foreground hidden flex-1 text-sm sm:flex">
-          {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
-        </div>
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <Button
             variant="outline"

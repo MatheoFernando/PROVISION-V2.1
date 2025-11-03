@@ -3,6 +3,7 @@ import { api } from "../utils/api";
 import { Car } from "../../types/domain";
 import { z } from "zod";
 import { createCarSchema } from "../schema/schema-cars";
+import { toast } from "sonner";
 
 type CreateCarInput = z.infer<typeof createCarSchema>;
 
@@ -10,9 +11,22 @@ export function useCars() {
   return useQuery({
     queryKey: ["cars"],
     queryFn: async (): Promise<Car[]> => {
-      const response = await api.get("/car/getAll");
-      return response.data;
+      try {
+        const response = await api.get("/car/getAll");
+        const data = response.data as unknown;
+        const list = Array.isArray(data)
+          ? (data as Car[])
+          : ((data as any)?.items ?? (data as any)?.data ?? []);
+        return list as Car[];
+      } catch (err) {
+        toast.error("Falha ao carregar viaturas");
+        throw err as unknown;
+      }
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    retry: 1,
   });
 }
 
@@ -24,8 +38,13 @@ export function useCreateCar() {
       const response = await api.post("/car/create", data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cars"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cars"] });
+      await queryClient.refetchQueries({ queryKey: ["cars"], type: "active" });
+      toast.success("Viatura criada com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao criar viatura");
     },
   });
 }
@@ -38,8 +57,13 @@ export function useUpdateCar() {
       const response = await api.put(`/car`, { id, ...data });
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cars"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cars"] });
+      await queryClient.refetchQueries({ queryKey: ["cars"], type: "active" });
+      toast.success("Viatura atualizada com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar viatura");
     },
   });
 }
@@ -51,8 +75,13 @@ export function useDeleteCar() {
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/car/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cars"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cars"] });
+      await queryClient.refetchQueries({ queryKey: ["cars"], type: "active" });
+      toast.success("Viatura excluída com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao excluir viatura");
     },
   });
 }

@@ -12,21 +12,11 @@ import { z } from "zod";
 import { useCreateEmployee } from "@/infrastructure/hooks/useEmployees";
 import { toast } from "sonner";
 import { Upload, User } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { ContactSelect } from "@/components/common/base-ui/selects/contact-select";
-import { useSites } from "@/infrastructure/hooks/useSites";
-import { useDepartments } from "@/infrastructure/hooks/useDepartments";
 import { DepartmentSelect } from "@/components/common/base-ui/selects/department-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
-import { useUsers } from "@/infrastructure/hooks/useUsers";
 import { AddressSelect } from "@/components/common/base-ui/selects/address-select";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;

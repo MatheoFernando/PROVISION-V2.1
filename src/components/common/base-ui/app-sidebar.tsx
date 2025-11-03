@@ -54,13 +54,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" {...props} >
-      <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
+      <div className="bg-[#121c2d]  h-screen">
+
+      <SidebarHeader className="bg-[#121c2d] border-b border-sidebar-border">
         <TeamSwitcher teams={sidebarData.teams} />
       </SidebarHeader>
-      <SidebarContent className="bg-sidebar">
+      <SidebarContent className="bg-[#121c2d] ">
         <NavMain items={sidebarData.navMain} />
       </SidebarContent>
       <SidebarRail />
+      </div>
     </Sidebar>
   )
 }

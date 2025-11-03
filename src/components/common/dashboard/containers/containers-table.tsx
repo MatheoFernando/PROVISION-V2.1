@@ -9,10 +9,9 @@ import { Container } from "@/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ContainersView } from "./containers-view";
+import { CreateContainerModal } from "./containers-create-modal";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteContainer } from "@/infrastructure/hooks/useContainers";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Container>[] = [
@@ -25,21 +24,14 @@ const columns: ColumnDef<Container>[] = [
     },
   },
   {
-    accessorKey: "mark",
-    header: "Marca",
+    accessorKey: "name",
+    header: "Nome",
     cell: ({ row }) => {
-      const mark = row.getValue("mark") as string;
-      return <div>{mark}</div>;
+      const name = row.getValue("name") as string;
+      return <div>{name}</div>;
     },
   },
-  {
-    accessorKey: "model",
-    header: "Modelo",
-    cell: ({ row }) => {
-      const model = row.getValue("model") as string;
-      return <div>{model}</div>;
-    },
-  },
+
   {
     accessorKey: "capacity",
     header: "Capacidade",
@@ -48,22 +40,7 @@ const columns: ColumnDef<Container>[] = [
       return `${capacity}L`;
     },
   },
-  {
-    accessorKey: "containerId",
-    header: "Container",
-    cell: ({ row }) => {
-      const containerId = row.getValue("containerId") as string;
-      return <div>{containerId}</div>;
-    },
-  },
-  {
-    accessorKey: "geoLocationEntityId",
-    header: "Localização",
-    cell: ({ row }) => {
-      const geoLocationEntityId = row.getValue("geoLocationEntityId") as string;
-      return <div>{geoLocationEntityId}</div>;
-    },
-  },
+
   {
     accessorKey: "createdAt",
     header: "Data de Criação",
@@ -84,16 +61,18 @@ export function ContainersTable() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedContainer, setSelectedContainer] = useState<Container | undefined>();
 
-  const filteredData = containers.filter((item) =>
-    item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.mark.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.model.toLowerCase().includes(searchTerm.toLowerCase())
+  const containersList: Container[] = Array.isArray(containers)
+    ? containers
+    : (containers as unknown as { items?: Container[]; data?: Container[] })?.items ??
+      (containers as unknown as { items?: Container[]; data?: Container[] })?.data ??
+      [];
+
+  const normalizedSearch = searchTerm.toLowerCase();
+  const filteredData = containersList.filter((item) =>
+    item.cod.toLowerCase().includes(normalizedSearch) ||
+    (String((item as any).name ?? "").toLowerCase().includes(normalizedSearch))
   );
 
-  const handleView = (container: Container) => {
-    setSelectedContainer(container);
-    setIsViewOpen(true);
-  };
 
   const handleEdit = (container: Container) => {
     setSelectedContainer(container);
@@ -110,18 +89,12 @@ export function ContainersTable() {
 
     try {
       await deleteContainer.mutateAsync(selectedContainer.id as string);
-      toast.success("Container excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedContainer(undefined);
-    } catch (error) {
-      toast.error("Erro ao excluir container");
-    }
+    } catch (error) {}
   };
 
-  const handleCreate = () => {
-    setSelectedContainer(undefined);
-    setIsCreateOpen(true);
-  };
+
 
   return (
     <div className="space-y-4">
@@ -132,16 +105,14 @@ export function ContainersTable() {
         searchKey="cod"
         actionButton={{
           label: "Novo Container",
-          onClick: () => router.push("/dashboard/containers/create"),
+          onClick: () => {
+            setSelectedContainer(undefined);
+            setIsCreateOpen(true);
+          },
         }}
         enableRowSelection={true}
         includeSelection={true}
         rowActions={[
-          {
-            label: "Visualizar",
-            icon: <Eye className="h-4 w-4 mr-2" />,
-            onClick: (container) => handleView(container),
-          },
           {
             label: "Editar",
             icon: <Edit className="h-4 w-4 mr-2" />,
@@ -157,10 +128,10 @@ export function ContainersTable() {
 
  
 
-      <ContainersView
+      <CreateContainerModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
         container={selectedContainer}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
       />
 
       <DeleteModal
@@ -170,8 +141,8 @@ export function ContainersTable() {
           setSelectedContainer(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Container"
-        message="Tem certeza que deseja excluir este container? Esta ação não pode ser desfeita."
+        title={`Excluir Container${(selectedContainer as any)?.name ? `: ${(selectedContainer as any).name}` : ""}`}
+        message={`Tem certeza que deseja excluir ${(selectedContainer as any)?.name ?? selectedContainer?.cod ?? "este container"}? Esta ação não pode ser desfeita.`}
         isLoading={deleteContainer.isPending}
       />
     </div>
