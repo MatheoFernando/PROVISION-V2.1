@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
-import { Equipment } from "@/types/domain";
+import { Equipment } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { EquipmentView } from "./equipment-view";
@@ -107,10 +106,6 @@ export function EquipmentTable() {
     }
   };
 
-  const handleCreate = () => {
-    setSelectedEquipment(undefined);
-    setIsCreateOpen(true);
-  };
 
   return (
     <div className="space-y-4">

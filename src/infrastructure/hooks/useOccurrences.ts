@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/infrastructure/utils/api';
-import type { Occorrence } from '@/types/domain';
+import type { Occorrence } from '@/infrastructure/types/domain';
 
 export function useOccurrences() {
   return useQuery({

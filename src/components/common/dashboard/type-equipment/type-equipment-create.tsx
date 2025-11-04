@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCreateTypeEquipment, useUpdateTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
 import { toast } from "sonner";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { TypeEquipment } from "@/types/domain";
+import { TypeEquipment } from "@/infrastructure/types/domain";
 import { createTypeEquipmentSchema } from "@/infrastructure/schema/schema-type-equipment";
 import { Loader2 } from "lucide-react";
 

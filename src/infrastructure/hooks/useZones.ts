@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-import { Zone } from "../../types/domain";
+import { Zone, CreateZonePayload } from "../types/domain";
 
 export function useZones() {
   return useQuery({
@@ -15,8 +15,8 @@ export function useZones() {
 
 export function useCreateZone() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: Omit<Zone, 'id' | 'createdAt' | 'updatedAt'>): Promise<Zone> => {
+  return useMutation<Zone, unknown, CreateZonePayload>({
+    mutationFn: async (payload: CreateZonePayload): Promise<Zone> => {
       const { data } = await api.post("/zone/create", payload);
       return data;
     },

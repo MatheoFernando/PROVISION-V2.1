@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useSites } from "@/infrastructure/hooks/useSites";
-import { Site } from "@/types/domain";
+import { Site } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";

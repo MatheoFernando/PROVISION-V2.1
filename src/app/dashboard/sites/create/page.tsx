@@ -12,7 +12,6 @@ import {
 } from "@/infrastructure/schema/schema-sites";
 import { useCreateSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
-import { MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { SectorSelect } from "@/components/common/base-ui/selects/sector-select";
@@ -44,7 +43,6 @@ export default function Page() {
       geoLocationId: "",
     },
   });
-
   const onSubmit = async (data: CreateSite) => {
     try {
       setIsSubmitting(true);
@@ -125,14 +123,15 @@ export default function Page() {
                     )}
                   </div>
 
-                  {/* Cliente Select modernizado */}
                   <div className="space-y-2">
                     <Label htmlFor="customerId" className="text-slate-700">
                       Selecione o Cliente *
                     </Label>
                     <CustomerSelect
                       value={form.watch("customerId")}
-                      onChange={(value) => form.setValue("customerId", value)}
+                      onChange={(value) => {
+                        form.setValue("customerId", value);
+                      }}
                       companyId={companyId}
                     />
                     {form.formState.errors.customerId && (
@@ -150,7 +149,6 @@ export default function Page() {
                       value={form.watch("areaId")}
                       onChange={(value) => form.setValue("areaId", value)}
                       companyId={companyId}
-                      employeeId=""
                     />
                   </div>
 
@@ -162,8 +160,7 @@ export default function Page() {
                       value={form.watch("sectorId")}
                       onChange={(value) => form.setValue("sectorId", value)}
                       companyId={companyId}
-                      employeeId=""
-                      zoneId=""
+                      zoneId={form.watch("zoneId")}
                     />
                     {form.formState.errors.sectorId && (
                       <p className="text-sm text-red-500">
@@ -210,11 +207,11 @@ export default function Page() {
                     </Label>
                     <ZoneSelect
                       value={form.watch("zoneId")}
-                      onChange={(value: string) =>
-                        form.setValue("zoneId", value)
-                      }
+                      onChange={(value: string) => {
+                        form.setValue("zoneId", value);
+                        form.setValue("sectorId", "");
+                      }}
                       companyId={companyId}
-                      employeeId=""
                       areaId={form.watch("areaId")}
                     />
                   </div>
@@ -224,9 +221,9 @@ export default function Page() {
                       htmlFor="geoLocationEntityId"
                       className="text-slate-700"
                     >
-                     Geolocalização *
+                      Geolocalização *
                     </Label>
-                    <div >
+                    <div>
                       <Input
                         id="geoLocationEntityId"
                         {...form.register("geoLocationId")}
@@ -234,7 +231,7 @@ export default function Page() {
                         className="rounded-lg "
                       />
                     </div>
-                 
+
                     {form.formState.errors.geoLocationId && (
                       <p className="text-sm text-red-500">
                         {form.formState.errors.geoLocationId.message}

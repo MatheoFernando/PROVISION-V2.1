@@ -1,49 +1,71 @@
 "use client"
 
-import React, { useActionState } from 'react'
+import React from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { type User } from '@/types/domain'
+import { type User, type Company } from '@/infrastructure/types/domain'
 import { Badge } from '@/components/ui/badge'
 import { DataTableGeneric } from '../../base-ui/data-table'
 import CreateUserDialog from './create-users'
 import { Edit, Trash2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useUsers } from '../../../../infrastructure/hooks/useUsers'
+import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
 
-const columns: ColumnDef<User, unknown>[] = [
-  { accessorKey: 'phone', header: 'Telefone' , cell: ({ row }) => {
-    const phone = row.getValue('phone') as string
-    return <div>{phone}</div>
-  } },
-  { 
-    accessorKey: 'isGlobalAdmin', 
-    header: 'Tipo', 
-    cell: ({ getValue }) => {
-      const isGlobalAdmin = getValue<boolean>()
-      return (
-        <Badge variant={isGlobalAdmin ? 'default' : 'secondary'} className={isGlobalAdmin ? 'bg-blue-500' : 'bg-gray-200 text-gray-700'}>
-          {isGlobalAdmin ? 'Super Admin' : 'Admin'}
-        </Badge>
-      )
-    }
-  },
-  { 
-    accessorKey: 'status', 
-    header: 'Status', 
-    cell: ({ getValue }) => {
-      const status = getValue<boolean>()
-      return (
-        <Badge variant={status ? 'default' : 'destructive'} className={status ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {status ? 'Ativo' : 'Inativo'}
-        </Badge>
-      )
-    }
-  },
-]
+function buildColumns(companyById: Record<string, Company | undefined>): ColumnDef<User, unknown>[] {
+  return [
+   
+    {
+      accessorKey: 'businessName',
+      header: 'Empresa',
+      cell: ({ row }) => {
+        const user = row.original
+        const company = user.companyId ? companyById[user.companyId] : undefined
+        return <span className="text-sm text-foreground whitespace-nowrap">{company?.businessName ?? '-'}</span>
+      }
+    },
+    {
+      accessorKey: 'cod',
+      header: 'Código',
+      cell: ({ row }) => {
+        const user = row.original
+        const company = user.companyId ? companyById[user.companyId] : undefined
+        return <span className="text-sm text-foreground whitespace-nowrap">{company?.cod ?? '-'}</span>
+      }
+    },
+    
+    { accessorKey: 'phone', header: 'Telefone', cell: ({ row }) => {
+      const phone = row.getValue('phone') as string
+      return <div>{phone}</div>
+    } },
+    { 
+      accessorKey: 'isGlobalAdmin', 
+      header: 'Tipo', 
+      cell: ({ getValue }) => {
+        const isGlobalAdmin = getValue<boolean>()
+        return (
+          <Badge variant={isGlobalAdmin ? 'default' : 'secondary'} className={isGlobalAdmin ? 'bg-blue-500' : 'bg-gray-200 text-gray-700'}>
+            {isGlobalAdmin ? 'Super Admin' : 'Admin'}
+          </Badge>
+        )
+      }
+    },
+    { 
+      accessorKey: 'status', 
+      header: 'Status', 
+      cell: ({ getValue }) => {
+        const status = getValue<boolean>()
+        return (
+          <Badge variant={status ? 'default' : 'destructive'} className={status ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
+            {status ? 'Ativo' : 'Inativo'}
+          </Badge>
+        )
+      }
+    },
+  ]
+}
 
 function ListUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -51,6 +73,17 @@ function ListUsers() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const companyId = useAuthStore((state) => state.companyId) || "";
   const { users, isLoading, isError, deleteUser, isDeleting } = useUsers(companyId)
+  const companiesQuery = useCompaniesQuery()
+
+  const companyById = React.useMemo<Record<string, Company | undefined>>(() => {
+    const map: Record<string, Company | undefined> = {}
+    for (const c of (companiesQuery.data ?? [])) {
+      if (c.id) map[c.id] = c
+    }
+    return map
+  }, [companiesQuery.data])
+
+  const columns = React.useMemo(() => buildColumns(companyById), [companyById])
 
   const handleEdit = (user: User) => {
     setSelectedUser(user)
@@ -80,7 +113,7 @@ function ListUsers() {
           columns={columns}
           searchKey="phone"
           placeholder="Pesquisar por telefone..."
-          isLoading={isLoading}
+          isLoading={isLoading || companiesQuery.isLoading}
           actionButton={{
             label: 'Novo Utilizador',
             component: <CreateUserDialog />

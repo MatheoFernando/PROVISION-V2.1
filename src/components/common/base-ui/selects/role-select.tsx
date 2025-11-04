@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
 import { createRoleSchema } from "@/infrastructure/schema/schema-role";
-import type { Role } from "@/types/domain";
+import type { Role } from "@/infrastructure/types/domain";
 import { z } from "zod";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { Input } from "@/components/ui/input";

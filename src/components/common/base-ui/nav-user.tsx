@@ -28,6 +28,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation"
 
 interface UserData {
   name: string
@@ -43,7 +44,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const AvatarIcon = user.avatarIcon || User
-
+  const router = useRouter()
   return (
     <SidebarMenu className="w-auto sm:w-fit">
       <SidebarMenuItem>
@@ -71,19 +72,19 @@ export function NavUser({
             <DropdownMenuLabel className="p-2 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 {user.avatar ? (
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-8 w-8 md:h-10 md:w-10 rounded-lg">
                     <AvatarImage src={user.avatar} alt={user.name} />
                     <AvatarFallback className="rounded-lg">
-                      <AvatarIcon className="size-4" />
+                      <AvatarIcon className="size-4 md:size-5" />
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border ">
-                    <AvatarIcon className="size-4" />
+                  <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full border ">
+                    <AvatarIcon className="size-4 md:size-5" />
                   </div>
                 )}
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium text-foreground">{user.name}</span>
+                  <span className="truncate font-medium text-foreground text-base">{user.name}</span>
                   <span className="truncate text-xs text-muted-foreground">{user.email}</span>
                 </div>
               </div>
@@ -91,7 +92,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
            
-              <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500">
+              <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500" onClick={() => router.push('/dashboard/user-settings')}>
                 <Settings className="hover:bg-blue-100 hover:text-blue-500" />
                 Configurações
               </DropdownMenuItem>

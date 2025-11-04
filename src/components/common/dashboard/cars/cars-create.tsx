@@ -34,14 +34,21 @@ export function CarsCreate() {
       capacity: 0,
       containerId: "",
       companyId: companyId ?? "",
-      geoLocationEntityId: "",
+      geoLocationId: "",
     },
   });
 
   const onSubmit = async (data: CreateCarInput) => {
     try {
       setIsSubmitting(true);
-      await createCar.mutateAsync(data as any);
+      const payload = {
+        ...data,
+        geoLocationId:
+          data?.geoLocationId && typeof data.geoLocationId === "string" && data.geoLocationId.trim() !== ""
+            ? data.geoLocationId
+            : null,
+      } as CreateCarInput;
+      await createCar.mutateAsync(payload as any);
       form.reset();
     } catch (error) {
     } finally {
@@ -135,12 +142,12 @@ export function CarsCreate() {
               <Label htmlFor="geoLocationEntityId">Localização  *</Label>
               <Input
                 id="geoLocationEntityId"
-                {...form.register("geoLocationEntityId")}
+                {...form.register("geoLocationId")}
                 placeholder="Digite o ID da localização"
               />
-              {form.formState.errors.geoLocationEntityId && (
+              {form.formState.errors.geoLocationId && (
                 <p className="text-sm text-red-500">
-                  {form.formState.errors.geoLocationEntityId.message}
+                  {form.formState.errors.geoLocationId.message}
                 </p>
               )}
             </div>

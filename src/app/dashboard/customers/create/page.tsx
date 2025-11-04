@@ -75,7 +75,9 @@ function CustomersCreatePage() {
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="bg-slate-400 p-6">
+           
+{/*
+  <div className="bg-slate-400 p-6">
               <div className="flex flex-col items-center">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-full bg-white shadow-lg overflow-hidden border-4 border-white">
@@ -110,7 +112,7 @@ function CustomersCreatePage() {
                 </p>
               </div>
             </div>
-
+             */}
             <div className="p-8 space-y-6">
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

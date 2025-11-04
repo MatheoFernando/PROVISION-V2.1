@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-import { RolePermission } from "../../types/domain";
+import { RolePermission } from "../types/domain";
 
 export function useRolePermissions() {
   return useQuery({

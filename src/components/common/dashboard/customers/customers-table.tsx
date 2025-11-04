@@ -4,10 +4,8 @@ import { useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCustomers } from "@/infrastructure/hooks/useCustomers";
-import { Customer } from "@/types/domain";
+import { Customer } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CustomersView } from "./customers-view";
@@ -17,22 +15,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Customer>[] = [
-  {
-    accessorKey: "photo",
-    header: "Foto",
-    cell: ({ row }) => {
-      const photo = row.getValue("photo") as string;
-      const name = row.original.name;
-      return (
-        <Avatar className="h-8 w-8 rounded-sm">
-          <AvatarImage src={photo} alt={name} className="rounded-sm" />
-          <AvatarFallback className="bg-blue-100 text-blue-600 font-medium text-base rounded-sm">
-            {name.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-      );
-    },
-  },
+ 
   {
     accessorKey: "cod",
     header: "Código",
@@ -49,18 +32,7 @@ const columns: ColumnDef<Customer>[] = [
       return <div>{name}</div>;
     },
   },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default" className="bg-green-400 text-white">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary" className="bg-red-400 text-white">Inativo</Badge>
-      );
-    },
-  },
+
   {
     accessorKey: "taxName",
     header: "Nome Fiscal",

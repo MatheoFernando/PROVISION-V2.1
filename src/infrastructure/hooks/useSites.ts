@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import type { Site } from "../../types/domain";
+import type { Site } from "../types/domain";
 import type { CreateSite } from "../schema/schema-sites";
 
 export function useSites() {

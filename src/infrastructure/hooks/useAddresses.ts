@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-import { Address } from "../../types/domain";
+import { Address } from "../types/domain";
 
 export function useAddresses(companyId?: string) {
   return useQuery({

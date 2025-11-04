@@ -13,16 +13,18 @@ import {
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
 import { useCreateSector, useSectors } from "@/infrastructure/hooks/useSectors";
-import { Sector } from "@/types/domain";
+import { Sector } from "@/infrastructure/types/domain";
 import { sectorSchema } from "@/infrastructure/schema/schema-sector";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
 
 interface SectorSelectProps {
   value?: string;
   onChange: (value: string) => void;
   companyId: string;
-  employeeId: string;
+  employeeId?: string;
   zoneId: string;
 }
 
@@ -44,11 +46,16 @@ export function SectorSelect({
   });
 
   function handleSubmit(data: Sector) {
-    createSector.mutate(data, {
+    const effectiveEmployeeId = employeeId || data.employeeId;
+    if (!effectiveEmployeeId) {
+      form.setError("employeeId", { message: "Funcionário é obrigatório" });
+      return;
+    }
+    createSector.mutate({ ...(data as any), employeeId: effectiveEmployeeId, zoneId, companyId } as any, {
       onSuccess: (created: any) => {
         setOpen(false);
         onChange(created.id);
-        form.reset();
+        form.reset({ name: "", employeeId, zoneId, companyId });
       },
     });
   }
@@ -94,8 +101,14 @@ export function SectorSelect({
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => setOpen(true)}
-        className="shrink-0"
+        onClick={() => {
+          if (!zoneId) {
+            toast.error("Selecione uma zona antes de criar um setor.");
+            return;
+          }
+          setOpen(true);
+        }}
+        className="cursor-pointer shrink-0"
       >
         <Plus className="w-4 h-4" />
       </Button>
@@ -106,24 +119,42 @@ export function SectorSelect({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-3 mt-2"
           >
-            <Label>
-
-            </Label>
-            <Input
-              {...form.register("name")}
-              className="input w-full"
-              placeholder="Nome do setor"
-              
-            />
-            {form.formState.errors.name && (
-              <span className="text-red-500 text-xs">
-                {form.formState.errors.name.message}
-              </span>
-            )}
+     
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name-sector">Nome do setor</Label>
+                <Input id="name-sector" {...form.register("name")} placeholder="Nome do setor" />
+                {form.formState.errors.name && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.name.message as string}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Funcionário</Label>
+                <EmployeeSelect
+                  value={(form.watch("employeeId") as string) || ""}
+                  onChange={(v) => form.setValue("employeeId", v, { shouldValidate: true })}
+                  companyId={companyId}
+                />
+                {(form.formState as any).errors?.employeeId && (
+                  <span className="text-red-500 text-xs">
+                    {((form.formState as any).errors.employeeId?.message as string) || "Funcionário é obrigatório"}
+                  </span>
+                )}
+              </div>
+            </div>
         
             <div className="col-span-2 flex justify-end mt-4">
-              <Button type="submit" className="bg-blue-400">
-                Salvar
+              <Button type="submit" className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white">
+                {createSector.status === "pending" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar"
+                )}
               </Button>
             </div>
           </form>

@@ -15,7 +15,7 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { usePermissions, useCreatePermission } from "@/infrastructure/hooks/usePermissions";
 import { createPermissionSchema } from "@/infrastructure/schema/schema-permission";
 import type { CreatePermissionForm } from "@/infrastructure/schema/schema-permission";
-import type { Permission } from "@/types/domain";
+import type { Permission } from "@/infrastructure/types/domain";
 import { Input } from "@/components/ui/input";
 
 interface PermissionSelectProps {

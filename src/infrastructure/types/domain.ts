@@ -13,7 +13,7 @@ export interface Address {
 export interface Area {
   id?: string;
   name: string;
-  employeeId: string;
+  employeeId?: string;
   companyId: string;
   createdAt?: string;
   updatedAt?: string;
@@ -46,6 +46,7 @@ export interface Car {
   model: string;
   capacity: number;
   containerId: string;
+  geoLocationId: string | null;
   companyId: string;
   createdAt?: string;
   updatedAt?: string;
@@ -312,11 +313,18 @@ export interface TypeEquipment {
 export interface Zone {
   id?: string;
   name: string;
-  employeeId: string;
-  areaId: string;
+  employeeId: string | undefined;
   companyId: string;
+  areaId?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface CreateZonePayload {
+  name: string;
+  companyId: string;
+  employeeId?: string;
+  areaId: string;
 }
 
 export interface TypeOccorrence {

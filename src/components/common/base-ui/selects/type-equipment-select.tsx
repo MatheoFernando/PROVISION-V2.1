@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus } from "lucide-react";
 import { useCreateTypeEquipment, useTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
 import { createTypeEquipmentSchema } from "@/infrastructure/schema/schema-type-equipment";
-import type { TypeEquipment } from "@/types/domain";
+import type { TypeEquipment } from "@/infrastructure/types/domain";
 import { toast } from "sonner";
 
 interface TypeEquipmentSelectProps {

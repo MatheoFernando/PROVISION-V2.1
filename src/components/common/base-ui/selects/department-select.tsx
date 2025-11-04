@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Plus } from "lucide-react";
 import { departmentSchema } from "@/infrastructure/schema/schema-department";
-import type { Department } from "@/types/domain";
+import type { Department } from "@/infrastructure/types/domain";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

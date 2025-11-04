@@ -16,7 +16,7 @@ import {
   useContacts,
   useCreateContact,
 } from "@/infrastructure/hooks/useContacts";
-import type { Contact } from "@/types/domain";
+import type { Contact } from "@/infrastructure/types/domain";
 import { contactSchema } from "@/infrastructure/schema/schema-contact";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

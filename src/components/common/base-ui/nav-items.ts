@@ -1,4 +1,3 @@
-// src/components/common/base-ui/nav-items.ts
 import {
   type LucideIcon,
   Home,
@@ -8,7 +7,6 @@ import {
   User2,
   Briefcase,
   Hammer,
-  Package,
   UserCheck,
   Building,
   Car,
@@ -46,13 +44,12 @@ export const allNavItems: BaseNavItem[] = [
     title: "Utilizadores",
     url: "/dashboard/users",
     icon: Users,
-    requiresGlobalAdmin: true,
   },
   {
     title: "Empresas",
     url: "/dashboard/companies",
     icon: Building2,
-    requiresGlobalAdmin: true,
+    requiresGlobalAdmin: false,
   },
   {
     title: "Equipamentos",
@@ -60,12 +57,7 @@ export const allNavItems: BaseNavItem[] = [
     icon: Hammer,
     requiresGlobalAdmin: false,
   },
-  {
-    title: "Containers",
-    url: "/dashboard/containers",
-    icon: Package,
-    requiresGlobalAdmin: false,
-  },
+
   {
     title: "Configurações",
     url: "/dashboard/settings",

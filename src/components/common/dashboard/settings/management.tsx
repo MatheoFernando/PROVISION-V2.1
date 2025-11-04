@@ -44,7 +44,7 @@ import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import { IconDotsVertical } from "@tabler/icons-react"
 import { useUsers } from '@/infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
-import type { User as UserEntity, Company } from '@/types/domain'
+import type { User as UserEntity, Company } from '@/infrastructure/types/domain'
 
 type User = UserEntity
 

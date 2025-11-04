@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-import { Area } from "../../types/domain";
+import { Area } from "../types/domain";
 
 export function useAreas() {
   return useQuery({
@@ -28,6 +28,7 @@ export function useCreateArea() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<Area, 'id' | 'createdAt' | 'updatedAt'>): Promise<Area> => {
+      
       const { data } = await api.post("/area/create", payload);
       return data;
     },

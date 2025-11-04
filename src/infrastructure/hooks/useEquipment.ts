@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { Equipment } from "../../types/domain";
+import { Equipment } from "../types/domain";
 import { z } from "zod";
 import { createEquipmentSchema } from "../schema/schema-equipment";
 import { toast } from "sonner";

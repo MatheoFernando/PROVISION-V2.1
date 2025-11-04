@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Plus } from "lucide-react";
 import { addressSchema } from "@/infrastructure/schema/schema-address";
-import type { Address } from "@/types/domain";
+import type { Address } from "@/infrastructure/types/domain";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

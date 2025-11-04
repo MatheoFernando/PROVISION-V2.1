@@ -1,17 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { Employee } from "../../types/domain";
+import { Employee } from "../types/domain";
 import { z } from "zod";
 import { createEmployeeSchema } from "../schema/schema-employees";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
-export function useEmployees() {
+export function useEmployees(companyId?: string) {
   return useQuery({
-    queryKey: ["employees"],
+    queryKey: ["employees", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<Employee[]> => {
-      const response = await api.get("/employees");
-      return response.data;
+      const response = await api.get(`/employee/getAll/${companyId}`);
+      return response.data.data;
     },
   });
 }
@@ -21,7 +22,7 @@ export function useCreateEmployee() {
   
   return useMutation<Employee, unknown, CreateEmployeeInput>({
     mutationFn: async (data: CreateEmployeeInput): Promise<Employee> => {
-      const response = await api.post("/employees", data);
+      const response = await api.post("/employee/create", data);
       return response.data;
     },
     onSuccess: () => {

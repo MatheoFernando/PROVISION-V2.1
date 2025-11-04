@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { api } from "@/infrastructure/utils/api";
 import { companySchema } from "@/infrastructure/schema/schema-company";
 import { z } from "zod";
-import type { Company } from "@/types/domain";
+import type { Company } from "@/infrastructure/types/domain";
 import {
   useCreateCompanyMutation,
   useUpdateCompanyMutation,

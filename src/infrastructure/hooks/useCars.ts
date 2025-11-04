@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { Car } from "../../types/domain";
+import { Car } from "../types/domain";
 import { z } from "zod";
 import { createCarSchema } from "../schema/schema-cars";
 import { toast } from "sonner";
@@ -35,7 +35,14 @@ export function useCreateCar() {
   
   return useMutation<Car, unknown, CreateCarInput>({
     mutationFn: async (data: CreateCarInput): Promise<Car> => {
-      const response = await api.post("/car/create", data);
+      const payload = {
+        ...data,
+        geoLocationId:
+          data?.geoLocationId && typeof data.geoLocationId === "string" && data.geoLocationId.trim() !== ""
+            ? data.geoLocationId
+            : null,
+      } as CreateCarInput;
+      const response = await api.post("/car/create", payload);
       return response.data;
     },
     onSuccess: async () => {

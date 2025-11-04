@@ -34,7 +34,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
-import type { User } from "@/types/domain";
+import type { User } from "@/infrastructure/types/domain";
 import { Badge } from "@/components/ui/badge";
 import { useRoles } from "@/infrastructure/hooks/useRoles";
 import {

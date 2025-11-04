@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { TypeEquipment } from "../../types/domain";
+import { TypeEquipment } from "../types/domain";
 import { toast } from "sonner";
 
 const QUERY_KEY = ["type-equipment"] as const;

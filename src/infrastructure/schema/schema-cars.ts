@@ -7,5 +7,5 @@ export const createCarSchema = z.object({
   containerId: z.string(),
   companyId: z.string(),
   model:z.string().min(1, "Modelo é obrigatório"),
-  geoLocationEntityId: z.string(),
+  geoLocationId: z.string(),
 });

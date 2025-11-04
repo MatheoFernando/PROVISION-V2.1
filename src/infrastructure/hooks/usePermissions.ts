@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-import { Permission } from "../../types/domain";
+import { Permission } from "../types/domain";
 
 export function usePermissions(companyId?: string) {
   return useQuery({

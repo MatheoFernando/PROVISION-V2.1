@@ -14,12 +14,13 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { areaSchema } from "@/infrastructure/schema/schema-area";
-import { Area } from "@/types/domain";
+import { Area } from "@/infrastructure/types/domain";
 import { Label } from "@/components/ui/label";
+import { EmployeeSelect } from "./employee-select";
 
 type AreaForm = {
   name: string;
-  employeeId: string;
+  employeeId?: string;
   companyId: string;
 };
 
@@ -27,7 +28,7 @@ interface AreaSelectProps {
   value?: string;
   onChange: (value: string) => void;
   companyId: string;
-  employeeId: string;
+  employeeId?: string;
 }
 
 export function AreaSelect({
@@ -44,19 +45,27 @@ export function AreaSelect({
     resolver: zodResolver(
       areaSchema.pick({ name: true, companyId: true, employeeId: true })
     ),
-    defaultValues: { name: "", companyId, employeeId },
+    defaultValues: { name: "", companyId: companyId, employeeId: "" },
   });
   function handleSubmit(data: AreaForm) {
-    createArea.mutate(data, {
-      onSuccess: (created) => {
-        setOpen(false);
-        onChange(created.id!);
-        form.reset({ name: "", companyId, employeeId });
-      },
-    });
+    const effectiveEmployeeId = data.employeeId || employeeId || "";
+    createArea.mutate(
+      { ...data, employeeId: effectiveEmployeeId },
+      {
+        onSuccess: (created) => {
+          setOpen(false);
+          onChange(created.id!);
+          form.reset({ name: "", companyId });
+        },
+      }
+    );
   }
   const list = Array.isArray(areas) ? areas : [];
-  const filtered = list.filter((a: Area) => String(a?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+  const filtered = list.filter((a: Area) =>
+    String(a?.name ?? "")
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  );
 
   return (
     <div className="flex items-stretch gap-2 w-full">
@@ -79,12 +88,20 @@ export function AreaSelect({
               />
             </div>
             {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                Não há dados disponíveis.
+              </div>
             ) : (
-              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+              <div
+                className={
+                  filtered.length > 7
+                    ? "max-h-60 overflow-y-auto"
+                    : "max-h-full"
+                }
+              >
                 {filtered.map((a: Area) => (
                   <SelectItem key={a.id} value={a.id!}>
-                    {a.name}
+                    <span className="truncate">{a.name}</span>
                   </SelectItem>
                 ))}
               </div>
@@ -96,7 +113,9 @@ export function AreaSelect({
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+        }}
         className="cursor-pointer shrink-0"
       >
         <Plus className="w-4 h-4" />
@@ -106,15 +125,32 @@ export function AreaSelect({
           <DialogHeader>Criar Área</DialogHeader>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-3 mt-2"
+            className="space-y-3 mt-2 "
           >
-            <Label htmlFor="name-area">Nome da área</Label>
-            <Input id="name-area" {...form.register("name")} />
-            {form.formState.errors.name && (
+          <div className="grid grid-cols-2 gap-4">
+           <div className="space-y-2">
+           <Label htmlFor="name-area">Nome da área</Label>
+           <Input id="name-area" {...form.register("name")} placeholder="Nome da área" />
+           {form.formState.errors.name && (
               <span className="text-red-500 text-xs">
                 {form.formState.errors.name.message as string}
               </span>
             )}
+           </div>
+           <div className="space-y-2">
+            <Label>Funcionário</Label>
+            <EmployeeSelect
+              value={(form.watch("employeeId") as string) || ""}
+              onChange={(v: string) => form.setValue("employeeId", v, { shouldValidate: true })}
+              companyId={companyId}
+            />
+            {form.formState.errors.employeeId && (
+              <span className="text-red-500 text-xs">
+                {form.formState.errors.employeeId.message as string}
+              </span>
+            )}
+            </div>
+           </div>
             <div className="flex justify-end mt-4">
               <Button
                 type="submit"

@@ -54,9 +54,9 @@ export function ServicesMenu() {
         <Button 
           variant="ghost" 
           size="lg" 
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200 p-2 cursor-pointer"
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200  cursor-pointer"
         >
-          <Grip className="h-5 w-5 md:h-6 md:w-6" />
+          <Grip className="h-56 w-6 " />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 

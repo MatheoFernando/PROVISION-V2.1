@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/infrastructure/utils/api'
-import type { User, CreateUserPayload, UpdateUserPayload } from '@/types/domain'
+import type { User, CreateUserPayload, UpdateUserPayload } from '@/infrastructure/types/domain'
 import { toast } from 'sonner'
 
 export function useUsersQuery(companyId?: string) {

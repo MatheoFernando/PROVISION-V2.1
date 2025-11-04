@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-import { Contact } from "../../types/domain";
+import { Contact } from "../types/domain";
 
 export function useContacts(): UseQueryResult<Contact[]>;
 export function useContacts(companyId?: string): UseQueryResult<Contact[]>;

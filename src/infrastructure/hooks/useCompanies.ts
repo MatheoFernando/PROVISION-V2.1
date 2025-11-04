@@ -6,7 +6,7 @@ import type {
   Company, 
   CreateCompanyPayload, 
   UpdateCompanyPayload 
-} from '@/types/domain'
+} from '@/infrastructure/types/domain'
 import type { 
   CompanyModuleWithDetails, 
   UpdateCompanyModule, 

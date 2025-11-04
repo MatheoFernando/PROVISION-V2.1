@@ -4,7 +4,7 @@ import { useState } from "react";
 import {  Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCars } from "@/infrastructure/hooks/useCars";
-import { Car } from "@/types/domain";
+import { Car } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

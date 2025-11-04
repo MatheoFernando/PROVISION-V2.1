@@ -58,7 +58,7 @@ export function Toolbar<TData extends RowData>({
   onClearDateRange,
 }: ToolbarProps<TData>) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
+    <div className="flex flex-col gap-3 md:flex-row lg:items-center lg:justify-between ">
       <div className="flex w-full items-center gap-3">
         <div className="flex w-full max-w-xs items-center gap-2">
           <Input

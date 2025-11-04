@@ -1,41 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
-import { Employee } from "@/types/domain";
+import { Employee } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeesView } from "./employees-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
 import { toast } from "sonner";
-import Badge from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 const columns: ColumnDef<Employee>[] = [
-  {
-    accessorKey: "photo",
-    header: "Foto",
-    cell: ({ row }) => {
-      const photo = row.getValue("photo") as string;
-      return <div><Avatar className="h-8 w-8 rounded-sm">
-        <AvatarImage src={photo} alt="teste" className="rounded-sm" />
-        <AvatarFallback className="bg-primary/10 text-primary font-medium text-base rounded-sm">
-          f
-        </AvatarFallback>
-      </Avatar></div>;
-    },
-  },
+
   {
     accessorKey: "cod",
     header: "Código",
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
-      return <div className="text-sm text-muted-foreground">{cod}</div>;
+      return <div className="text-sm text-muted-foreground font-medium">{cod}</div>;
     },
   },
   {
@@ -60,7 +47,7 @@ const columns: ColumnDef<Employee>[] = [
     header: "Site",
     cell: ({ row }) => {
       const siteId = row.getValue("siteId") as string;
-      return <div>{siteId}</div>;
+      return <div>{siteId ?? "Sem site"}</div>;
     },
   },
   {
@@ -71,42 +58,17 @@ const columns: ColumnDef<Employee>[] = [
       return <div>{departmentId}</div>;
     },
   },
+ 
   {
-    accessorKey: "userId",
-    header: "Usuário",
-    cell: ({ row }) => {
-      const userId = row.getValue("userId") as string;
-      return <div>{userId}</div>;
-    },
-  },
-  {
-    accessorKey: "functionEntityId",
+    accessorKey: "function",
     header: "Função",
     cell: ({ row }) => {
-      const functionEntityId = row.getValue("functionEntityId") as string;
-      return <div>{functionEntityId}</div>;
+      const functionValue = row.getValue("function") as string;
+      return <div>{functionValue}</div>;
     },
   },
-  {
-    accessorKey: "rolesEntityId",
-    header: "Cargo",
-    cell: ({ row }) => {
-      const rolesEntityId = row.getValue("rolesEntityId") as string;
-      return <div>{rolesEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
-      );
-    },
-  },
+ 
+ 
 
   {
     accessorKey: "createdAt",
@@ -119,7 +81,8 @@ const columns: ColumnDef<Employee>[] = [
 ];
 
 export function EmployeesTable() {
-  const { data: employees = [], isLoading } = useEmployees();
+  const companyId = useAuthStore((state) => state.companyId) ?? "";
+  const { data: employees = [], isLoading } = useEmployees(companyId);
   const router = useRouter();
   const deleteEmployee = useDeleteEmployee();
   const [searchTerm, setSearchTerm] = useState("");
@@ -127,10 +90,6 @@ export function EmployeesTable() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
-
-  const filteredData = employees.filter((item) =>
-    item.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleView = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -160,16 +119,12 @@ export function EmployeesTable() {
     }
   };
 
-  const handleCreate = () => {
-    setSelectedEmployee(undefined);
-    setIsCreateOpen(true);
-  };
 
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
+        data={employees}
         isLoading={isLoading}
         searchKey="fullName"
         actionButton={{
@@ -197,7 +152,6 @@ export function EmployeesTable() {
         ]}
       />
 
-  
       <EmployeesView
         employee={selectedEmployee}
         isOpen={isViewOpen}
@@ -212,8 +166,8 @@ export function EmployeesTable() {
         }}
         onConfirm={handleConfirmDelete}
         title="Excluir Funcionário"
-        message="Tem certeza que deseja excluir este funcionário? Esta ação não pode ser desfeita."
         isLoading={deleteEmployee.isPending}
+        message={`Tem certeza que deseja excluir este funcionário ${selectedEmployee?.fullName ?? "Não informado"})? Esta ação não pode ser desfeita.`}
       />
     </div>
   );
