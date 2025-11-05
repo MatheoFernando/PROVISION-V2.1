@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus } from "lucide-react";
 import { useContainers } from "@/infrastructure/hooks/useContainers";
-import { CreateContainerModal } from "@/components/common/dashboard/containers/containers-create-modal";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface ContainerSelectProps {
@@ -18,7 +17,6 @@ export function ContainerSelect({ value, onChange, required = false }: Container
   const { data: containers = [], isLoading } = useContainers();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   const list = useMemo(() => {
     const arr = Array.isArray(containers)
@@ -78,18 +76,7 @@ export function ContainerSelect({ value, onChange, required = false }: Container
         </Button>
       </div>
 
-      <CreateContainerModal
-        isOpen={open}
-        onClose={() => setOpen(false)}
-        onCreated={(created) => {
-          const createdAny = created as any;
-          const newId = createdAny?.id ?? createdAny?.containerId ?? createdAny?.data?.id ?? "";
-          if (newId) onChange(newId);
-          queryClient.invalidateQueries({ queryKey: ["containers"] });
-          setOpen(false);
-        
-        }}
-      />
+   
     </div>
   );
 }

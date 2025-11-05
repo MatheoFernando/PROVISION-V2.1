@@ -11,7 +11,6 @@ import {
   type CreateSite,
 } from "@/infrastructure/schema/schema-sites";
 import { useCreateSite } from "@/infrastructure/hooks/useSites";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { SectorSelect } from "@/components/common/base-ui/selects/sector-select";
@@ -46,27 +45,24 @@ export default function Page() {
   const onSubmit = async (data: CreateSite) => {
     try {
       setIsSubmitting(true);
-      await createSite.mutateAsync({ ...data, companyId });
-      toast.success("Site criado com sucesso!");
+      await createSite.mutateAsync({ ...data, companyId} as any);
       router.back();
       form.reset();
     } catch (error) {
-      toast.error("Erro ao salvar site");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div>
+
       <div>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Novo Site</h1>
         </div>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-8 space-y-6">
-              <div>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+         
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="cod" className="text-slate-700">
@@ -229,6 +225,7 @@ export default function Page() {
                         {...form.register("geoLocationId")}
                         placeholder="geolocalização (ex.: GEO-XYZ)"
                         className="rounded-lg "
+                        type="text"
                       />
                     </div>
 
@@ -238,8 +235,6 @@ export default function Page() {
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
             </div>
             <div className="bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-200">
               <Button
@@ -261,6 +256,6 @@ export default function Page() {
           </div>
         </form>
       </div>
-    </div>
+ 
   );
 }

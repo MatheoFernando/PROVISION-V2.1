@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+
 import { Label } from "@/components/ui/label";
 import { createEmployeeSchema } from "@/infrastructure/schema/schema-employees";
 import { z } from "zod";
@@ -85,7 +87,7 @@ export default function EmployeesCreatePage() {
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
             {/*
             <div className="bg-blue-400 p-6">
               <div className="flex flex-col items-center">
@@ -124,7 +126,6 @@ export default function EmployeesCreatePage() {
             </div>
       */}
 
-            <div className="p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-slate-700">
@@ -241,7 +242,7 @@ export default function EmployeesCreatePage() {
                     </p>
                   )}
                 </div>
-              </div>
+       
             </div>
 
             {/* Botões de Ação */}

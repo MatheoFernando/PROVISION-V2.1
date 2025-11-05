@@ -74,7 +74,7 @@ function CustomersCreatePage() {
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
            
 {/*
   <div className="bg-slate-400 p-6">
@@ -113,8 +113,7 @@ function CustomersCreatePage() {
               </div>
             </div>
              */}
-            <div className="p-8 space-y-6">
-              <div>
+           
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="cod" className="text-slate-700">
@@ -230,8 +229,7 @@ function CustomersCreatePage() {
                         </p>
                       )}
                     </div>
-                  </div>
-                </div>
+                  
               </div>
             </div>
 

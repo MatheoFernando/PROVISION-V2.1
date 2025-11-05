@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { OccurrenceTable } from "./occurrence-table"
-import { CreateOccurrenceModal } from "./occurrence-modals"
 import { useOccurrences } from "@/infrastructure/hooks/useOccurrences"
 
 export default function Occurrence() {
@@ -25,15 +24,12 @@ export default function Occurrence() {
       )}
 
       <OccurrenceTable
-        data={occurrences || []}
+        data={occurrences}
         isLoading={isLoading}
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
-      <CreateOccurrenceModal
-        isOpen={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
-      />
+    
     </div>
   )
 }

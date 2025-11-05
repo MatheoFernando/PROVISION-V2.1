@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
@@ -14,82 +14,84 @@ import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useDepartments } from "@/infrastructure/hooks/useDepartments";
 
-const columns: ColumnDef<Employee>[] = [
-
-  {
-    accessorKey: "cod",
-    header: "Código",
-    cell: ({ row }) => {
-      const cod = row.getValue("cod") as string;
-      return <div className="text-sm text-muted-foreground font-medium">{cod}</div>;
-    },
-  },
-  {
-    accessorKey: "fullName",
-    header: "Nome Completo",
-    cell: ({ row }) => {
-      const fullName = row.getValue("fullName") as string;
-      return <div>{fullName}</div>;
-    },
-  },
-
-  {
-    accessorKey: "contactId",
-    header: "Contato",
-    cell: ({ row }) => {
-      const contactId = row.getValue("contactId") as string;
-      return <div>{contactId}</div>;
-    },
-  },
-  {
-    accessorKey: "siteId",
-    header: "Site",
-    cell: ({ row }) => {
-      const siteId = row.getValue("siteId") as string;
-      return <div>{siteId ?? "Sem site"}</div>;
-    },
-  },
-  {
-    accessorKey: "departmentId",
-    header: "Departamento",
-    cell: ({ row }) => {
-      const departmentId = row.getValue("departmentId") as string;
-      return <div>{departmentId}</div>;
-    },
-  },
- 
-  {
-    accessorKey: "function",
-    header: "Função",
-    cell: ({ row }) => {
-      const functionValue = row.getValue("function") as string;
-      return <div>{functionValue}</div>;
-    },
-  },
- 
- 
-
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
-    },
-  },
-];
 
 export function EmployeesTable() {
   const companyId = useAuthStore((state) => state.companyId) ?? "";
   const { data: employees = [], isLoading } = useEmployees(companyId);
+  const { data: departments = [] } = useDepartments();
   const router = useRouter();
   const deleteEmployee = useDeleteEmployee();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
+
+  const departmentIdToName = useMemo(() => {
+    return Object.fromEntries(
+      (departments ?? []).map((department) => [department.id, department.name])
+    ) as Record<string, string>;
+  }, [departments]);
+
+  const columns: ColumnDef<Employee>[] = [
+    {
+      accessorKey: "cod",
+      header: "Código",
+      cell: ({ row }) => {
+        const cod = row.getValue("cod") as string;
+        return <div className="text-sm text-muted-foreground font-medium">{cod}</div>;
+      },
+    },
+    {
+      accessorKey: "fullName",
+      header: "Nome Completo",
+      cell: ({ row }) => {
+        const fullName = row.getValue("fullName") as string;
+        return <div>{fullName}</div>;
+      },
+    },
+    {
+      accessorKey: "contactId",
+      header: "Contato",
+      cell: ({ row }) => {
+        const contactId = row.getValue("contactId") as string;
+        return <div>{contactId}</div>;
+      },
+    },
+    {
+      accessorKey: "siteId",
+      header: "Site",
+      cell: ({ row }) => {
+        const siteId = row.getValue("siteId") as string;
+        return <div>{siteId ?? "Sem site"}</div>;
+      },
+    },
+    {
+      accessorKey: "departmentId",
+      header: "Departamento",
+      cell: ({ row }) => {
+        const departmentId = row.getValue("departmentId") as string;
+        const departmentName = departmentIdToName[departmentId] ?? "Não informado";
+        return <div>{departmentName}</div>;
+      },
+    },
+    {
+      accessorKey: "function",
+      header: "Função",
+      cell: ({ row }) => {
+        const functionValue = row.getValue("function") as string;
+        return <div>{functionValue}</div>;
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Data de Criação",
+      cell: ({ row }) => {
+        const date = row.getValue("createdAt") as Date;
+        return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+      },
+    },
+  ];
 
   const handleView = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -98,7 +100,7 @@ export function EmployeesTable() {
 
   const handleEdit = (employee: Employee) => {
     setSelectedEmployee(employee);
-    setIsCreateOpen(true);
+    router.push(`/dashboard/employees/edit/${employee.id}`);
   };
 
   const handleDelete = (employee: Employee) => {

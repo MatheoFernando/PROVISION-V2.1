@@ -3,8 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FunnelPlus, LayoutGrid, List, Plus, X } from "lucide-react";
+import { FunnelPlus, Plus, X } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -58,7 +57,7 @@ export function Toolbar<TData extends RowData>({
   onClearDateRange,
 }: ToolbarProps<TData>) {
   return (
-    <div className="flex flex-col gap-3 md:flex-row lg:items-center lg:justify-between ">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between ">
       <div className="flex w-full items-center gap-3">
         <div className="flex w-full max-w-xs items-center gap-2">
           <Input
@@ -74,24 +73,12 @@ export function Toolbar<TData extends RowData>({
       </div>
 
       <div className="flex items-center gap-2  w-full justify-end">
-        <div className="text-sm text-muted-foreground flex items-center border-r border-gray-400 dark:border-gray-800 pr-2">
+        <div className="text-sm text-muted-foreground flex items-center  pr-2">
           <Badge variant="outline" className="border-none text-base">
             Total: {table.getRowModel().rows.length} item
           </Badge>
         </div>
-        <Tabs value={view} onValueChange={(v) => onChangeView(v as any)}>
-          <TabsList className="h-11 max-w-lg w-full">
-            <TabsTrigger value="table" className="gap-2 cursor-pointer">
-              <List className="size-4" />
-              <span className="sr-only">Tabela</span>
-            </TabsTrigger>
-            <TabsTrigger value="cards" className="gap-2 cursor-pointer">
-              <LayoutGrid className="size-4" />
-              <span className="sr-only">Cards</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
+    
         <Drawer
           open={isFilterOpen}
           onOpenChange={setIsFilterOpen}

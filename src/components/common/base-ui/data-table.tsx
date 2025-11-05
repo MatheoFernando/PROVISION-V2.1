@@ -17,7 +17,6 @@ import {
 } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -26,21 +25,10 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Columns, Plus, Eye, MoreHorizontal, CircleAlert } from "lucide-react"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {  MoreHorizontal } from "lucide-react"
 import { type DateRange } from "react-day-picker"
 import { Toolbar } from "./data-table/toolbar"
 import { TableView } from "./data-table/table-view"
-import { CardGrid } from "./data-table/card-grid"
 
 interface ActionButton<TData> {
   label: string
@@ -174,10 +162,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         <TableView table={table} isLoading={isLoading} colSpan={columnsWithSelection.length} />
       )}
 
-      {viewAsCard && (
-        <CardGrid table={table} isLoading={isLoading} />
-      )}
-
+  
    
 
       <div className="flex items-center justify-end px-4 pt-4 border-t border-border">
@@ -242,7 +227,7 @@ export function createSelectionColumn<TData extends RowData>(): ColumnDef<TData>
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 40,
+    size: 1,
   }
 }
 

@@ -13,7 +13,6 @@ import {
 import { Plus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { zoneSchema } from "@/infrastructure/schema/schema-zone";
-import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { useCreateZone, useZones } from "@/infrastructure/hooks/useZones";
 import { toast } from "sonner";
@@ -25,7 +24,13 @@ const createZoneSchema = zoneSchema.pick({
   employeeId: true,
   areaId: true,
 });
-type ZoneForm = z.infer<typeof createZoneSchema>;
+
+interface ZoneForm {
+  name: string;
+  companyId: string;
+  employeeId: string;
+  areaId: string;
+}
 
 interface ZoneSelectProps {
   value?: string;
@@ -56,6 +61,7 @@ export function ZoneSelect({
       form.setError("employeeId", { message: "Funcionário é obrigatório" });
       return;
     }
+
     createZone.mutate(
       { ...data, employeeId: effectiveEmployeeId, areaId: areaId as string },
       {
@@ -146,10 +152,12 @@ export function ZoneSelect({
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Funcionário</Label>
+                <Label>Funcionário *</Label>
                 <EmployeeSelect
                   value={(form.watch("employeeId") as string) || ""}
-                onChange={(v: string) => form.setValue("employeeId", v, { shouldValidate: true })}
+                  onChange={(v: string) =>
+                    form.setValue("employeeId", v, { shouldValidate: true })
+                  }
                   companyId={companyId}
                 />
                 {(form.formState as any).errors?.employeeId && (

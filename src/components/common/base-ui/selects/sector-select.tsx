@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,17 +50,30 @@ export function SectorSelect({
       form.setError("employeeId", { message: "Funcionário é obrigatório" });
       return;
     }
-    createSector.mutate({ ...(data as any), employeeId: effectiveEmployeeId, zoneId, companyId } as any, {
-      onSuccess: (created: any) => {
-        setOpen(false);
-        onChange(created.id);
-        form.reset({ name: "", employeeId, zoneId, companyId });
-      },
-    });
+
+    createSector.mutate(
+      {
+        ...(data as any),
+        employeeId: effectiveEmployeeId,
+        zoneId,
+        companyId,
+      } as any,
+      {
+        onSuccess: (created: any) => {
+          setOpen(false);
+          onChange(created.id);
+          form.reset({ name: "", employeeId, zoneId, companyId });
+        },
+      }
+    );
   }
 
   const list = Array.isArray(sectors) ? sectors : [];
-  const filtered = list.filter((s: Sector) => String(s?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+  const filtered = list.filter((s: Sector) =>
+    String(s?.name ?? "")
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  );
 
   return (
     <div className="flex items-stretch gap-2 w-full">
@@ -84,9 +96,17 @@ export function SectorSelect({
               />
             </div>
             {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                Não há dados disponíveis.
+              </div>
             ) : (
-              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+              <div
+                className={
+                  filtered.length > 7
+                    ? "max-h-60 overflow-y-auto"
+                    : "max-h-full"
+                }
+              >
                 {filtered.map((s: Sector) => (
                   <SelectItem key={s.id} value={s.id!}>
                     {s.name}
@@ -119,11 +139,14 @@ export function SectorSelect({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-3 mt-2"
           >
-     
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name-sector">Nome do setor</Label>
-                <Input id="name-sector" {...form.register("name")} placeholder="Nome do setor" />
+                <Input
+                  id="name-sector"
+                  {...form.register("name")}
+                  placeholder="Nome do setor"
+                />
                 {form.formState.errors.name && (
                   <span className="text-red-500 text-xs">
                     {form.formState.errors.name.message as string}
@@ -131,22 +154,28 @@ export function SectorSelect({
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Funcionário</Label>
+                <Label>Funcionário *</Label>
                 <EmployeeSelect
                   value={(form.watch("employeeId") as string) || ""}
-                  onChange={(v) => form.setValue("employeeId", v, { shouldValidate: true })}
+                  onChange={(v) =>
+                    form.setValue("employeeId", v, { shouldValidate: true })
+                  }
                   companyId={companyId}
                 />
                 {(form.formState as any).errors?.employeeId && (
                   <span className="text-red-500 text-xs">
-                    {((form.formState as any).errors.employeeId?.message as string) || "Funcionário é obrigatório"}
+                    {((form.formState as any).errors.employeeId
+                      ?.message as string) || "Funcionário é obrigatório"}
                   </span>
                 )}
               </div>
             </div>
-        
+
             <div className="col-span-2 flex justify-end mt-4">
-              <Button type="submit" className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white">
+              <Button
+                type="submit"
+                className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+              >
                 {createSector.status === "pending" ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -38,21 +38,25 @@ const columns: ColumnDef<Equipment>[] = [
       return <div>{model}</div>;
     },
   },
- 
+
   {
     accessorKey: "siteId",
     header: "Site",
     cell: ({ row }) => {
-      const siteId = row.getValue("siteId") as string;
-      return <div>{siteId}</div>;
+      const siteName = (
+        row.original as { site?: { name?: string } } | undefined
+      )?.site?.name;
+      return <div>{siteName ?? "-"}</div>;
     },
   },
   {
     accessorKey: "typeEquipmentId",
     header: "Tipo de Equipamento",
     cell: ({ row }) => {
-      const typeEquipmentId = row.getValue("typeEquipmentId") as string;
-      return <div>{typeEquipmentId}</div>;
+      const typeEquipmentName = (
+        row.original as { typeEquipment?: { name?: string } } | undefined
+      )?.typeEquipment?.name;
+      return <div>{typeEquipmentName ?? "-"}</div>;
     },
   },
   {
@@ -69,17 +73,12 @@ export function EquipmentTable() {
   const { data: equipment = [], isLoading } = useEquipment();
   const deleteEquipment = useDeleteEquipment();
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | undefined>();
-
-  const filteredData = equipment.filter((item) =>
-    item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.mark.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.model.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [selectedEquipment, setSelectedEquipment] = useState<
+    Equipment | undefined
+  >();
 
   const handleView = (equipment: Equipment) => {
     setSelectedEquipment(equipment);
@@ -106,12 +105,11 @@ export function EquipmentTable() {
     }
   };
 
-
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
+        data={equipment ?? []}
         isLoading={isLoading}
         searchKey="serialNumber"
         actionButton={{
@@ -138,8 +136,6 @@ export function EquipmentTable() {
           },
         ]}
       />
-
-   
 
       <EquipmentView
         equipment={selectedEquipment}

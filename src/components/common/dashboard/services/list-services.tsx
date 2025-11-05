@@ -33,21 +33,6 @@ export function ListServices({ services }: ListServicesProps) {
     setDeleteTarget(service);
   }
 
-  function handleAssign(service: ModuleSchema) {
-    setProcessing({ id: service.id, action: 'assign' });
-    setAssociateService(service);
-  }
-
-  function handleToggleActive(service: ModuleSchema) {
-    const payload: Partial<ModuleSchema> & { id: string } = {
-      id: service.id!,
-      status: !service.status,
-    };
-    setProcessing({ id: service.id, action: 'toggle' });
-    updateModuleMutation.mutate(payload, {
-      onSettled: () => setProcessing(null),
-    });
-  }
 
   function confirmDelete() {
     if (!deleteTarget) return;

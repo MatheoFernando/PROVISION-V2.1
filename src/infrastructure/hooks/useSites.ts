@@ -2,14 +2,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import type { Site } from "../types/domain";
 import type { CreateSite } from "../schema/schema-sites";
+import { toast } from "sonner";
 
 export function useSites() {
   return useQuery({
     queryKey: ["sites"],
     queryFn: async (): Promise<Site[]> => {
       const response = await api.get("/site/getAll");
-      return response.data;
+      return response.data.data;
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    retry: 1,
+   
   });
 }
 
@@ -23,6 +29,10 @@ export function useCreateSite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
+      toast.success("Site criado com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Erro ao criar site");
     },
   });
 }

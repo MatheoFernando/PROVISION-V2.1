@@ -200,6 +200,7 @@ export interface Equipment {
   companyId: string;
   createdAt?: string;
   updatedAt?: string;
+  
 }
 
 export interface Module {
@@ -222,12 +223,22 @@ export interface Site {
   addressId: string;
   sectorId: string;
   zoneId: string;
-  status: boolean;
   companyId: string;
-  siteEntityId: string;
-  geoLocationEntityId: string;
+  geoLocationId: string | null | undefined;
   createdAt?: string;
   updatedAt?: string;
+  customer?: Customer;
+  customers?: Customer | (Customer | null)[];
+  address?: Address;
+  addresses?: Address | (Address | null)[];
+  zone?: Zone;
+  zones?: Zone | (Zone | null)[];
+  area?: Area;
+  areas?: Area | (Area | null)[];
+  sector?: Sector;
+  sectors?: Sector | (Sector | null)[];
+  contact?: Contact;
+  contacts?: Contact | (Contact | null)[];
 }
 
 export interface Occorrence {
@@ -287,7 +298,7 @@ export interface Sector {
 export interface Supervision {
   id?: string;
   cod: string;
-  observation: string;
+  observation: string | undefined;
   companyId: string;
   desiredNumberWorkers: number;
   equipmentId: string;

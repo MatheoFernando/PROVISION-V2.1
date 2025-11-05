@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/infrastructure/utils/api';
-import { mockTypeOccurrences } from '@/infrastructure/schema/schema-type-occurrence';
-import type { TypeOccurrence, CreateTypeOccurrence, UpdateTypeOccurrence } from '@/infrastructure/schema/schema-type-occurrence';
+import type { TypeOccurrence} from '@/infrastructure/schema/schema-type-occurrence';
 
 export function useTypeOccurrences() {
   return useQuery({
@@ -12,10 +11,10 @@ export function useTypeOccurrences() {
         const { data } = await api.get('/type-occurrence/GetAll');
         return data?.data ?? [];
       } catch {
-        return mockTypeOccurrences;
+        return [];
       }
     },
-    initialData: mockTypeOccurrences,
+  
   });
 }
 
@@ -34,7 +33,7 @@ export function useCreateTypeOccurrenceMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateTypeOccurrence): Promise<TypeOccurrence> => {
+    mutationFn: async (data: TypeOccurrence): Promise<TypeOccurrence> => {
       const { data: response } = await api.post('/type-occurrence/Create', data);
       return response?.data;
     },
@@ -53,7 +52,7 @@ export function useUpdateTypeOccurrenceMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateTypeOccurrence }): Promise<TypeOccurrence> => {
+    mutationFn: async ({ id, data }: { id: string; data: TypeOccurrence }): Promise<TypeOccurrence> => {
       const { data: response } = await api.put(`/type-occurrence/Update/${id}`, data);
       return response?.data;
     },

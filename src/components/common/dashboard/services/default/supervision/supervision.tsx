@@ -2,12 +2,11 @@
 
 import * as React from "react"
 import { SupervisionTable } from "./supervision-table"
-import { CreateSupervisionModal } from "./supervision-modals"
 import { useSupervisionsQuery } from "@/infrastructure/hooks/useSupervisions"
 
 export default function Supervision() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
-  const { data: supervisions = [], isLoading, error } = useSupervisionsQuery()
+  const { data: supervisions = [], isLoading } = useSupervisionsQuery()
 
   return (
     <div className=" py-6">
@@ -18,11 +17,6 @@ export default function Supervision() {
         </p>
       </div>
       
-      {error && (
-        <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-md mb-4">
-          <p>Erro ao carregar supervisões: {error.message}</p>
-        </div>
-      )}
 
       <SupervisionTable 
         data={supervisions} 
@@ -30,10 +24,7 @@ export default function Supervision() {
         onCreateClick={() => setIsCreateOpen(true)}
       />
 
-      <CreateSupervisionModal
-        isOpen={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
-      />
+     
     </div>
   )
 }

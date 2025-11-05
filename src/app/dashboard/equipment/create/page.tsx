@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { TypeEquipmentSelect } from "@/components/common/base-ui/selects/type-equipment-select";
 import { createEquipmentSchema } from "@/infrastructure/schema/schema-equipment";
@@ -28,9 +29,12 @@ export default function Page() {
   const form = useForm<CreateEquipmentInput>({
     resolver: zodResolver(createEquipmentSchema),
     defaultValues: {
+      cod: "",
       serialNumber: "",
       mark: "",
       model: "",
+      status: true,
+      siteId: "",
       typeEquipmentId: "",
       companyId: companyId,
     },
@@ -58,11 +62,9 @@ export default function Page() {
     }
   };
 
-  
-
   return (
     <div className="min-h-screen ">
-      <div >
+      <div>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">
             Novo Equipamento
@@ -70,94 +72,127 @@ export default function Page() {
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-8 space-y-6">
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="serialNumber" className="text-slate-700">
-                      Número de Série *
-                    </Label>
-                    <Input
-                      id="serialNumber"
-                      {...form.register("serialNumber")}
-                      placeholder="Digite o número de série"
-                      className="rounded-lg"
-                    />
-                    {form.formState.errors.serialNumber && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.serialNumber.message}
-                      </p>
-                    )}
-                  </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cod" className="text-slate-700">
+                  Código
+                </Label>
+                <Input
+                  id="cod"
+                  {...form.register("cod")}
+                  placeholder="Digite o código"
+                  className="rounded-lg"
+                />
+                {form.formState.errors.cod && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.cod.message}
+                  </p>
+                )}
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="mark" className="text-slate-700">
-                      Marca *
-                    </Label>
-                    <Input
-                      id="mark"
-                      {...form.register("mark")}
-                      placeholder="Digite a marca"
-                      className="rounded-lg"
-                    />
-                    {form.formState.errors.mark && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.mark.message}
-                      </p>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="serialNumber" className="text-slate-700">
+                  Número de Série *
+                </Label>
+                <Input
+                  id="serialNumber"
+                  {...form.register("serialNumber")}
+                  placeholder="Digite o número de série"
+                  className="rounded-lg"
+                />
+                {form.formState.errors.serialNumber && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.serialNumber.message}
+                  </p>
+                )}
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="model" className="text-slate-700">
-                      Modelo *
-                    </Label>
-                    <Input
-                      id="model"
-                      {...form.register("model")}
-                      placeholder="Digite o modelo"
-                      className="rounded-lg"
-                    />
-                    {form.formState.errors.model && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.model.message}
-                      </p>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="mark" className="text-slate-700">
+                  Marca *
+                </Label>
+                <Input
+                  id="mark"
+                  {...form.register("mark")}
+                  placeholder="Digite a marca"
+                  className="rounded-lg"
+                />
+                {form.formState.errors.mark && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.mark.message}
+                  </p>
+                )}
+              </div>
 
-                  <div className="space-y-2 ">
-                    <Label htmlFor="typeEquipmentId" className="text-slate-700">
-                      Tipo de Equipamento *
-                    </Label>
-                    <TypeEquipmentSelect
-                      value={form.watch("typeEquipmentId")}
-                      onChange={(v) => form.setValue("typeEquipmentId", v)}
-                      companyId={companyId}
-                    />
-                    {form.formState.errors.typeEquipmentId && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.typeEquipmentId.message}
-                      </p>
-                    )}
-                  </div>
-                  <input type="hidden" value={companyId} {...form.register("companyId")} />
+              <div className="space-y-2">
+                <Label htmlFor="model" className="text-slate-700">
+                  Modelo *
+                </Label>
+                <Input
+                  id="model"
+                  {...form.register("model")}
+                  placeholder="Digite o modelo"
+                  className="rounded-lg"
+                />
+                {form.formState.errors.model && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.model.message}
+                  </p>
+                )}
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="siteId" className="text-slate-700">
-                      Site  *
-                    </Label>
-                    <SiteSelect
-                      value={form.watch("siteId")}
-                      onChange={(v) => form.setValue("siteId", v)}
-                    />
-                    {form.formState.errors.siteId && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.siteId.message}
-                      </p>
-                    )}
-                  </div>
+              <div className="space-y-2 ">
+                <Label htmlFor="typeEquipmentId" className="text-slate-700">
+                  Tipo de Equipamento *
+                </Label>
+                <TypeEquipmentSelect
+                  value={form.watch("typeEquipmentId")}
+                  onChange={(v) => form.setValue("typeEquipmentId", v)}
+                  companyId={companyId}
+                />
+                {form.formState.errors.typeEquipmentId && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.typeEquipmentId.message}
+                  </p>
+                )}
+              </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="siteId" className="text-slate-700">
+                  Site *
+                </Label>
+                <SiteSelect
+                  value={form.watch("siteId")}
+                  onChange={(v) => form.setValue("siteId", v)}
+                />
+                {form.formState.errors.siteId && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.siteId.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status" className="text-slate-700">
+                  Ativo
+                </Label>
+                <div className="flex items-center gap-3 py-2">
+                  <Switch
+                    id="status"
+                    checked={!!form.watch("status")}
+                    onCheckedChange={(checked) =>
+                      form.setValue("status", checked)
+                    }
+                  />
+                  <span className="text-sm text-slate-600">
+                    {form.watch("status") ? "Ativo" : "Inativo"}
+                  </span>
                 </div>
+                {form.formState.errors.status && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.status.message}
+                  </p>
+                )}
               </div>
             </div>
 

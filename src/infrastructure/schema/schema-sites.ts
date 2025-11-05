@@ -14,7 +14,7 @@ export const createSiteSchema = z.object({
   sectorId: z.string().min(1, "Setor é obrigatório"),
   zoneId: z.string().default(""),
   companyId: z.string().default(""),
-  geoLocationId: z.string().min(1, "Localização é obrigatória"),
+  geoLocationId:  z.string().nullable().optional()
 });
 
 export type CreateSite = z.infer<typeof createSiteSchema>;

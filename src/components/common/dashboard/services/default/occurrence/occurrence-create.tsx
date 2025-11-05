@@ -1,0 +1,284 @@
+"use client";
+
+import * as React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
+import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
+import { EquipmentSelect } from "@/components/common/base-ui/selects/equipment-select";
+import { useCreateOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
+import { useRouter } from "next/navigation";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { TypeOccorrenceSelect } from "@/components/common/base-ui/selects/type-occorrence-select";
+import { z } from "zod";
+
+const createOccurrenceSchema = z.object({
+  cod: z.string().min(1, "Código obrigatório"),
+  description: z.string().default(""),
+  companyId: z.string().min(1),
+  typeOccorrenceId: z.string().min(1, "Tipo obrigatório"),
+  equipmentId: z.string().min(1, "Equipamento obrigatório"),
+  employeeId: z.string().min(1, "Funcionário obrigatório"),
+  siteId: z.string().min(1, "Site obrigatório"),
+  time: z.string().min(1, "Horário obrigatório"),
+  correctiveAction: z.string().default(""),
+  gravity: z.string().default(""),
+  status: z.string().min(1),
+});
+
+type CreateOccurrenceInput = z.output<typeof createOccurrenceSchema>;
+
+export function OccurrenceCreate() {
+  const router = useRouter();
+  const companyId = useAuthStore((s) => s.companyId || "");
+  const createMutation = useCreateOccurrenceMutation();
+
+  const form = useForm({
+    resolver: zodResolver(createOccurrenceSchema),
+    defaultValues: {
+      cod: "",
+      description: "",
+      companyId,
+      typeOccorrenceId: "",
+      equipmentId: "",
+      employeeId: "",
+      siteId: "",
+      time: "",
+      correctiveAction: "",
+      gravity: "",
+      status: "Ativo",
+    },
+  });
+
+  function handleSubmit(data: CreateOccurrenceInput) {
+    const toIsoFromTime = (value: string) => {
+      if (!value) return "";
+      if (value.includes("T")) return value;
+      const [hoursStr, minutesStr] = value.split(":");
+      const hours = parseInt(hoursStr || "0", 10);
+      const minutes = parseInt(minutesStr || "0", 10);
+      const d = new Date();
+      d.setSeconds(0, 0);
+      d.setHours(hours, minutes, 0, 0);
+      return d.toISOString();
+    };
+
+    const payload = {
+      ...data,
+      companyId: data.companyId || companyId,
+      time: toIsoFromTime(data.time),
+    };
+    createMutation.mutate(payload as any, {
+      onSuccess: () => {
+        router.back();
+      },
+    });
+  }
+
+  return (
+    <div className="mb-8">
+      <h1 className="text-3xl font-bold text-slate-900">Nova Ocorrência</h1>
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="space-y-6 mt-6"
+      >
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="cod" className="text-slate-700">
+                Código
+              </Label>
+              <Input
+                id="cod"
+                placeholder="Ex: OCC001"
+                {...form.register("cod")}
+              />
+              {form.formState.errors.cod && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.cod.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="time" className="text-slate-700">
+                Horário
+              </Label>
+              <Input id="time" type="time" {...form.register("time")} />
+              {form.formState.errors.time && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.time.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-700">Tipo de Ocorrência</Label>
+              <TypeOccorrenceSelect
+                value={form.watch("typeOccorrenceId")}
+                onChange={(v) =>
+                  form.setValue("typeOccorrenceId", v, { shouldValidate: true })
+                }
+              />
+              {form.formState.errors.typeOccorrenceId && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.typeOccorrenceId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-700">Equipamento</Label>
+              <EquipmentSelect
+                value={form.watch("equipmentId")}
+                onChange={(v) =>
+                  form.setValue("equipmentId", v, { shouldValidate: true })
+                }
+              />
+              {form.formState.errors.equipmentId && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.equipmentId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-700">Funcionário</Label>
+              <EmployeeSelect
+                value={form.watch("employeeId")}
+                onChange={(v) =>
+                  form.setValue("employeeId", v, { shouldValidate: true })
+                }
+                companyId={companyId}
+              />
+              {form.formState.errors.employeeId && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.employeeId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-700">Site</Label>
+              <SiteSelect
+                value={form.watch("siteId")}
+                onChange={(v) =>
+                  form.setValue("siteId", v, { shouldValidate: true })
+                }
+              />
+              {form.formState.errors.siteId && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.siteId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gravity" className="text-slate-700">
+                Gravidade
+              </Label>
+              <Select
+                value={form.watch("gravity") || ""}
+                onValueChange={(v) =>
+                  form.setValue("gravity", v, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione a gravidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Baixa">Baixa</SelectItem>
+                  <SelectItem value="Média">Média</SelectItem>
+                  <SelectItem value="Alta">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-slate-700">
+                Descrição
+              </Label>
+              <Textarea
+                id="description"
+                className="rounded-lg resize-none"
+                placeholder="Digite a descrição"
+                {...form.register("description")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="correctiveAction" className="text-slate-700">
+                Ação Corretiva
+              </Label>
+              <Textarea
+                id="correctiveAction"
+                className="rounded-lg resize-none"
+                placeholder="Digite a ação corretiva"
+                {...form.register("correctiveAction")}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-700">Status</Label>
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={form.watch("status") === "Ativo"}
+                onCheckedChange={(checked) =>
+                  form.setValue("status", checked ? "Ativo" : "Inativo", {
+                    shouldValidate: true,
+                  })
+                }
+              />
+              <span className="text-sm text-muted-foreground">
+                {form.watch("status") === "Ativo" ? "Ativo" : "Inativo"}
+              </span>
+            </div>
+            {form.formState.errors.status && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.status.message}
+              </p>
+            )}
+          </div>
+          <div className="space-x-2 pt-4 bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-200">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="rounded-lg px-6 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                </>
+              ) : (
+                "Criar Ocorrência"
+              )}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}

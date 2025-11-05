@@ -17,10 +17,11 @@ import { areaSchema } from "@/infrastructure/schema/schema-area";
 import { Area } from "@/infrastructure/types/domain";
 import { Label } from "@/components/ui/label";
 import { EmployeeSelect } from "./employee-select";
+import { toast } from "sonner";
 
 type AreaForm = {
   name: string;
-  employeeId?: string;
+  employeeId: string;
   companyId: string;
 };
 
@@ -45,10 +46,19 @@ export function AreaSelect({
     resolver: zodResolver(
       areaSchema.pick({ name: true, companyId: true, employeeId: true })
     ),
-    defaultValues: { name: "", companyId: companyId, employeeId: "" },
+    defaultValues: {
+      name: "",
+      companyId: companyId,
+      employeeId: employeeId ?? "",
+    },
   });
   function handleSubmit(data: AreaForm) {
     const effectiveEmployeeId = data.employeeId || employeeId || "";
+    if (!effectiveEmployeeId) {
+      form.setError("employeeId", { message: "Funcionário é obrigatório" });
+      return;
+    }
+   
     createArea.mutate(
       { ...data, employeeId: effectiveEmployeeId },
       {
@@ -127,30 +137,36 @@ export function AreaSelect({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-3 mt-2 "
           >
-          <div className="grid grid-cols-2 gap-4">
-           <div className="space-y-2">
-           <Label htmlFor="name-area">Nome da área</Label>
-           <Input id="name-area" {...form.register("name")} placeholder="Nome da área" />
-           {form.formState.errors.name && (
-              <span className="text-red-500 text-xs">
-                {form.formState.errors.name.message as string}
-              </span>
-            )}
-           </div>
-           <div className="space-y-2">
-            <Label>Funcionário</Label>
-            <EmployeeSelect
-              value={(form.watch("employeeId") as string) || ""}
-              onChange={(v: string) => form.setValue("employeeId", v, { shouldValidate: true })}
-              companyId={companyId}
-            />
-            {form.formState.errors.employeeId && (
-              <span className="text-red-500 text-xs">
-                {form.formState.errors.employeeId.message as string}
-              </span>
-            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name-area">Nome da área</Label>
+                <Input
+                  id="name-area"
+                  {...form.register("name")}
+                  placeholder="Nome da área"
+                />
+                {form.formState.errors.name && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.name.message as string}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Funcionário *</Label>
+                <EmployeeSelect
+                  value={(form.watch("employeeId") as string) || ""}
+                  onChange={(v: string) =>
+                    form.setValue("employeeId", v, { shouldValidate: true })
+                  }
+                  companyId={companyId}
+                />
+                {form.formState.errors.employeeId && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.employeeId.message as string}
+                  </span>
+                )}
+              </div>
             </div>
-           </div>
             <div className="flex justify-end mt-4">
               <Button
                 type="submit"

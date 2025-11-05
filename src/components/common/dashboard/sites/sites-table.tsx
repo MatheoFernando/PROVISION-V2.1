@@ -6,7 +6,6 @@ import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { Site } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SitesView } from "./sites-view";
@@ -34,18 +33,6 @@ const columns: ColumnDef<Site>[] = [
   },
 
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
-      );
-    },
-  },
-  {
     accessorKey: "numberWorkersContract",
     header: "Trabalhadores",
     cell: ({ row }) => {
@@ -57,64 +44,84 @@ const columns: ColumnDef<Site>[] = [
     accessorKey: "customerId",
     header: "Cliente",
     cell: ({ row }) => {
-      const customerId = row.getValue("customerId") as string;
-      return <div>{customerId}</div>;
+      const original = row.original as Site;
+      const customer = Array.isArray(original.customers)
+        ? original.customers.find((c) => c && (c as any).name)
+        : (original.customers as any) || (original as any).customer;
+      const name = customer?.name ?? "-";
+      return <div>{name}</div>;
     },
   },
   {
     accessorKey: "zoneId",
     header: "Zona",
     cell: ({ row }) => {
-      const zoneId = row.getValue("zoneId") as string;
-      return <div>{zoneId}</div>;
+      const original = row.original as Site;
+      const zone = Array.isArray(original.zones)
+        ? original.zones.find((z) => z && (z as any).name)
+        : (original.zones as any) || (original as any).zone;
+      const name = zone?.name ?? "-";
+      return <div>{name}</div>;
     },
   },
   {
     accessorKey: "areaId",
     header: "Área",
     cell: ({ row }) => {
-      const areaId = row.getValue("areaId") as string;
-      return <div>{areaId}</div>;
+      const original = row.original as Site;
+      const area = Array.isArray(original.areas)
+        ? original.areas.find((a) => a && (a as any).name)
+        : (original.areas as any) || (original as any).area;
+      const name = area?.name ?? "-";
+      return <div>{name}</div>;
     },
   },
   {
     accessorKey: "sectorId",
     header: "Setor",
     cell: ({ row }) => {
-      const sectorId = row.getValue("sectorId") as string;
-      return <div>{sectorId}</div>;
+      const original = row.original as Site;
+      const sector = Array.isArray(original.sectors)
+        ? original.sectors.find((s) => s && (s as any).name)
+        : (original.sectors as any) || (original as any).sector;
+      const name = sector?.name ?? "-";
+      return <div>{name}</div>;
     },
   },
   {
     accessorKey: "contactId",
     header: "Contato",
     cell: ({ row }) => {
-      const contactId = row.getValue("contactId") as string;
-      return <div>{contactId}</div>;
+      const original = row.original as Site;
+      const contact = Array.isArray(original.contacts)
+        ? original.contacts.find((c) => c && ((c as any).email || (c as any).phoneNumbers?.length))
+        : (original.contacts as any) || (original as any).contact;
+      const display = contact?.email ?? contact?.phoneNumbers?.[0]?.phone ?? "-";
+      return <div>{display}</div>;
     },
   },
   {
     accessorKey: "addressId",
     header: "Endereço",
     cell: ({ row }) => {
-      const addressId = row.getValue("addressId") as string;
-      return <div>{addressId}</div>;
+      const original = row.original as Site;
+      const address = Array.isArray(original.addresses)
+        ? original.addresses.find((a) => a && (a as any).country)
+        : (original.addresses as any) || (original as any).address;
+      if (!address) return <div>-</div>;
+      const parts = [address.houseHold, address.commune, address.municipality, address.province, address.country]
+        .filter(Boolean)
+        .join(", ");
+      return <div className="truncate max-w-[220px]" title={parts}>{parts || '-'}</div>;
     },
   },
+
   {
-    accessorKey: "siteEntityId",
-    header: "Site",
-    cell: ({ row }) => {
-      const siteEntityId = row.getValue("siteEntityId") as string;
-      return <div>{siteEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "geoLocationEntityId",
+    accessorKey: "geoLocationId",
     header: "Localização",
     cell: ({ row }) => {
-      const geoLocationEntityId = row.getValue("geoLocationEntityId") as string;
-      return <div>{geoLocationEntityId}</div>;
+      const geoLocationId = row.getValue("geoLocationId") as string | null | undefined;
+      return <div>{geoLocationId || "-"}</div>;
     },
   },
   {
@@ -142,8 +149,6 @@ export function SitesTable() {
   const { data: sites = [], isLoading } = useSites();
   const router = useRouter();
   const deleteSite = useDeleteSite();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
@@ -156,7 +161,7 @@ export function SitesTable() {
 
   const handleEdit = (site: Site) => {
     setSelectedSite(site);
-    setIsCreateOpen(true);
+    router.push(`/dashboard/sites/edit/${site.id}`);
   };
 
   const handleDelete = (site: Site) => {
@@ -177,10 +182,6 @@ export function SitesTable() {
     }
   };
 
-  const handleCreate = () => {
-    setSelectedSite(undefined);
-    setIsCreateOpen(true);
-  };
 
   return (
     <div className="space-y-4">

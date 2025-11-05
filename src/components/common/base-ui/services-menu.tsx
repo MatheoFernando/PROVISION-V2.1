@@ -40,12 +40,6 @@ export function ServicesMenu() {
       label: "Ocorrências",
       imageClass: "bg-accent/10",
     },
-    {
-      path: "/dashboard/service/rsu",
-      imageSrc: "/reciclar.png",
-      label: "RSU",
-      imageClass: "bg-accent/10",
-    },
   ];
 
   return (
@@ -68,12 +62,12 @@ export function ServicesMenu() {
           Serviços Rápidos
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border/50 mb-3" />
-        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
             <DropdownMenuItem 
               key={index}
               onClick={() => handleNavigation(item.path)}
-              className="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-muted/50 transition-all duration-200 rounded-lg border border-border/20 hover:border-border/40"
+              className="flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-muted/50 transition-all duration-200 rounded-lg border border-border/20 hover:border-border/40"
             >
               <div className={`rounded-lg p-2  ${item.imageClass}`}>
                 <Image

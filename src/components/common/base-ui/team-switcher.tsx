@@ -43,10 +43,7 @@ export function TeamSwitcher({
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild >
-            <SidebarMenuButton
-              size="lg"
-              className="text-white data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent/50 transition-colors duration-200"
-            >
+        <div className="flex items-center gap-2 md:gap-4">
               <div className="text-white flex aspect-square size-12 items-center justify-center rounded-lg overflow-hidden shrink-0 group-has-[:where([data-collapsible=icon])]/sidebar-wrapper:size-8">
                 {activeTeam.logo ? (
                   <Image
@@ -67,7 +64,7 @@ export function TeamSwitcher({
                 <span className="truncate text-xs text-white/70">{activeTeam.plan}</span>
               </div>
             
-            </SidebarMenuButton>
+            </div>
           </DropdownMenuTrigger>
       
         </DropdownMenu>

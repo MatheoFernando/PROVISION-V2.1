@@ -13,8 +13,8 @@ export function useEquipment() {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: async (): Promise<Equipment[]> => {
-      const response = await api.get("/equipment");
-      return response.data as Equipment[];
+      const response = await api.get("/equipment/getAll");
+      return response.data.data as Equipment[];
     },
     refetchOnWindowFocus: false,
     staleTime: 30_000,
@@ -26,7 +26,19 @@ export function useCreateEquipment() {
   
   return useMutation<Equipment, unknown, CreateEquipmentInput>({
     mutationFn: async (data: CreateEquipmentInput): Promise<Equipment> => {
-      const response = await api.post("/equipment", data);
+      const payload = {
+        cod: data.cod,
+        serialNumber: data.serialNumber,
+        status: data.status ? "ACTIVE" : "INACTIVE",
+        mark: data.mark,
+        model: data.model,
+        siteId: data.siteId,
+        typeEquipmentId: data.typeEquipmentId,
+        companyId: data.companyId,
+      };
+      const response = await api.post("/equipment/create", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
       return response.data as Equipment;
     },
     onSuccess: (created) => {
