@@ -11,26 +11,33 @@ import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-sel
 import { DepartmentSelect } from "@/components/common/base-ui/selects/department-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { EquipmentSelect } from "@/components/common/base-ui/selects/equipment-select";
-import { useCreateSupervisionMutation } from "@/infrastructure/hooks/useSupervisions";
-import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { useCreateSupervisionMutation, useSupervisionQuery, useUpdateSupervisionMutation } from "@/infrastructure/hooks/useSupervisions";
+import { useSearchParams } from "next/navigation";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock2Icon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Supervision } from "@/infrastructure/types/domain";
 import { supervisionSchema } from "@/infrastructure/schema/schema-supervision";
 import z from "zod";
 
-interface SupervisionFormProps {}
+interface SupervisionFormProps {
+  id?: string
+  initialData?: Supervision
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
 
 export function SupervisionCreate(_props: SupervisionFormProps) {
-  const router = useRouter();
   const params = useSearchParams();
-  const id = params.get("id") || undefined;
+  const routeId = params.get("id") || undefined;
+  const id = _props.id ?? routeId;
   const createMutation = useCreateSupervisionMutation();
+  const updateMutation = useUpdateSupervisionMutation();
   const companyId = useAuthStore((s) => s.companyId || "");
   const form = useForm<z.infer<typeof supervisionSchema>>({
     resolver: zodResolver(supervisionSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
     defaultValues: {
       cod: "",
       observation: "",
@@ -46,36 +53,66 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
     },
   });
 
+  const shouldQuery = !(_props.initialData) && !!id
+  const { data: supervisionData } = useSupervisionQuery(shouldQuery ? (id || "") : "");
+
+  React.useEffect(() => {
+    const dataToUse = _props.initialData || supervisionData
+    if (!id || !dataToUse) return;
+    const parseTime = (value: string) => {
+      if (!value) return "";
+      return value.includes("T") ? value.slice(11, 16) : value.slice(0, 5);
+    };
+    form.reset({
+      cod: dataToUse.cod || "",
+      observation: dataToUse.observation || "",
+      companyId: dataToUse.companyId || companyId,
+      desiredNumberWorkers: Number(dataToUse.desiredNumberWorkers ?? 0),
+      numberWorkerPresent: Number(dataToUse.numberWorkerPresent ?? 0),
+      equipmentId: dataToUse.equipmentId || "",
+      employeeId: dataToUse.employeeId || "",
+      siteId: dataToUse.siteId || "",
+      time: parseTime(dataToUse.time || ""),
+      departmentId: dataToUse.departmentId || "",
+      status: dataToUse.status || "Ativo",
+    });
+  }, [id, supervisionData, _props.initialData, form, companyId]);
+
   const handleSubmit = (data: z.infer<typeof supervisionSchema>) => {
     const toIsoFromTime = (value: string) => {
       if (!value) return "";
-      if (value.includes("T")) return value; 
-      const [hoursStr, minutesStr] = value.split(":");
-      const hours = parseInt(hoursStr || "0", 10);
-      const minutes = parseInt(minutesStr || "0", 10);
-      const d = new Date();
-      d.setSeconds(0, 0);
-      d.setHours(hours, minutes, 0, 0);
-      return d.toISOString();
+      if (value.includes("T")) return value;
+      return new Date(`1970-01-01T${value}`).toISOString();
     };
 
     const payload = {
       ...data,
-      id, 
       time: toIsoFromTime(data.time),
       desiredNumberWorkers: Number(data.desiredNumberWorkers ?? 0),
       numberWorkerPresent: Number(data.numberWorkerPresent ?? 0),
-    };
+    } as Supervision;
+
+    if (id) {
+      updateMutation.mutate(
+        { id, data: payload },
+        {
+          onSuccess: () => {
+            if (typeof _props.onSuccess === "function") _props.onSuccess();
+          },
+        }
+      );
+      return;
+    }
+
     createMutation.mutate(payload as Supervision, {
       onSuccess: () => {
-        toast.success("Supervisão criada com sucesso!");
-        router.push("/dashboard/service/supervision");
+        if (typeof _props.onSuccess === "function") _props.onSuccess();
       },
     });
   };
 
   return (
-    <div className="mb-8">
+    <div>
       <h1 className="text-3xl font-bold text-slate-900">
         {id ? "Editar Supervisão" : "Nova Supervisão"}
       </h1>
@@ -83,8 +120,8 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
         onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-6 mt-6"
       >
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="overflow-hidden p-4 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
             <div className="space-y-2">
               <Label htmlFor="cod" className="text-slate-700">
                 Código
@@ -105,7 +142,16 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               <Label htmlFor="time" className="text-slate-700">
                 Horário
               </Label>
-              <Input id="time" type="time" {...form.register("time")} />
+              <div className="relative flex w-full items-center gap-2">
+                <Clock2Icon className="text-muted-foreground pointer-events-none absolute left-2.5 size-4 select-none" />
+                <Input
+                  id="time"
+                  type="time"
+                  defaultValue=""
+                  className="appearance-none pl-8 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  {...form.register("time")}
+                />
+              </div>
               {form.formState.errors.time && (
                 <p className="text-sm text-red-500">
                   {form.formState.errors.time.message}
@@ -117,9 +163,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               <Label className="text-slate-700">Funcionário</Label>
               <EmployeeSelect
                 value={form.watch("employeeId")}
-                onChange={(v) =>
-                  form.setValue("employeeId", v, { shouldValidate: true })
-                }
+                onChange={(v) => form.setValue("employeeId", v)}
                 companyId={companyId}
               />
               {form.formState.errors.employeeId && (
@@ -133,9 +177,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               <Label className="text-slate-700">Equipamento</Label>
               <EquipmentSelect
                 value={form.watch("equipmentId")}
-                onChange={(v) =>
-                  form.setValue("equipmentId", v, { shouldValidate: true })
-                }
+                onChange={(v) => form.setValue("equipmentId", v)}
               />
               {form.formState.errors.equipmentId && (
                 <p className="text-sm text-red-500">
@@ -148,9 +190,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               <Label className="text-slate-700">Site</Label>
               <SiteSelect
                 value={form.watch("siteId")}
-                onChange={(v) =>
-                  form.setValue("siteId", v, { shouldValidate: true })
-                }
+                onChange={(v) => form.setValue("siteId", v)}
               />
               {form.formState.errors.siteId && (
                 <p className="text-sm text-red-500">
@@ -164,9 +204,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               <DepartmentSelect
                 companyId={companyId}
                 value={form.watch("departmentId")}
-                onChange={(v) =>
-                  form.setValue("departmentId", v, { shouldValidate: true })
-                }
+                onChange={(v) => form.setValue("departmentId", v)}
               />
               {form.formState.errors.departmentId && (
                 <p className="text-sm text-red-500">
@@ -177,7 +215,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="desiredNumberWorkers" className="text-slate-700">
-                Número Desejado de Trabalhadores
+                Trabalhadores Desejados
               </Label>
               <Input
                 id="desiredNumberWorkers"
@@ -187,8 +225,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
                 onChange={(e) =>
                   form.setValue(
                     "desiredNumberWorkers",
-                    parseInt(e.target.value) || 0,
-                    { shouldValidate: true }
+                    parseInt(e.target.value) || 0
                   )
                 }
               />
@@ -211,8 +248,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
                 onChange={(e) =>
                   form.setValue(
                     "numberWorkerPresent",
-                    parseInt(e.target.value) || 0,
-                    { shouldValidate: true }
+                    parseInt(e.target.value) || 0
                   )
                 }
               />
@@ -262,21 +298,23 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
             )}
           </div>
 
-          <div className="space-x-2 pt-4 bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-200">
-            <Button
+          <div className="space-x-2   flex justify-end gap-3 ">
+          <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (typeof _props.onCancel === "function") _props.onCancel();
+              }}
               className="rounded-lg px-6 cursor-pointer"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
+            disabled={createMutation.isPending || updateMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
             >
-              {createMutation.isPending ? (
+            {createMutation.isPending || updateMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
                 </>

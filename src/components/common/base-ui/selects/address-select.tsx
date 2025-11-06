@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
   useAddresses,
@@ -40,7 +44,7 @@ export function AddressSelect({
   const authCompanyId = useAuthStore((s) => s.companyId);
   const effectiveCompanyId = companyId ?? authCompanyId ?? undefined;
   const { data: addresses = [], isLoading } = useAddresses(effectiveCompanyId);
-  
+
   const createAddress = useCreateAddress();
   const form = useForm<AddressForm>({
     resolver: zodResolver(addressSchema),
@@ -56,7 +60,6 @@ export function AddressSelect({
 
   function handleSubmit(data: AddressForm) {
     createAddress.mutate(data, {
-      
       onSuccess: (created: Address) => {
         setOpen(false);
         onChange(created.id!);
@@ -65,11 +68,12 @@ export function AddressSelect({
     });
   }
 
-  const filtered = (Array.isArray(addresses) ? addresses : []).filter((a: Address) =>
-    [a.houseHold, a.commune, a.municipality, a.province, a.country]
-      .join(" ")
-      .toLowerCase()
-      .includes(query.toLowerCase())
+  const filtered = (Array.isArray(addresses) ? addresses : []).filter(
+    (a: Address) =>
+      [a.houseHold, a.commune, a.municipality, a.province, a.country]
+        .join(" ")
+        .toLowerCase()
+        .includes(query.toLowerCase())
   );
 
   return (
@@ -78,7 +82,9 @@ export function AddressSelect({
         <Select
           value={value}
           onValueChange={(val) => {
-            const selected = (Array.isArray(addresses) ? addresses : []).find((a: Address) => a.id === val);
+            const selected = (Array.isArray(addresses) ? addresses : []).find(
+              (a: Address) => a.id === val
+            );
             console.log("Endereço selecionado:", {
               id: val,
               houseHold: selected?.houseHold ?? null,
@@ -98,51 +104,89 @@ export function AddressSelect({
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-2 sticky top-0 bg-popover">
+            <div className="p-1 sticky top-0 bg-popover">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar endereços..."
-                className="w-full"
+                className="w-full placeholder:text-xs"
               />
             </div>
             {filtered.length === 0 && (
               <div className="text-center text-muted-foreground py-2 text-sm">
-         Não há dados disponíveis
+                Não há dados disponíveis
               </div>
             )}
-            <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
-              {filtered.map((a: Address) => a.id && (
-                <SelectItem key={a.id} value={a.id} className="cursor-pointer">
-                  {a.houseHold || '-'} - {a.commune || '-'} / {a.municipality || '-'}
-                </SelectItem>
-              ))}
+            <div
+              className={
+                filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
+              }
+            >
+              {filtered.map(
+                (a: Address) =>
+                  a.id && (
+                    <SelectItem
+                      key={a.id}
+                      value={a.id}
+                      className="cursor-pointer"
+                    >
+                      {a.houseHold || "-"}
+                    </SelectItem>
+                  )
+              )}
             </div>
           </SelectContent>
         </Select>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        onClick={() => setOpen(true)}
-        className="cursor-pointer shrink-0"
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          const isSaving = createAddress.status === "pending";
+          if (isSaving) return;
+          setOpen(next);
+        }}
       >
-        <Plus className="w-4 h-4" />
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>Criar Endereço</DialogHeader>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="cursor-pointer shrink-0"
+            disabled={createAddress.status === "pending"}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          className="w-[26rem] p-4"
+          onInteractOutside={(e) => {
+            if (createAddress.status === "pending") e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (createAddress.status === "pending") e.preventDefault();
+          }}
+        >
+          <div className="font-medium mb-2">Criar Endereço</div>
           <form
-            onSubmit={form.handleSubmit(handleSubmit)}
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit(handleSubmit)();
+            }}
             className="space-y-3 mt-2 grid grid-cols-2 gap-4"
           >
             <div className="col-span-2">
-              <Label htmlFor="houseHold" className="mb-2 block">Domicílio</Label>
+              <Label htmlFor="houseHold" className="mb-2 block">
+                Domicílio
+              </Label>
               <Input
                 id="houseHold"
                 {...form.register("houseHold")}
                 placeholder="domicílio"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
               />
               {form.formState.errors.houseHold && (
                 <span className="text-red-500 text-xs">
@@ -151,11 +195,16 @@ export function AddressSelect({
               )}
             </div>
             <div>
-              <Label htmlFor="commune" className="mb-2 block">Comuna</Label>
+              <Label htmlFor="commune" className="mb-2 block">
+                Comuna
+              </Label>
               <Input
                 id="commune"
                 {...form.register("commune")}
                 placeholder="Comuna"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
               />
               {form.formState.errors.commune && (
                 <span className="text-red-500 text-xs">
@@ -164,11 +213,16 @@ export function AddressSelect({
               )}
             </div>
             <div>
-              <Label htmlFor="municipality" className="mb-2 block">Município</Label>
+              <Label htmlFor="municipality" className="mb-2 block">
+                Município
+              </Label>
               <Input
                 id="municipality"
                 {...form.register("municipality")}
                 placeholder="Município"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
               />
               {form.formState.errors.municipality && (
                 <span className="text-red-500 text-xs">
@@ -177,12 +231,16 @@ export function AddressSelect({
               )}
             </div>
             <div>
-              <Label htmlFor="province" className="mb-2 block">Província</Label>
+              <Label htmlFor="province" className="mb-2 block">
+                Província
+              </Label>
               <Input
                 id="province"
                 {...form.register("province")}
                 placeholder="Província"
-                
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
               />
               {form.formState.errors.province && (
                 <span className="text-red-500 text-xs">
@@ -191,11 +249,16 @@ export function AddressSelect({
               )}
             </div>
             <div>
-              <Label htmlFor="country" className="mb-2 block">País</Label>
+              <Label htmlFor="country" className="mb-2 block">
+                País
+              </Label>
               <Input
                 id="country"
                 {...form.register("country")}
                 placeholder="País"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
               />
               {form.formState.errors.country && (
                 <span className="text-red-500 text-xs">
@@ -203,10 +266,26 @@ export function AddressSelect({
                 </span>
               )}
             </div>
-            <div className="col-span-2 flex justify-end mt-4">
+            <div className="col-span-2 flex justify-end gap-2 mt-4">
               <Button
-                type="submit"
+                type="button"
+                variant="outline"
+                className="cursor-pointer"
+                disabled={createAddress.status === "pending"}
+                onClick={() => {
+                  if (createAddress.status !== "pending") {
+                    form.reset();
+                    setOpen(false);
+                  }
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+                disabled={createAddress.status === "pending"}
+                onClick={() => form.handleSubmit(handleSubmit)()}
               >
                 {createAddress.status === "pending" ? (
                   <>
@@ -219,8 +298,8 @@ export function AddressSelect({
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

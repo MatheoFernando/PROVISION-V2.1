@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FunnelPlus, Plus, X } from "lucide-react";
+import { FunnelPlus, Plus, X, ChevronDown } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -18,6 +18,12 @@ import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import type { RowData, Table as ReactTable } from "@tanstack/react-table";
 import Badge from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ToolbarProps<TData extends RowData> {
   table: ReactTable<TData>;
@@ -34,28 +40,50 @@ interface ToolbarProps<TData extends RowData> {
   onChangeView: (v: "table" | "cards") => void;
   isFilterOpen: boolean;
   setIsFilterOpen: (v: boolean) => void;
-  tempDateRange?: DateRange;
-  setTempDateRange: (r?: DateRange) => void;
-  onApplyDateRange: () => void;
-  onClearDateRange: () => void;
+  tempRange?: DateRange;
+  setTempRange: (r?: DateRange) => void;
+  onClearRange: () => void;
+  searchKey?: string;
+  dateKey?: string;
 }
 
 export function Toolbar<TData extends RowData>({
   table,
   placeholder,
   globalFilter,
-  setGlobalFilter,
   actionButton,
   toolbar,
-  view,
-  onChangeView,
   isFilterOpen,
   setIsFilterOpen,
-  tempDateRange,
-  setTempDateRange,
-  onApplyDateRange,
-  onClearDateRange,
+  tempRange,
+  setTempRange,
+  onClearRange,
+  searchKey,
+  dateKey,
 }: ToolbarProps<TData>) {
+  const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const [sortLabel, setSortLabel] = React.useState("Mais recente");
+  const d = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  function setSortRecent() {
+    if (dateKey) table.setSorting([{ id: dateKey, desc: true } as any]);
+    setSortLabel("Mais recente");
+  }
+
+  function setSortOldest() {
+    if (dateKey) table.setSorting([{ id: dateKey, desc: false } as any]);
+    setSortLabel("Mais antigo");
+  }
+
+  function setSortAZ() {
+    if (searchKey) table.setSorting([{ id: searchKey, desc: false } as any]);
+    setSortLabel("A–Z");
+  }
+
+  function setSortZA() {
+    if (searchKey) table.setSorting([{ id: searchKey, desc: true } as any]);
+    setSortLabel("Z–A");
+  }
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between ">
       <div className="flex w-full items-center gap-3">
@@ -70,6 +98,42 @@ export function Toolbar<TData extends RowData>({
         {toolbar && (
           <div className="flex items-center gap-3">{toolbar(table)}</div>
         )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-9 cursor-pointer">
+              {sortLabel}
+              <ChevronDown className="ml-2 size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={setSortRecent}
+            >
+              Mais recente
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={setSortOldest}
+            >
+              Mais antigo
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={setSortAZ}
+              disabled={!searchKey}
+            >
+              A–Z
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={setSortZA}
+              disabled={!searchKey}
+            >
+              Z–A
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex items-center gap-2  w-full justify-end">
@@ -78,7 +142,7 @@ export function Toolbar<TData extends RowData>({
             Total: {table.getRowModel().rows.length} item
           </Badge>
         </div>
-    
+
         <Drawer
           open={isFilterOpen}
           onOpenChange={setIsFilterOpen}
@@ -96,7 +160,7 @@ export function Toolbar<TData extends RowData>({
           <DrawerContent className="max-w-2xl w-full">
             <DrawerHeader className="text-center">
               <div className="flex items-center justify-between">
-                <DrawerTitle>Filtrar por data</DrawerTitle>
+                <DrawerTitle>Filtros</DrawerTitle>
                 <DrawerClose asChild>
                   <Button variant="ghost" className="ml-auto cursor-pointer">
                     <X className="size-4" />
@@ -104,34 +168,97 @@ export function Toolbar<TData extends RowData>({
                 </DrawerClose>
               </div>
               <DrawerDescription>
-                {tempDateRange?.from && tempDateRange?.to
-                  ? `${new Date(
-                      tempDateRange.from
-                    ).toLocaleDateString()} — ${new Date(
-                      tempDateRange.to
-                    ).toLocaleDateString()}`
-                  : "Selecione o intervalo"}
+                Escolha os filtros desejados
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 pb-4 flex justify-center">
-              <Calendar
-                mode="range"
-                defaultMonth={tempDateRange?.from}
-                selected={tempDateRange}
-                onSelect={setTempDateRange}
-                numberOfMonths={2}
-                className="rounded-lg border shadow-sm"
-              />
+            <div className="px-4 pb-4">
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm font-medium">Data</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 cursor-pointer"
+                  onClick={() => setShowDatePicker((v) => !v)}
+                  aria-label="Abrir seletor de data"
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+              {showDatePicker && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-4">
+                  <div className="flex justify-center">
+                    <Calendar
+                      mode="single"
+                      defaultMonth={tempRange?.from}
+                      selected={tempRange?.from}
+                      onSelect={(day) => {
+                        if (!day) return setTempRange(undefined)
+                        const from = d(day)
+                        setTempRange({ from, to: from })
+                      }}
+                      className=" cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const today = new Date();
+                        const yesterday = new Date(today);
+                        yesterday.setDate(today.getDate() - 1);
+                        const y = d(yesterday);
+                        setTempRange({ from: y, to: y });
+                      }}
+                    >
+                      Último dia
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const to = d(new Date());
+                        const from = d(new Date());
+                        from.setDate(from.getDate() - 6);
+                        setTempRange({ from, to });
+                      }}
+                    >
+                      Últimos 7 dias
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const to = d(new Date());
+                        const from = d(new Date());
+                        from.setDate(from.getDate() - 29);
+                        setTempRange({ from, to });
+                      }}
+                    >
+                      Últimos 30 dias
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const now = new Date();
+                        const start = d(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+                        const end = d(new Date(now.getFullYear(), now.getMonth(), 0));
+                        setTempRange({ from: start, to: end });
+                      }}
+                    >
+                      Último mês
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <DrawerFooter>
               <div className="flex items-center gap-2">
-                <Button className="cursor-pointer" onClick={onApplyDateRange}>
-                  Aplicar
-                </Button>
                 <Button
                   variant="outline"
                   className="cursor-pointer"
-                  onClick={onClearDateRange}
+                  onClick={onClearRange}
                 >
                   Limpar
                 </Button>

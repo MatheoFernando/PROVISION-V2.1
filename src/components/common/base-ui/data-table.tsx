@@ -1,10 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -14,41 +13,51 @@ import {
   type RowData,
   useReactTable,
   type Table as ReactTable,
-} from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
-import {  MoreHorizontal } from "lucide-react"
-import { type DateRange } from "react-day-picker"
-import { Toolbar } from "./data-table/toolbar"
-import { TableView } from "./data-table/table-view"
+import { MoreHorizontal } from "lucide-react";
+import { type DateRange } from "react-day-picker";
+import { Toolbar } from "./data-table/toolbar";
+import { TableView } from "./data-table/table-view";
 
 interface ActionButton<TData> {
-  label: string
-  icon?: React.ReactNode
-  onClick: (row: TData) => void
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+  label: string;
+  icon?: React.ReactNode;
+  onClick: (row: TData) => void;
+  variant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
 }
 
 interface DataTableProps<TData extends RowData, TValue> {
-  data: TData[]
-  columns: ColumnDef<TData, TValue>[]
-  searchKey?: keyof TData & string
-  placeholder?: string
-  enableRowSelection?: boolean
-  actionButton?: { label: string; onClick?: () => void; component?: React.ReactNode }
-  rowActions?: ActionButton<TData>[]
-  toolbar?: (table: ReactTable<TData>) => React.ReactNode
-  includeSelection?: boolean
-  isLoading?: boolean
-  dateKey?: keyof TData & string
+  data: TData[];
+  columns: ColumnDef<TData, TValue>[];
+  searchKey?: keyof TData & string;
+  placeholder?: string;
+  enableRowSelection?: boolean;
+  actionButton?: {
+    label: string;
+    onClick?: () => void;
+    component?: React.ReactNode;
+  };
+  rowActions?: ActionButton<TData>[];
+  toolbar?: (table: ReactTable<TData>) => React.ReactNode;
+  includeSelection?: boolean;
+  isLoading?: boolean;
+  dateKey?: keyof TData & string;
+  onDateRangeChange?: (range?: DateRange) => void;
 }
 
 export function DataTableGeneric<TData extends RowData, TValue>({
@@ -63,44 +72,68 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   includeSelection = false,
   isLoading = false,
   dateKey,
+  onDateRangeChange,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = React.useState("")
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
-  const [viewAsCard, setViewAsCard] = React.useState(false)
-  const [isFilterOpen, setIsFilterOpen] = React.useState(false)
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
-  const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(undefined)
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 15,
+  });
+  const [viewAsCard, setViewAsCard] = React.useState(false);
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [selectedRange, setSelectedRange] = React.useState<
+    DateRange | undefined
+  >(undefined);
+  const [tempSelectedRange, setTempSelectedRange] = React.useState<
+    DateRange | undefined
+  >(undefined);
 
   const dataWithDateFilter = React.useMemo(() => {
-    if (!dateRange || !dateRange.from || !dateRange.to) return data
-    const from = new Date(dateRange.from)
-    const to = new Date(dateRange.to)
+    if (!selectedRange || !selectedRange.from || !selectedRange.to || !dateKey)
+      return data;
+    const toDateOnly = (dt: Date) =>
+      new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const from = toDateOnly(new Date(selectedRange.from));
+    const to = toDateOnly(new Date(selectedRange.to));
     return data.filter((row: any) => {
-      const value = (row as any)[(dateKey as unknown as string)]
-      if (!value) return false
-      const d = new Date(value)
-      if (Number.isNaN(d.getTime())) return false
-      return d >= from && d <= to
-    })
-  }, [data, dateRange])
+      const value = (row as any)[dateKey as unknown as string];
+      if (!value) return false;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return false;
+      const dOnly = toDateOnly(d);
+      return dOnly >= from && dOnly <= to;
+    });
+  }, [data, selectedRange, dateKey]);
 
   const columnsWithSelection = React.useMemo<ColumnDef<TData, any>[]>(() => {
-    let finalColumns = columns
-    
+    let finalColumns = columns.map((col: any) => {
+      const accessorId = (col.id ?? col.accessorKey) as string | undefined;
+      if (dateKey && accessorId === (dateKey as unknown as string)) {
+        return { enableSorting: true, sortingFn: "datetime", ...col };
+      }
+      if (searchKey && accessorId === (searchKey as unknown as string)) {
+        return { enableSorting: true, sortingFn: "alphanumeric", ...col };
+      }
+      return col;
+    });
+
     if (includeSelection) {
-      finalColumns = [createSelectionColumn<TData>(), ...finalColumns]
+      finalColumns = [createSelectionColumn<TData>(), ...finalColumns];
     }
-    
+
     if (rowActions && rowActions.length > 0) {
-      finalColumns = [...finalColumns, createActionsColumn<TData>(rowActions)]
+      finalColumns = [...finalColumns, createActionsColumn<TData>(rowActions)];
     }
-    
-    return finalColumns
-  }, [columns, includeSelection, rowActions])
+
+    return finalColumns;
+  }, [columns, includeSelection, rowActions]);
 
   const table = useReactTable<TData>({
     data: dataWithDateFilter,
@@ -125,19 +158,23 @@ export function DataTableGeneric<TData extends RowData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     globalFilterFn: (row, _columnId, filter) => {
-      const needle = String(filter).toLowerCase()
-      if (!needle) return true
-      if (searchKey) {
-        const value = row.original?.[searchKey]
-        return String(value ?? "").toLowerCase().includes(needle)
+      const needle = String(filter).trim().toLowerCase();
+      if (!needle) return true;
+      const cells = (row.getAllCells?.() ?? row.getVisibleCells?.() ?? []) as any[];
+      if (cells.length > 0) {
+        return cells.some((cell: any) => {
+          const colId = String(cell.column?.id ?? "");
+          if (colId === "select" || colId === "actions") return false;
+          const raw = row.getValue?.(colId as any);
+          return String(raw ?? "").toLowerCase().includes(needle);
+        });
       }
-      // Sem searchKey: procura em todos os campos do objeto
-      const values = Object.values(row.original as Record<string, unknown>)
-      return values.some((v) => String(v ?? "").toLowerCase().includes(needle))
+      const values = Object.values(row.original as Record<string, unknown>);
+      return values.some((v) => String(v ?? "").toLowerCase().includes(needle));
     },
-  })
+  });
 
-  const hasSelectionColumn = enableRowSelection
+  const hasSelectionColumn = enableRowSelection;
 
   return (
     <div className="w-full max-w-full space-y-4 ">
@@ -152,21 +189,29 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         onChangeView={(v) => setViewAsCard(v === "cards")}
         isFilterOpen={isFilterOpen}
         setIsFilterOpen={setIsFilterOpen}
-        tempDateRange={tempDateRange}
-        setTempDateRange={setTempDateRange}
-        onApplyDateRange={() => { setDateRange(tempDateRange); setIsFilterOpen(false) }}
-        onClearDateRange={() => { setTempDateRange(undefined); setDateRange(undefined) }}
+        tempRange={tempSelectedRange}
+        setTempRange={(r) => {
+          const normalized =
+            r && r.from ? { from: r.from, to: r.to ?? r.from } : undefined;
+          setTempSelectedRange(normalized);
+          setSelectedRange(normalized);
+          onDateRangeChange?.(normalized);
+        }}
+        onClearRange={() => {
+          setTempSelectedRange(undefined);
+          setSelectedRange(undefined);
+        }}
+        searchKey={searchKey}
+        dateKey={dateKey}
       />
 
-      {!viewAsCard && (
-        <TableView table={table} isLoading={isLoading} colSpan={columnsWithSelection.length} />
-      )}
-
-  
-   
+      <TableView
+        table={table}
+        isLoading={isLoading}
+        colSpan={columnsWithSelection.length}
+      />
 
       <div className="flex items-center justify-end px-4 pt-4 border-t border-border">
-       
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <Button
             variant="outline"
@@ -176,8 +221,12 @@ export function DataTableGeneric<TData extends RowData, TValue>({
           >
             Anterior
           </Button>
-          {Array.from({ length: table.getPageCount() }, (_, index) => index).map((pageIndex) => {
-            const isActive = table.getState().pagination.pageIndex === pageIndex
+          {Array.from(
+            { length: table.getPageCount() },
+            (_, index) => index
+          ).map((pageIndex) => {
+            const isActive =
+              table.getState().pagination.pageIndex === pageIndex;
             return (
               <Button
                 key={pageIndex}
@@ -188,7 +237,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
               >
                 {pageIndex + 1}
               </Button>
-            )
+            );
           })}
           <Button
             variant="outline"
@@ -201,16 +250,21 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export function createSelectionColumn<TData extends RowData>(): ColumnDef<TData> {
+export function createSelectionColumn<
+  TData extends RowData
+>(): ColumnDef<TData> {
   return {
     id: "select",
     header: ({ table }) => (
       <div className="flex items-center justify-center">
         <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Selecionar todos"
         />
@@ -227,11 +281,13 @@ export function createSelectionColumn<TData extends RowData>(): ColumnDef<TData>
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 1,
-  }
+    size: 44,
+  };
 }
 
-export function createActionsColumn<TData extends RowData>(actions: ActionButton<TData>[]): ColumnDef<TData> {
+export function createActionsColumn<TData extends RowData>(
+  actions: ActionButton<TData>[]
+): ColumnDef<TData> {
   return {
     id: "actions",
     header: "Ações",
@@ -259,8 +315,6 @@ export function createActionsColumn<TData extends RowData>(actions: ActionButton
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 60,
-  }
+    size: 30,
+  };
 }
-
-

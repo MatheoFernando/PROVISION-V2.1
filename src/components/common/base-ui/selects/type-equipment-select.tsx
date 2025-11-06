@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus } from "lucide-react";
@@ -51,7 +51,6 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
           setOpen(false);
           onChange(created.id!);
           form.reset({ name: "", description: "", companyId });
-          
         },
         onError: () => {
           toast.error("Erro ao criar tipo de equipamento");
@@ -98,40 +97,77 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
           </SelectContent>
         </Select>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="shrink-0 cursor-pointer"
-        onClick={() => setOpen(true)}
-        aria-label="Criar tipo de equipamento"
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          const isSaving = createTypeEquipment.status === "pending";
+          if (isSaving) return;
+          setOpen(next);
+        }}
       >
-        <Plus className="w-4 h-4" />
-      </Button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>Criar Tipo de Equipamento</DialogHeader>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 mt-2">
-            <div className="space-y-2">
-              <Label htmlFor="type_name">Nome</Label>
-              <Input id="type_name" {...form.register("name")} placeholder="Nome" />
-              {form.formState.errors.name && (
-                <span className="text-red-500 text-xs">{form.formState.errors.name.message}</span>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="type_desc">Descrição</Label>
-              <Textarea id="type_desc" rows={3} {...form.register("description")} placeholder="Descrição" />
-              {form.formState.errors.description && (
-                <span className="text-red-500 text-xs">{(form.formState.errors.description as any)?.message}</span>
-              )}
-            </div>
-            <div className="flex justify-end mt-4">
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0 cursor-pointer"
+            disabled={createTypeEquipment.status === "pending"}
+            aria-label="Criar tipo de equipamento"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          className="w-80 p-4"
+          onInteractOutside={(e) => {
+            if (createTypeEquipment.status === "pending") e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (createTypeEquipment.status === "pending") e.preventDefault();
+          }}
+        >
+          <div className="space-y-3">
+            <Label htmlFor="type_name" className="block">Nome</Label>
+            <Input
+              id="type_name"
+              {...form.register("name")}
+              className="w-full"
+              placeholder="Nome"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
+            />
+            {form.formState.errors.name && (
+              <span className="text-red-500 text-xs">{form.formState.errors.name.message}</span>
+            )}
+            <Label htmlFor="type_desc" className="block">Descrição</Label>
+            <Textarea id="type_desc" rows={3} {...form.register("description")} placeholder="Descrição" />
+            {form.formState.errors.description && (
+              <span className="text-red-500 text-xs">{(form.formState.errors.description as any)?.message}</span>
+            )}
+            <div className="flex justify-end gap-2">
               <Button
-                type="submit"
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (createTypeEquipment.status === "pending") return;
+                  form.reset({ name: "", description: "", companyId });
+                  setOpen(false);
+                }}
+                className="cursor-pointer"
+                disabled={createTypeEquipment.status === "pending"}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
                 disabled={createTypeEquipment.status === "pending"}
                 className="px-6 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => form.handleSubmit(handleSubmit)()}
               >
                 {createTypeEquipment.status === "pending" ? (
                   <>
@@ -142,9 +178,9 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
                 )}
               </Button>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

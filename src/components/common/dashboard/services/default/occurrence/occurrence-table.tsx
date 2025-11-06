@@ -14,25 +14,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { OccurrenceDialog } from "./occurrence-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { OccurrenceCreate } from "./occurrence-create";
 import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
 import { useTypeOccurrences } from "@/infrastructure/hooks/useTypeOccurrences";
 import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
-import type { TypeOccurrence } from "@/infrastructure/schema/schema-type-occurrence";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useRouter } from "next/navigation";
+import { DeleteModal } from "@/components/ui/delete-modal";
 
 function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const deleteMutation = useDeleteOccurrenceMutation();
-  const router = useRouter();
-
-  const handleDelete = () => {
-    if (window.confirm("Tem certeza que deseja excluir esta ocorrência?")) {
-      deleteMutation.mutate(occurrence.id!);
-    }
+  const handleConfirmDelete = () => {
+    deleteMutation.mutate(occurrence.id!, {
+      onSuccess: () => setIsDeleteOpen(false),
+    });
   };
 
   return (
@@ -56,11 +58,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
             Visualizar
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              router.push(
-                `/dashboard/service/occorrence/create?id=${occurrence.id}`
-              )
-            }
+            onClick={() => setIsEditOpen(true)}
             className="cursor-pointer"
           >
             <Edit className="size-4 mr-2" />
@@ -70,7 +68,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
           <DropdownMenuItem
             className="cursor-pointer"
             variant="destructive"
-            onClick={handleDelete}
+            onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="size-4 mr-2" />
@@ -84,16 +82,34 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <OccurrenceCreate id={occurrence.id} initialData={occurrence as any} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <DeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+        title="Excluir Ocorrência"
+        message={`Tem certeza que deseja excluir a ocorrência ${occurrence.cod}?`}
+      />
     </>
   );
 }
 
 const createOccurrenceColumns = (
-  typeOccurrences: TypeOccurrence[]
 ): ColumnDef<Occurrence>[] => [
   {
     accessorKey: "cod",
     header: "Código",
+    size: 40,
     cell: ({ row }) => <div className="font-medium">{row.original.cod}</div>,
   },
 
@@ -172,6 +188,7 @@ const createOccurrenceColumns = (
   {
     accessorKey: "time",
     header: "Horário",
+    size: 40,
     cell: ({ row }) => {
       const t = row.original.time || "";
       const hhmm = t.includes("T") ? t.slice(11, 16) : t.slice(0, 5);
@@ -204,14 +221,13 @@ interface OccurrenceTableProps {
 export function OccurrenceTable({
   data,
   isLoading,
-  onCreateClick,
 }: OccurrenceTableProps) {
   const { data: typeOccurrences } = useTypeOccurrences();
   const companyId = useAuthStore((s) => s.companyId || undefined);
   const { data: employees = [] } = useEmployees(companyId);
   const { data: equipments = [] } = useEquipment();
   const { data: sites = [] } = useSites();
-  const router = useRouter();
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
 
   const employeeById = React.useMemo(() => {
     const map: Record<string, string> = {};
@@ -250,17 +266,26 @@ export function OccurrenceTable({
     <div className="w-full">
       <DataTableGeneric
         data={resolvedData}
-        columns={createOccurrenceColumns(typeOccurrences ?? [])}
+        columns={createOccurrenceColumns()}
         searchKey="cod"
-        placeholder="Pesquisar ocorrências..."
+        placeholder="Pesquisar..."
+        dateKey="createdAt"
         enableRowSelection={true}
         includeSelection={true}
         isLoading={isLoading}
         actionButton={{
           label: "Nova Ocorrência",
-          onClick: () => router.push("/dashboard/service/occurrence/create"),
+          onClick: () => setIsCreateOpen(true),
         }}
       />
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <OccurrenceCreate onSuccess={() => setIsCreateOpen(false)} onCancel={() => setIsCreateOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

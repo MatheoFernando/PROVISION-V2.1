@@ -104,7 +104,6 @@ export function useCreateCompanyMutation() {
       return data
     },
     onSuccess: (data) => {
-      console.log('Empresa criada com sucesso', data)
       void queryClient.invalidateQueries({ queryKey: ['companies'] })
       toast.success('Empresa criada com sucesso')
     },
@@ -125,12 +124,10 @@ export function useUpdateCompanyMutation() {
       return data
     },
     onSuccess: (data) => {
-      console.log('Empresa atualizada com sucesso', data)
       void queryClient.invalidateQueries({ queryKey: ['companies'] })
       toast.success('Empresa atualizada com sucesso')
     },
     onError: (error) => {
-      console.log('Erro ao atualizar empresa', error)
       toast.error('Erro ao atualizar empresa')
     },
   })

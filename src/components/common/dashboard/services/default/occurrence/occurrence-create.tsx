@@ -17,8 +17,7 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { EquipmentSelect } from "@/components/common/base-ui/selects/equipment-select";
-import { useCreateOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
-import { useRouter } from "next/navigation";
+import { useCreateOccurrenceMutation, useUpdateOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -41,10 +40,17 @@ const createOccurrenceSchema = z.object({
 
 type CreateOccurrenceInput = z.output<typeof createOccurrenceSchema>;
 
-export function OccurrenceCreate() {
-  const router = useRouter();
+interface OccurrenceCreateProps {
+  id?: string
+  initialData?: any
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+export function OccurrenceCreate(props: OccurrenceCreateProps) {
   const companyId = useAuthStore((s) => s.companyId || "");
   const createMutation = useCreateOccurrenceMutation();
+  const updateMutation = useUpdateOccurrenceMutation();
 
   const form = useForm({
     resolver: zodResolver(createOccurrenceSchema),
@@ -63,17 +69,33 @@ export function OccurrenceCreate() {
     },
   });
 
+  React.useEffect(() => {
+    const d = props.initialData
+    if (!d) return
+    const parseTime = (value: string) => {
+      if (!value) return ""
+      return value.includes("T") ? value.slice(11, 16) : value.slice(0, 5)
+    }
+    form.reset({
+      cod: d.cod || "",
+      description: d.description || "",
+      companyId: d.companyId || companyId,
+      typeOccorrenceId: d.typeOccorrenceId || d.typeOccurrenceId || "",
+      equipmentId: d.equipmentId || "",
+      employeeId: d.employeeId || "",
+      siteId: d.siteId || "",
+      time: parseTime(d.time || ""),
+      correctiveAction: d.correctiveAction || "",
+      gravity: d.gravity || "",
+      status: d.status || "Ativo",
+    })
+  }, [props.initialData, form, companyId])
+
   function handleSubmit(data: CreateOccurrenceInput) {
     const toIsoFromTime = (value: string) => {
       if (!value) return "";
       if (value.includes("T")) return value;
-      const [hoursStr, minutesStr] = value.split(":");
-      const hours = parseInt(hoursStr || "0", 10);
-      const minutes = parseInt(minutesStr || "0", 10);
-      const d = new Date();
-      d.setSeconds(0, 0);
-      d.setHours(hours, minutes, 0, 0);
-      return d.toISOString();
+      return new Date(`1970-01-01T${value}`).toISOString();
     };
 
     const payload = {
@@ -81,22 +103,27 @@ export function OccurrenceCreate() {
       companyId: data.companyId || companyId,
       time: toIsoFromTime(data.time),
     };
-    createMutation.mutate(payload as any, {
-      onSuccess: () => {
-        router.back();
-      },
-    });
+    if (props.id) {
+      updateMutation.mutate(
+        { id: props.id, data: payload as any },
+        { onSuccess: () => { if (props.onSuccess) props.onSuccess() } }
+      )
+    } else {
+      createMutation.mutate(payload as any, {
+        onSuccess: () => { if (props.onSuccess) props.onSuccess() },
+      });
+    }
   }
 
   return (
-    <div className="mb-8">
+    <div>
       <h1 className="text-3xl font-bold text-slate-900">Nova Ocorrência</h1>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-6 mt-6"
+        className="space-y-6 "
       >
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className=" p-4 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
             <div className="space-y-2">
               <Label htmlFor="cod" className="text-slate-700">
                 Código
@@ -206,9 +233,30 @@ export function OccurrenceCreate() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+            <Label className="text-slate-700">Status</Label>
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={form.watch("status") === "Ativo"}
+                onCheckedChange={(checked) =>
+                  form.setValue("status", checked ? "Ativo" : "Inativo", {
+                    shouldValidate: true,
+                  })
+                }
+              />
+              <span className="text-sm text-muted-foreground">
+                {form.watch("status") === "Ativo" ? "Ativo" : "Inativo"}
+              </span>
+            </div>
+            {form.formState.errors.status && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.status.message}
+              </p>
+            )}
+          </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <Label htmlFor="description" className="text-slate-700">
                 Descrição
@@ -233,48 +281,26 @@ export function OccurrenceCreate() {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-slate-700">Status</Label>
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.watch("status") === "Ativo"}
-                onCheckedChange={(checked) =>
-                  form.setValue("status", checked ? "Ativo" : "Inativo", {
-                    shouldValidate: true,
-                  })
-                }
-              />
-              <span className="text-sm text-muted-foreground">
-                {form.watch("status") === "Ativo" ? "Ativo" : "Inativo"}
-              </span>
-            </div>
-            {form.formState.errors.status && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.status.message}
-              </p>
-            )}
-          </div>
-          <div className="space-x-2 pt-4 bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-200">
+        
+          <div className="space-x-2 pt-4 flex justify-end gap-3">
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => props.onCancel?.()}
               className="rounded-lg px-6 cursor-pointer"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
             >
-              {createMutation.isPending ? (
+              {createMutation.isPending || updateMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
                 </>
-              ) : (
-                "Criar Ocorrência"
-              )}
+              ) : props.id ? "Atualizar Ocorrência" : "Criar Ocorrência"}
             </Button>
           </div>
         </div>

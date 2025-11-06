@@ -18,7 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DataTableGeneric } from "@/components/common/base-ui/data-table"
+import type { DateRange } from "react-day-picker"
 import { SupervisionDialog } from "./supervision-dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { SupervisionCreate } from "./supervision-create"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"
 import { useEmployees } from "@/infrastructure/hooks/useEmployees"
 import { useEquipment } from "@/infrastructure/hooks/useEquipment"
@@ -27,20 +30,23 @@ import { useDepartments } from "@/infrastructure/hooks/useDepartments"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { useRouter } from "next/navigation"
 import { Supervision } from "@/infrastructure/types/domain"
+import { DeleteModal } from "@/components/ui/delete-modal"
 
 interface ActionsButtonsProps {
   supervision: Supervision
+  equipmentCode?: string
 }
 
-function ActionsButtons({ supervision }: ActionsButtonsProps) {
+function ActionsButtons({ supervision, equipmentCode }: ActionsButtonsProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
+  const [isEditOpen, setIsEditOpen] = React.useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
   const deleteMutation = useDeleteSupervisionMutation()
-  const router = useRouter()
-
-  const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir esta supervisão?')) {
-      deleteMutation.mutate(supervision.id!)
-    }
+ 
+  const handleConfirmDelete = () => {
+    deleteMutation.mutate(supervision.id!, {
+      onSuccess: () => setIsDeleteOpen(false),
+    })
   }
 
   return (
@@ -60,7 +66,7 @@ function ActionsButtons({ supervision }: ActionsButtonsProps) {
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push(`/dashboard/service/supervision/create?id=${supervision.id}`)} className="cursor-pointer">
+          <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="cursor-pointer">
             <Edit className="size-4 mr-2" />
             Editar
           </DropdownMenuItem>
@@ -68,7 +74,7 @@ function ActionsButtons({ supervision }: ActionsButtonsProps) {
           <DropdownMenuItem 
             className="cursor-pointer"
             variant="destructive" 
-            onClick={handleDelete}
+            onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="size-4 mr-2" />
@@ -83,7 +89,23 @@ function ActionsButtons({ supervision }: ActionsButtonsProps) {
         onOpenChange={setIsDialogOpen}
       />
 
-      
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <SupervisionCreate id={supervision.id} initialData={supervision} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <DeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+        title="Excluir Supervisão"
+        message={`Tem certeza que deseja excluir a supervisão do equipamento ?`}
+      />
     </>
   )
 }
@@ -100,6 +122,7 @@ const createSupervisionColumns = (
   {
     accessorKey: "cod",
     header: "Código",
+    size: 50,
     cell: ({ row }) => (
       <div className="font-medium">{row.original.cod}</div>
     ),
@@ -107,6 +130,7 @@ const createSupervisionColumns = (
   {
     accessorKey: "desiredNumberWorkers",
     header: "Desejado",
+    size: 50,
     cell: ({ row }) => (
       <div className="text-center">{row.original.desiredNumberWorkers}</div>
     ),
@@ -114,12 +138,14 @@ const createSupervisionColumns = (
   {
     accessorKey: "numberWorkerPresent",
     header: "Presente",
+    size: 50,
     cell: ({ row }) => (
       <div className="text-center">{row.original.numberWorkerPresent}</div>
     ),
   },
   {
-    accessorKey: "equipmentId",
+    accessorFn: (row) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
+    id: "equipment",
     header: "Equipamento",
     cell: ({ row }) => {
       const name = maps.equipmentById[row.original.equipmentId || ""]
@@ -127,7 +153,8 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorKey: "employeeId",
+    accessorFn: (row) => maps.employeeById[row.employeeId || ""] || 'N/A',
+    id: "employee",
     header: "Funcionário",
     cell: ({ row }) => {
       const name = maps.employeeById[row.original.employeeId || ""]
@@ -135,7 +162,8 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorKey: "siteId",
+    accessorFn: (row) => maps.siteById[row.siteId || ""] || 'N/A',
+    id: "site",
     header: "Site",
     cell: ({ row }) => {
       const name = maps.siteById[row.original.siteId || ""]
@@ -143,8 +171,13 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorKey: "time",
+    accessorFn: (row) => {
+      const t = row.time || ""
+      return t.includes("T") ? t.slice(11, 16) : t.slice(0, 5)
+    },
+    id: "time",
     header: "Horário",
+    size: 50,
     cell: ({ row }) => {
       const t = row.original.time || ""
       const hhmm = t.includes("T") ? t.slice(11, 16) : t.slice(0, 5)
@@ -152,7 +185,8 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorKey: "departmentId",
+    accessorFn: (row) => maps.departmentById[row.departmentId || ""] || 'N/A',
+    id: "department",
     header: "Departamento",
     cell: ({ row }) => {
       const name = maps.departmentById[row.original.departmentId || ""]
@@ -172,7 +206,8 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorKey: "createdAt",
+    accessorFn: (row) => new Date(row.createdAt || '').toLocaleDateString('pt-BR'),
+    id: "createdAt",
     header: "Criado em",
     cell: ({ row }) => (
       <div className="text-sm text-muted-foreground">
@@ -184,7 +219,7 @@ const createSupervisionColumns = (
     id: "actions",
     header: "Ações",
     cell: ({ row }) => (
-      <ActionsButtons supervision={row.original} />
+      <ActionsButtons supervision={row.original} equipmentCode={maps.equipmentById[row.original.equipmentId || ""]} />
     ),
   },
 ]
@@ -193,15 +228,16 @@ interface SupervisionTableProps {
   data: Supervision[]
   isLoading?: boolean
   onCreateClick?: () => void
+  onDateRangeChange?: (range?: DateRange) => void
 }
 
-export function SupervisionTable({ data, isLoading }: SupervisionTableProps) {
+export function SupervisionTable({ data, isLoading, onDateRangeChange }: SupervisionTableProps) {
   const companyId = useAuthStore((s) => s.companyId || undefined)
   const { data: employees = [] } = useEmployees(companyId)
   const { data: equipments = [] } = useEquipment()
   const { data: sites = [] } = useSites()
   const { data: departments = [] } = useDepartments()
-  const router = useRouter()
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
 
   const employeeById = React.useMemo(() => {
     const map: Record<string, string> = {}
@@ -246,15 +282,26 @@ export function SupervisionTable({ data, isLoading }: SupervisionTableProps) {
           departmentById,
         })}
         searchKey="cod"
-        placeholder="Pesquisar supervisões..."
+        placeholder="Pesquisar..."
         enableRowSelection={true}
         includeSelection={true}
         isLoading={isLoading}
+        dateKey="createdAt"
+        onDateRangeChange={onDateRangeChange}
         actionButton={{
           label: "Nova Supervisão",
-          onClick: () => router.push('/dashboard/service/supervision/create'),
+          onClick: () => setIsCreateOpen(true),
         }}
       />
+
+      <Dialog open={isCreateOpen} onOpenChange={(open) => { if (open) setIsCreateOpen(true) }}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <SupervisionCreate onSuccess={() => setIsCreateOpen(false)} onCancel={() => setIsCreateOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

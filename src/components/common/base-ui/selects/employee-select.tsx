@@ -33,12 +33,12 @@ export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectPro
           <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
         )}
         <SelectContent className="w-[var(--radix-select-trigger-width)] ">
-          <div className="p-2 sticky top-0 bg-popover">
+          <div className="p-1 sticky top-0 bg-popover">
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filtrar funcionários..."
-              className="w-full"
+              className="w-full placeholder:text-xs"
               disabled={isLoading || list.length === 0}
             />
           </div>

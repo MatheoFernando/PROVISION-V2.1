@@ -12,13 +12,15 @@ import { CustomersView } from "./customers-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteCustomer } from "@/infrastructure/hooks/useCustomers";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import CustomersCreatePage from "./customer-create";
 
 const columns: ColumnDef<Customer>[] = [
  
   {
     accessorKey: "cod",
     header: "Código",
+    size: 40, 
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
@@ -36,6 +38,7 @@ const columns: ColumnDef<Customer>[] = [
   {
     accessorKey: "taxName",
     header: "Nome Fiscal",
+    size: 60,
     cell: ({ row }) => {
       const taxName = row.getValue("taxName") as string;
       return <div>{taxName}</div>;
@@ -62,19 +65,10 @@ const columns: ColumnDef<Customer>[] = [
 export function CustomersTable() {
   const { data: customers = [], isLoading } = useCustomers();
   const deleteCustomer = useDeleteCustomer();
-  const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
-
-  const filteredData = customers.filter((item) =>
-    item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.taxName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.nif.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleView = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -110,24 +104,23 @@ export function CustomersTable() {
     }
   };
 
-  const handleCreate = () => {
-    setSelectedCustomer(undefined);
-    setIsViewOpen(false);
-    setIsDeleteOpen(false);
-    setIsCreateOpen(true);
-  };
 
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
+        data={customers}
         isLoading={isLoading}
-        searchKey="name"
-        actionButton={{
+         actionButton={{
           label: "Novo Cliente",
-          onClick: () => router.push("/dashboard/customers/create"),
+          onClick: () => {
+            setSelectedCustomer(undefined);
+            setIsCreateOpen(true);
+          },
         }}
+        searchKey="name"
+        placeholder="Pesquisar..."
+        dateKey="createdAt"
         enableRowSelection={true}
         includeSelection={true}
         rowActions={[
@@ -149,10 +142,23 @@ export function CustomersTable() {
         ]}
       />
 
-   
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+    
+        >
+          <CustomersCreatePage
+            id={selectedCustomer?.id}
+            initialData={selectedCustomer as any}
+            onSuccess={() => { setIsCreateOpen(false); setSelectedCustomer(undefined); }}
+            onCancel={() => { setIsCreateOpen(false); setSelectedCustomer(undefined); }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <CustomersView
-        customer={selectedCustomer}
+        customer={selectedCustomer as any}
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
       />

@@ -1,9 +1,12 @@
 "use client";
 
+import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/infrastructure/utils/api";
 import { toast } from "sonner";
 import { Supervision } from "../types/domain";
+
+const QUERY_KEY = ["supervisions"] as const;
 
 export function useSupervisionsQuery() {
   return useQuery({
@@ -15,6 +18,25 @@ export function useSupervisionsQuery() {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export function useSupervisionsByDayQuery(date?: Date) {
+  const dataParam = React.useMemo(() => {
+    if (!date) return undefined;
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return day.toISOString();
+  }, [date]);
+
+  return useQuery({
+    queryKey: ["supervisions", "byDate", dataParam],
+    enabled: !!dataParam,
+    queryFn: async (): Promise<Supervision[]> => {
+      const response = await api.get("/supervision/getByDate", { params: { data: dataParam } });
+      return (response.data?.data ?? response.data) as Supervision[];
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
 
 export function useSupervisionQuery(id: string) {
   return useQuery({
@@ -58,11 +80,14 @@ export function useUpdateSupervisionMutation() {
       id: string;
       data: Supervision;
     }): Promise<Supervision> => {
-      const response = await api.put(`/supervisions/${id}`, data);
+      const response = await api.put(`/supervision/${id}`, data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisions"] });
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData<Supervision[] | undefined>(QUERY_KEY, (old) => {
+        if (!old) return old;
+        return old.map((e) => (e.id === variables.id ? (updated as Supervision) : e));
+      });
       toast.success("Supervisão atualizada com sucesso");
     },
     onError: (error: any) => {
@@ -78,7 +103,7 @@ export function useDeleteSupervisionMutation() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/supervisions/${id}`);
+      await api.delete(`/supervision/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supervisions"] });

@@ -9,19 +9,27 @@ import {
   createCustomerSchema,
   CreateCustomerPayload,
 } from "@/infrastructure/schema/schema-customers";
-import { useCreateCustomer } from "@/infrastructure/hooks/useCustomers";
+import { useCreateCustomer, useUpdateCustomer } from "@/infrastructure/hooks/useCustomers";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { AddressSelect } from "@/components/common/base-ui/selects/address-select";
 import { ContactSelect } from "@/components/common/base-ui/selects/contact-select";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
-function CustomersCreatePage() {
+interface CustomersCreatePageProps {
+  id?: string;
+  initialData?: CreateCustomerPayload & { id?: string };
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+function CustomersCreatePage(props: CustomersCreatePageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState("");
 
   const router = useRouter();
   const createCustomer = useCreateCustomer();
+  const updateCustomer = useUpdateCustomer();
   const companyId = useAuthStore((state) => state.companyId) || "";
   const form = useForm({
     resolver: zodResolver(createCustomerSchema),
@@ -36,6 +44,21 @@ function CustomersCreatePage() {
       companyId: companyId,
     },
   });
+
+  React.useEffect(() => {
+    const d = props.initialData;
+    if (!d) return;
+    form.reset({
+      cod: d.cod || "",
+      name: d.name || "",
+      taxName: d.taxName || "",
+      nif: d.nif || "",
+      photo: d.photo || "",
+      contactId: d.contactId || "",
+      addressId: d.addressId || "",
+      companyId: d.companyId || companyId,
+    });
+  }, [props.initialData, form, companyId]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,11 +77,15 @@ function CustomersCreatePage() {
     console.log("onSubmit chamado com dados:", data);
     setIsSubmitting(true);
     try {
-      await createCustomer.mutateAsync({
-        ...data,
-        companyId,
-      });
-      router.back();
+      if (props.id) {
+        await updateCustomer.mutateAsync({ id: props.id, data: { ...data, companyId } as any });
+      } else {
+        await createCustomer.mutateAsync({
+          ...data,
+          companyId,
+        });
+      }
+      if (props.onSuccess) props.onSuccess(); else router.back();
     } catch (error) {
       console.error(error);
     } finally {
@@ -67,14 +94,12 @@ function CustomersCreatePage() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Novo Cliente</h1>
-        </div>
 
+      <div>
+          <h1 className="text-3xl font-bold text-slate-900">Novo Cliente</h1>
+      
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+          <div className=" p-4 space-y-6">
            
 {/*
   <div className="bg-slate-400 p-6">
@@ -114,7 +139,7 @@ function CustomersCreatePage() {
             </div>
              */}
            
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="cod" className="text-slate-700">
                       Código *
@@ -233,27 +258,27 @@ function CustomersCreatePage() {
               </div>
             </div>
 
-            <div className="bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-200">
+            <div className=" flex justify-end gap-3 ">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={() => (props.onCancel ? props.onCancel() : router.back())}
                 className="rounded-lg px-6 cursor-pointer"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || updateCustomer.isPending || createCustomer.isPending}
                 className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
               >
-                {isSubmitting ? "Salvando..." : "Criar Cliente"}
+                {isSubmitting || updateCustomer.isPending || createCustomer.isPending ? "Salvando..." : props.id ? "Atualizar Cliente" : "Criar Cliente"}
               </Button>
             </div>
           </div>
         </form>
       </div>
-    </div>
+  
   );
 }
 

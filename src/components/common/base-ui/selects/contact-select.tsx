@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogHeader, DialogContent } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -11,7 +15,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus,  Loader2, Trash } from "lucide-react";
+import { Plus, Loader2, Trash } from "lucide-react";
 import {
   useContacts,
   useCreateContact,
@@ -30,7 +34,12 @@ interface ContactSelectProps {
   onPhoneChange?: (phone: string) => void;
 }
 
-export function ContactSelect({ value, onChange, companyId, onPhoneChange }: ContactSelectProps) {
+export function ContactSelect({
+  value,
+  onChange,
+  companyId,
+  onPhoneChange,
+}: ContactSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedPhone, setSelectedPhone] = useState<string>("");
@@ -64,14 +73,18 @@ export function ContactSelect({ value, onChange, companyId, onPhoneChange }: Con
   const list = Array.isArray(contacts) ? contacts : [];
   const selectedContact = list.find((c) => c.id === value);
   const phoneOptions = Array.isArray(selectedContact?.phoneNumbers)
-    ? selectedContact!.phoneNumbers.map((p: { phone: string }) => p.phone).filter((p) => (p ?? "").trim() !== "")
+    ? selectedContact!.phoneNumbers
+        .map((p: { phone: string }) => p.phone)
+        .filter((p) => (p ?? "").trim() !== "")
     : [];
   const filtered = list.filter((c: Contact) => {
     const phones = (Array.isArray(c.phoneNumbers) ? c.phoneNumbers : [])
       .map((p: { phone: string }) => p.phone)
       .join(", ");
     return (
-      String(c.email ?? "").toLowerCase().includes(query.toLowerCase()) ||
+      String(c.email ?? "")
+        .toLowerCase()
+        .includes(query.toLowerCase()) ||
       phones.toLowerCase().includes(query.toLowerCase())
     );
   });
@@ -83,16 +96,22 @@ export function ContactSelect({ value, onChange, companyId, onPhoneChange }: Con
           <Select
             value={value}
             onValueChange={(val) => {
-              const selected = (Array.isArray(contacts) ? contacts : []).find((c: Contact) => c.id === val);
+              const selected = (Array.isArray(contacts) ? contacts : []).find(
+                (c: Contact) => c.id === val
+              );
               console.log("Contato selecionado:", {
                 id: val,
                 email: selected?.email ?? null,
                 phoneNumbers: Array.isArray(selected?.phoneNumbers)
-                  ? selected!.phoneNumbers.map((p: { phone: string }) => p.phone)
+                  ? selected!.phoneNumbers.map(
+                      (p: { phone: string }) => p.phone
+                    )
                   : [],
               });
               const firstPhone = Array.isArray(selected?.phoneNumbers)
-                ? (selected!.phoneNumbers.find((p: { phone: string }) => (p?.phone ?? "").trim() !== "")?.phone ?? "")
+                ? selected!.phoneNumbers.find(
+                    (p: { phone: string }) => (p?.phone ?? "").trim() !== ""
+                  )?.phone ?? ""
                 : "";
               setSelectedPhone(firstPhone);
               if (firstPhone) {
@@ -112,22 +131,32 @@ export function ContactSelect({ value, onChange, companyId, onPhoneChange }: Con
               <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             )}
             <SelectContent className="w-[var(--radix-select-trigger-width)]">
-              <div className="p-2 sticky top-0 bg-popover">
+              <div className="p-1 sticky top-0 bg-popover">
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Filtrar contatos..."
-                  className="w-full"
+                  className="w-full placeholder:text-xs"
                 />
               </div>
               {filtered.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+                <div className="text-sm text-muted-foreground p-3 text-center">
+                  Não há dados disponíveis.
+                </div>
               ) : (
-                <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                <div
+                  className={
+                    filtered.length > 7
+                      ? "max-h-60 overflow-y-auto"
+                      : "max-h-full"
+                  }
+                >
                   {filtered.map((c: Contact) => (
                     <SelectItem key={c.id} value={c.id!}>
-                      {(Array.isArray(c.phoneNumbers) ? c.phoneNumbers : []).map((p: { phone: string }) => p.phone).join(", ")}
-                      {c.email ? ` - ${c.email}` : ""}
+                      {(Array.isArray(c.phoneNumbers) ? c.phoneNumbers : [])
+                        .map((p: { phone: string }) => p.phone)
+                        .join(", ")}
+                      {c.email ? ` ${c.email}` : ""}
                     </SelectItem>
                   ))}
                 </div>
@@ -150,7 +179,13 @@ export function ContactSelect({ value, onChange, companyId, onPhoneChange }: Con
                 <SelectValue placeholder="Selecione um telefone" />
               </SelectTrigger>
               <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                <div className={phoneOptions.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                <div
+                  className={
+                    phoneOptions.length > 7
+                      ? "max-h-60 overflow-y-auto"
+                      : "max-h-full"
+                  }
+                >
                   {phoneOptions.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
@@ -161,96 +196,143 @@ export function ContactSelect({ value, onChange, companyId, onPhoneChange }: Con
             </Select>
           </div>
         )}
-        <Button
-          type="button"
-          variant="outline"
-          className="flex items-center gap-2 px-3 py-2 rounded-md shrink-0 cursor-pointer"
-          onClick={() => setOpen(true)}
+        <Popover
+          open={open}
+          onOpenChange={(next) => {
+            const isSaving = createContact.status === "pending";
+            if (isSaving) return;
+            setOpen(next);
+          }}
         >
-          <Plus className="w-4 h-4" />
-      
-        </Button>
-      </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>Criar Contato</DialogHeader>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-3 mt-2">
-            <div>
-              <div className="flex items-end justify-between mb-2">
-                <Label className="block">Telefones</Label>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex items-center gap-2 px-3 py-2 rounded-md shrink-0 cursor-pointer"
+              disabled={createContact.status === "pending"}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className="w-[25rem] p-4"
+            onInteractOutside={(e) => {
+              if (createContact.status === "pending") e.preventDefault();
+            }}
+            onEscapeKeyDown={(e) => {
+              if (createContact.status === "pending") e.preventDefault();
+            }}
+          >
+            <div className="font-medium mb-2">Criar Contato</div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit(handleSubmit)();
+              }}
+              className="grid gap-3 mt-2"
+            >
+              <div>
+                <div className="flex items-end justify-between mb-2">
+                  <Label className="block">Telefones</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="ml-2 cursor-pointer"
+                    onClick={() => append({ phone: "" })}
+                    aria-label="Adicionar telefone"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {fields.map((field, idx) => (
+                    <div key={field.id} className="flex gap-2 items-center">
+                      <Input
+                        {...form.register(`phoneNumbers.${idx}.phone` as const)}
+                        placeholder={`Telefone ${idx + 1}`}
+                        className="w-full mb-0"
+                        type="number"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.preventDefault();
+                        }}
+                      />
+                      {fields.length > 1 && (
+                        <Button
+                          type="button"
+                          onClick={() => remove(idx)}
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                          aria-label="Remover telefone"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {form.formState.errors.phoneNumbers && (
+                  <span className="text-red-500 text-xs">
+                    {(form.formState.errors.phoneNumbers as any)?.message}
+                  </span>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="contact_email" className="mb-2 block">
+                  Email
+                </Label>
+                <Input
+                  id="contact_email"
+                  {...form.register("email")}
+                  placeholder="Email"
+                  className="mb-2"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.preventDefault();
+                  }}
+                />
+                {form.formState.errors.email && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.email.message}
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
-                  className="ml-2 cursor-pointer"
-                  onClick={() => append({ phone: "" })}
-                  aria-label="Adicionar telefone"
+                  className="cursor-pointer"
+                  disabled={createContact.status === "pending"}
+                  onClick={() => {
+                    if (createContact.status !== "pending") {
+                      form.reset();
+                      setOpen(false);
+                    }
+                  }}
                 >
-                  <Plus className="w-4 h-4" />
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={createContact.status === "pending"}
+                  className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => form.handleSubmit(handleSubmit)()}
+                >
+                  {createContact.status === "pending" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                    </>
+                  ) : (
+                    "Salvar"
+                  )}
                 </Button>
               </div>
-              <div className="flex flex-col gap-2">
-                {fields.map((field, idx) => (
-                  <div key={field.id} className="flex gap-2 items-center">
-                    <Input
-                      {...form.register(`phoneNumbers.${idx}.phone` as const)}
-                      placeholder={`Telefone ${idx + 1}`}
-                      className="w-full mb-0"
-                      type="number"
-                    />
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        onClick={() => remove(idx)}
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:bg-destructive/10 cursor-pointer"
-                        aria-label="Remover telefone"
-                      >
-                        <Trash className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {form.formState.errors.phoneNumbers && (
-                <span className="text-red-500 text-xs">
-                  {(form.formState.errors.phoneNumbers as any)?.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="contact_email" className="mb-2 block">Email</Label>
-              <Input
-                id="contact_email"
-                {...form.register("email")}
-                placeholder="Email"
-                className="mb-2"
-              />
-              {form.formState.errors.email && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.email.message}
-                </span>
-              )}
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button
-                type="submit"
-                disabled={createContact.status === "pending"}
-                className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                {createContact.status === "pending" ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
-                  </>
-                ) : (
-                  "Salvar"
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
