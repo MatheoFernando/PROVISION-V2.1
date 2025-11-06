@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,12 +88,12 @@ export function AreaSelect({
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-2 sticky top-0 bg-popover">
+            <div className="p-1 sticky top-0 bg-popover">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar áreas..."
-                className="w-full"
+                className="w-full placeholder:text-xs"
                 disabled={isLoading || list.length === 0}
               />
             </div>
@@ -119,22 +119,34 @@ export function AreaSelect({
           </SelectContent>
         </Select>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        onClick={() => {
-          setOpen(true);
-        }}
-        className="cursor-pointer shrink-0"
-      >
-        <Plus className="w-4 h-4" />
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>Criar Área</DialogHeader>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="cursor-pointer shrink-0"
+            disabled={createArea.status === "pending"}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          className="w-[26rem] p-4"
+          onInteractOutside={(e) => {
+            if (createArea.status === "pending") e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (createArea.status === "pending") e.preventDefault();
+          }}
+        >
+          <div className="font-medium mb-2">Criar Área</div>
           <form
-            onSubmit={form.handleSubmit(handleSubmit)}
+            onSubmit={(e) => {
+              e.preventDefault();
+            }}
             className="space-y-3 mt-2 "
           >
             <div className="grid grid-cols-2 gap-4">
@@ -169,9 +181,10 @@ export function AreaSelect({
             </div>
             <div className="flex justify-end mt-4">
               <Button
-                type="submit"
+                type="button"
                 disabled={createArea.status === "pending"}
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={() => form.handleSubmit(handleSubmit)()}
               >
                 {createArea.status === "pending" ? (
                   <>
@@ -183,8 +196,8 @@ export function AreaSelect({
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

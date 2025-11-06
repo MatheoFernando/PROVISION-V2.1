@@ -158,7 +158,7 @@ export function AddressSelect({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          align="end"
+          align="start"
           sideOffset={8}
           className="w-[26rem] p-4"
           onInteractOutside={(e) => {

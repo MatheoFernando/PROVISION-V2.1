@@ -13,11 +13,14 @@ import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import SitesCreatePage from "./site-create";
 
 const columns: ColumnDef<Site>[] = [
   {
     accessorKey: "cod",
     header: "Código",
+    size: 50,
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
@@ -147,9 +150,9 @@ const columns: ColumnDef<Site>[] = [
 
 export function SitesTable() {
   const { data: sites = [], isLoading } = useSites();
-  const router = useRouter();
   const deleteSite = useDeleteSite();
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
 
@@ -161,7 +164,7 @@ export function SitesTable() {
 
   const handleEdit = (site: Site) => {
     setSelectedSite(site);
-    router.push(`/dashboard/sites/edit/${site.id}`);
+    setIsCreateOpen(true);
   };
 
   const handleDelete = (site: Site) => {
@@ -182,20 +185,23 @@ export function SitesTable() {
     }
   };
 
-
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
         data={sites}
         isLoading={isLoading}
-        searchKey="name"
+        searchKey="cod"
         actionButton={{
           label: "Novo Site",
-          onClick: () => router.push("/dashboard/sites/create"),
+          onClick: () => {
+            setSelectedSite(undefined);
+            setIsCreateOpen(true);
+          },
         }}
         enableRowSelection={true}
         includeSelection={true}
+        dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
@@ -221,6 +227,20 @@ export function SitesTable() {
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
       />
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <SitesCreatePage
+            id={selectedSite?.id}
+            initialData={selectedSite as any}
+            onSuccess={() => { setIsCreateOpen(false); setSelectedSite(undefined); }}
+            onCancel={() => { setIsCreateOpen(false); setSelectedSite(undefined); }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <DeleteModal
         isOpen={isDeleteOpen}

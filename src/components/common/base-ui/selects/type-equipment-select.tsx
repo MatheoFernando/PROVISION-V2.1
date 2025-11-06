@@ -74,12 +74,12 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-2 sticky top-0 bg-popover">
+            <div className="p-1 sticky top-0 bg-popover">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar tipos..."
-                className="w-full"
+                className="w-full placeholder:text-xs"
                 disabled={isLoading || (list as any)?.length === 0}
               />
             </div>
@@ -145,7 +145,7 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
               <span className="text-red-500 text-xs">{form.formState.errors.name.message}</span>
             )}
             <Label htmlFor="type_desc" className="block">Descrição</Label>
-            <Textarea id="type_desc" rows={3} {...form.register("description")} placeholder="Descrição" />
+            <Textarea id="type_desc" rows={3} {...form.register("description")} placeholder="Descrição" className="resize-none"/>
             {form.formState.errors.description && (
               <span className="text-red-500 text-xs">{(form.formState.errors.description as any)?.message}</span>
             )}

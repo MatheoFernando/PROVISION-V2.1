@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -11,20 +11,28 @@ import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { TypeEquipmentSelect } from "@/components/common/base-ui/selects/type-equipment-select";
 import { createEquipmentSchema } from "@/infrastructure/schema/schema-equipment";
 import { z } from "zod";
-import { useCreateEquipment } from "@/infrastructure/hooks/useEquipment";
+import { useCreateEquipment, useUpdateEquipment } from "@/infrastructure/hooks/useEquipment";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
 
-export default function Page() {
+interface EquipmentCreatePageProps {
+  id?: string;
+  initialData?: Partial<CreateEquipmentInput> & { id?: string };
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export default function EquipmentCreatePage(props: EquipmentCreatePageProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const companyId = useAuthStore((s) => s.companyId) ?? "";
 
   const createEquipment = useCreateEquipment();
+  const updateEquipment = useUpdateEquipment();
 
   const form = useForm<CreateEquipmentInput>({
     resolver: zodResolver(createEquipmentSchema),
@@ -44,17 +52,40 @@ export default function Page() {
     if (companyId) form.setValue("companyId", companyId);
   }, [companyId, form]);
 
+  useEffect(() => {
+    const d = props.initialData;
+    if (!d) return;
+    form.reset({
+      cod: d.cod || "",
+      serialNumber: d.serialNumber || "",
+      mark: d.mark || "",
+      model: d.model || "",
+      status: typeof d.status === 'boolean' ? d.status : (String(d.status).toUpperCase() !== 'INACTIVE'),
+      siteId: (d as any).siteId || "",
+      typeEquipmentId: (d as any).typeEquipmentId || "",
+      companyId: d.companyId || companyId,
+    });
+  }, [props.initialData, form, companyId]);
+
+  const isGuid = (v: unknown) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v);
+
   const onSubmit = async (data: CreateEquipmentInput) => {
     try {
       setIsSubmitting(true);
-      await (
-        createEquipment.mutateAsync as (
-          vars: CreateEquipmentInput
-        ) => Promise<unknown>
-      )(data);
-      toast.success("Equipamento criado com sucesso!");
-      router.push("/dashboard/equipment");
-      form.reset();
+      if (props.id && isGuid(props.id)) {
+        const { companyId: _omit, ...rest } = (data as any) || {};
+        const updatePayload: any = {
+          ...rest,
+          status: data.status ? "ACTIVE" : "INACTIVE",
+        };
+        await updateEquipment.mutateAsync({ id: props.id, data: updatePayload });
+        toast.success("Equipamento atualizado com sucesso!");
+      } else {
+        const { companyId: _omit, ...createOnly } = (data as any) || {};
+        await (createEquipment.mutateAsync as (vars: any) => Promise<unknown>)(createOnly);
+        toast.success("Equipamento criado com sucesso!");
+      }
+      if (props.onSuccess) props.onSuccess(); else form.reset();
     } catch (error) {
       toast.error("Erro ao salvar equipamento");
     } finally {
@@ -63,17 +94,14 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen ">
-      <div>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">
-            Novo Equipamento
-          </h1>
-        </div>
 
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">
+          Novo Equipamento
+        </h1>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="py-4 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cod" className="text-slate-700">
                   Código
@@ -196,26 +224,30 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-200">
+            <div className="pt-4 flex justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={() => (props.onCancel ? props.onCancel() : router.back())}
                 className="rounded-lg px-6 cursor-pointer"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || createEquipment.isPending || updateEquipment.isPending}
                 className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
               >
-                {isSubmitting ? "Salvando..." : "Criar Equipamento"}
+                {isSubmitting || createEquipment.isPending || updateEquipment.isPending
+                  ? "Salvando..."
+                  : props.id
+                  ? "Atualizar Equipamento"
+                  : "Criar Equipamento"}
               </Button>
             </div>
           </div>
         </form>
       </div>
-    </div>
+  
   );
 }

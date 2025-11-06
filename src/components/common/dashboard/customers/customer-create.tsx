@@ -78,11 +78,12 @@ function CustomersCreatePage(props: CustomersCreatePageProps) {
     setIsSubmitting(true);
     try {
       if (props.id) {
-        await updateCustomer.mutateAsync({ id: props.id, data: { ...data, companyId } as any });
+        const { companyId: _omit, ...updateOnly } = (data as any) || {};
+        await updateCustomer.mutateAsync({ id: props.id, data: updateOnly as any });
       } else {
         await createCustomer.mutateAsync({
           ...data,
-          companyId,
+          companyId: (data as any).companyId || companyId,
         });
       }
       if (props.onSuccess) props.onSuccess(); else router.back();
@@ -99,7 +100,7 @@ function CustomersCreatePage(props: CustomersCreatePageProps) {
           <h1 className="text-3xl font-bold text-slate-900">Novo Cliente</h1>
       
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className=" p-4 space-y-6">
+          <div className=" py-4 space-y-6">
            
 {/*
   <div className="bg-slate-400 p-6">

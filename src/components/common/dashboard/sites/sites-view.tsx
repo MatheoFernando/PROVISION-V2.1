@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Site } from "@/infrastructure/schema/schema-sites";
+import { Site } from "@/infrastructure/types/domain";
 
 interface SitesViewProps {
   site?: Site;

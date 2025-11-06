@@ -69,7 +69,7 @@ export function SiteSelect({ value, onChange }: SiteSelectProps) {
         variant="outline"
         size="icon"
         className="shrink-0 cursor-pointer"
-        onClick={() => router.push("/dashboard/sites/create")}
+        onClick={() => router.push("/dashboard/sites")}
         aria-label="Criar site"
       >
         <Plus className="w-4 h-4" />

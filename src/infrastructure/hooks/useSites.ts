@@ -29,6 +29,7 @@ export function useCreateSite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
+      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
       toast.success("Site criado com sucesso!");
     },
     onError: (error: any) => {
@@ -47,6 +48,8 @@ export function useUpdateSite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
+      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
+      toast.success("Site atualizado com sucesso!");
     },
   });
 }
@@ -60,6 +63,8 @@ export function useDeleteSite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
+      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
+      toast.success("Site excluído com sucesso!");
     },
   });
 }

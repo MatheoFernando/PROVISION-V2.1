@@ -3,6 +3,7 @@ import { api } from "../utils/api";
 import { Employee } from "../types/domain";
 import { z } from "zod";
 import { createEmployeeSchema } from "../schema/schema-employees";
+import { toast } from "sonner";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
@@ -17,6 +18,18 @@ export function useEmployees(companyId?: string) {
   });
 }
 
+export function useEmployeeById(id?: string, companyId?: string) {
+  return useQuery({
+    queryKey: ["employee", id, companyId],
+    enabled: Boolean(id && companyId),
+    queryFn: async (): Promise<Employee | null> => {
+      const response = await api.get(`/employee/getAll/${companyId}`);
+      const list: Employee[] = response.data.data ?? [];
+      return (list || []).find((e: any) => e?.id === id) ?? null;
+    },
+  });
+}
+
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
   
@@ -27,6 +40,8 @@ export function useCreateEmployee() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.refetchQueries({ queryKey: ["employees"], type: 'active' });
+      toast.success('Funcionário criado com sucesso!');
     },
   });
 }
@@ -36,11 +51,13 @@ export function useUpdateEmployee() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Employee> => {
-      const response = await api.put(`/employees/${id}`, data);
+      const response = await api.put(`/employee/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.refetchQueries({ queryKey: ["employees"], type: 'active' });
+      toast.success('Funcionário atualizado com sucesso!');
     },
   });
 }
@@ -50,10 +67,12 @@ export function useDeleteEmployee() {
   
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/employees/${id}`);
+      await api.delete(`/employee/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.refetchQueries({ queryKey: ["employees"], type: 'active' });
+      toast.success('Funcionário excluído com sucesso!');
     },
   });
 }

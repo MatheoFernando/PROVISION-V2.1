@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -15,15 +15,23 @@ import {
 } from "@/components/ui/select";
 import { createCarSchema } from "@/infrastructure/schema/schema-cars";
 import { z } from "zod";
-import { useCreateCar } from "@/infrastructure/hooks/useCars";
+import { useCreateCar, useUpdateCar } from "@/infrastructure/hooks/useCars";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useRouter } from "next/navigation";
 
 type CreateCarInput = z.infer<typeof createCarSchema>;
 
-export function CarsCreate() {
+interface CarsCreateProps {
+  id?: string;
+  initialData?: Partial<CreateCarInput> & { id?: string };
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function CarsCreate(props: CarsCreateProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createCar = useCreateCar();
+  const updateCar = useUpdateCar();
   const { companyId } = useAuthStore();
   const router = useRouter();
 
@@ -39,16 +47,30 @@ export function CarsCreate() {
     },
   });
 
+  useEffect(() => {
+    const d = props.initialData;
+    if (!d) return;
+    form.reset({
+      cod: d.cod || "",
+      mark: d.mark || "",
+      model: d.model || "",
+      capacity: (d as any).capacity ? String((d as any).capacity) : "",
+      companyId: d.companyId || companyId || "",
+      geoLocationId: (d as any).geoLocationId || "",
+    } as any);
+  }, [props.initialData, form, companyId]);
+
   const onSubmit = async (data: CreateCarInput) => {
     try {
       setIsSubmitting(true);
-      const { containerId, geoLocationId, ...rest } = data as any;
-      const payload = {
-        ...rest,
-      } as CreateCarInput;
-      await createCar.mutateAsync(payload as any);
-      form.reset();
-      router.back();
+      if (props.id) {
+        const { companyId: _omit, containerId, geoLocationId, ...updatePayload } = data as any;
+        await updateCar.mutateAsync({ id: props.id, data: updatePayload as any });
+      } else {
+        const { containerId, geoLocationId, ...createPayload } = data as any;
+        await createCar.mutateAsync({ ...createPayload, companyId: companyId || (data as any).companyId } as any);
+      }
+      if (props.onSuccess) props.onSuccess(); else form.reset();
     } catch (error) {
     } finally {
       setIsSubmitting(false);
@@ -56,17 +78,11 @@ export function CarsCreate() {
   };
 
   return (
-    <div className="min-h-screen ">
-  
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Nova viatura</h1>
-        </div>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
-        >
-          <div className="p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div>
+        <h1 className="text-3xl font-bold text-slate-900">Nova viatura</h1>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="py-4 space-y-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cod">Código *</Label>
                 <Input
@@ -149,26 +165,29 @@ export function CarsCreate() {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="pt-4 flex justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
                 className="rounded-lg px-6 cursor-pointer"
-                onClick={() => router.back()}
+                onClick={() => (props.onCancel ? props.onCancel() : router.back())}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || createCar.isPending || updateCar.isPending}
                 className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
               >
-                {isSubmitting ? "Salvando..." : "Criar"}
+                {isSubmitting || createCar.isPending || updateCar.isPending
+                  ? "Salvando..."
+                  : props.id
+                  ? "Atualizar"
+                  : "Criar"}
               </Button>
             </div>
           </div>
         </form>
       </div>
-    
   );
 }

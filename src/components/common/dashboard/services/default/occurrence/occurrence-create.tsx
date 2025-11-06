@@ -98,18 +98,20 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
       return new Date(`1970-01-01T${value}`).toISOString();
     };
 
-    const payload = {
+    const basePayload = {
       ...data,
-      companyId: data.companyId || companyId,
       time: toIsoFromTime(data.time),
-    };
+    } as any;
+
     if (props.id) {
+      const { companyId: _omit, ...updateOnly } = basePayload;
       updateMutation.mutate(
-        { id: props.id, data: payload as any },
+        { id: props.id, data: updateOnly },
         { onSuccess: () => { if (props.onSuccess) props.onSuccess() } }
       )
     } else {
-      createMutation.mutate(payload as any, {
+      const createPayload = { ...basePayload, companyId: data.companyId || companyId } as any;
+      createMutation.mutate(createPayload, {
         onSuccess: () => { if (props.onSuccess) props.onSuccess() },
       });
     }
@@ -122,7 +124,7 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
         onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-6 "
       >
-        <div className=" p-4 space-y-6">
+        <div className=" py-4 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
             <div className="space-y-2">
               <Label htmlFor="cod" className="text-slate-700">

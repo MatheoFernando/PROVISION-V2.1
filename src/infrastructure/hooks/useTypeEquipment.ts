@@ -30,6 +30,7 @@ export function useCreateTypeEquipment() {
         const current = old ?? [];
         return [created, ...current];
       });
+      queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
       toast.success("Tipo de equipamento criado com sucesso!");
     },
     onError: () => {
@@ -51,6 +52,7 @@ export function useUpdateTypeEquipment() {
         if (!old) return [updated];
         return old.map((item) => (item.id === updated.id ? { ...item, ...updated } : item));
       });
+      queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
       toast.success("Tipo de equipamento atualizado com sucesso!");
     },
     onError: () => {
@@ -71,6 +73,7 @@ export function useDeleteTypeEquipment() {
         if (!old) return old;
         return old.filter((item) => item.id !== id);
       });
+      queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
       toast.success("Tipo de equipamento removido com sucesso");
     },
     onError: () => {

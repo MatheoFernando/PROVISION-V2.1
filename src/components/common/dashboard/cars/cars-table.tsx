@@ -12,6 +12,8 @@ import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteCar } from "@/infrastructure/hooks/useCars";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { CarsCreate } from "./cars-create";
 
 const columns: ColumnDef<Car>[] = [
   {
@@ -115,10 +117,14 @@ export function CarsTable() {
         columns={columns}
         data={filteredData}
         isLoading={isLoading}
+        dateKey="createdAt"
         searchKey="cod"
         actionButton={{
           label: "Novo Veículo",
-          onClick: () => router.push("/dashboard/cars/create"),
+          onClick: () => {
+            setSelectedCar(undefined);
+            setIsCreateOpen(true);
+          },
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -138,6 +144,20 @@ export function CarsTable() {
       />
 
    
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <CarsCreate
+            id={selectedCar?.id}
+            initialData={selectedCar as any}
+            onSuccess={() => { setIsCreateOpen(false); setSelectedCar(undefined); }}
+            onCancel={() => { setIsCreateOpen(false); setSelectedCar(undefined); }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <DeleteModal
         isOpen={isDeleteOpen}

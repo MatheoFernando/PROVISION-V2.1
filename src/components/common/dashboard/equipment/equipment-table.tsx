@@ -11,12 +11,14 @@ import { ptBR } from "date-fns/locale";
 import { EquipmentView } from "./equipment-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEquipment } from "@/infrastructure/hooks/useEquipment";
-import { useRouter } from "next/navigation";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import EquipmentCreatePage from "./equipment-create";
 
 const columns: ColumnDef<Equipment>[] = [
   {
     accessorKey: "serialNumber",
     header: "Número de Série",
+    size: 80,
     cell: ({ row }) => {
       const serialNumber = row.getValue("serialNumber") as string;
       return <div>{serialNumber}</div>;
@@ -72,7 +74,6 @@ const columns: ColumnDef<Equipment>[] = [
 export function EquipmentTable() {
   const { data: equipment = [], isLoading } = useEquipment();
   const deleteEquipment = useDeleteEquipment();
-  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -114,10 +115,14 @@ export function EquipmentTable() {
         searchKey="serialNumber"
         actionButton={{
           label: "Novo Equipamento",
-          onClick: () => router.push("/dashboard/equipment/create"),
+          onClick: () => {
+            setSelectedEquipment(undefined);
+            setIsCreateOpen(true);
+          },
         }}
         enableRowSelection={true}
         includeSelection={true}
+        dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
@@ -142,6 +147,20 @@ export function EquipmentTable() {
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
       />
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <EquipmentCreatePage
+            id={selectedEquipment?.id}
+            initialData={selectedEquipment as any}
+            onSuccess={() => { setIsCreateOpen(false); setSelectedEquipment(undefined); }}
+            onCancel={() => { setIsCreateOpen(false); setSelectedEquipment(undefined); }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <DeleteModal
         isOpen={isDeleteOpen}

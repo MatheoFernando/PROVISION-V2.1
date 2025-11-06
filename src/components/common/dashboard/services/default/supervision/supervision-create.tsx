@@ -85,7 +85,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
       return new Date(`1970-01-01T${value}`).toISOString();
     };
 
-    const payload = {
+    const basePayload = {
       ...data,
       time: toIsoFromTime(data.time),
       desiredNumberWorkers: Number(data.desiredNumberWorkers ?? 0),
@@ -93,8 +93,10 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
     } as Supervision;
 
     if (id) {
+ 
+      const { companyId: _omit, ...updateOnly } = basePayload as any;
       updateMutation.mutate(
-        { id, data: payload },
+        { id, data: updateOnly },
         {
           onSuccess: () => {
             if (typeof _props.onSuccess === "function") _props.onSuccess();
@@ -103,8 +105,11 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
       );
       return;
     }
-
-    createMutation.mutate(payload as Supervision, {
+    const createPayload = {
+      ...basePayload,
+      companyId: data.companyId || companyId,
+    } as Supervision;
+    createMutation.mutate(createPayload, {
       onSuccess: () => {
         if (typeof _props.onSuccess === "function") _props.onSuccess();
       },
@@ -120,7 +125,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
         onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-6 mt-6"
       >
-        <div className="overflow-hidden p-4 space-y-6">
+        <div className=" py-4 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
             <div className="space-y-2">
               <Label htmlFor="cod" className="text-slate-700">

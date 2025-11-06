@@ -118,6 +118,7 @@ export function TypeEquipmentTable() {
         }}
         enableRowSelection={true}
         includeSelection={true}
+        dateKey="createdAt"
         rowActions={[
         
           {

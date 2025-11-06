@@ -12,18 +12,19 @@ import { EmployeesView } from "./employees-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useDepartments } from "@/infrastructure/hooks/useDepartments";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import EmployeesCreatePage from "./employee-create";
 
 
 export function EmployeesTable() {
   const companyId = useAuthStore((state) => state.companyId) ?? "";
   const { data: employees = [], isLoading } = useEmployees(companyId);
   const { data: departments = [] } = useDepartments();
-  const router = useRouter();
   const deleteEmployee = useDeleteEmployee();
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
 
@@ -36,6 +37,7 @@ export function EmployeesTable() {
   const columns: ColumnDef<Employee>[] = [
     {
       accessorKey: "cod",
+      size: 50,
       header: "Código",
       cell: ({ row }) => {
         const cod = row.getValue("cod") as string;
@@ -53,6 +55,7 @@ export function EmployeesTable() {
     {
       accessorKey: "contactId",
       header: "Contato",
+      size: 90,
       cell: ({ row }) => {
         const contactId = row.getValue("contactId") as string;
         return <div>{contactId}</div>;
@@ -100,7 +103,7 @@ export function EmployeesTable() {
 
   const handleEdit = (employee: Employee) => {
     setSelectedEmployee(employee);
-    router.push(`/dashboard/employees/edit/${employee.id}`);
+    setIsCreateOpen(true);
   };
 
   const handleDelete = (employee: Employee) => {
@@ -131,10 +134,14 @@ export function EmployeesTable() {
         searchKey="fullName"
         actionButton={{
           label: "Novo Funcionário",
-          onClick: () => router.push("/dashboard/employees/create"),
+          onClick: () => {
+            setSelectedEmployee(undefined);
+            setIsCreateOpen(true);
+          },
         }}
         enableRowSelection={true}
         includeSelection={true}
+        dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
@@ -159,6 +166,20 @@ export function EmployeesTable() {
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
       />
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <EmployeesCreatePage
+            id={selectedEmployee?.id}
+            initialData={selectedEmployee as any}
+            onSuccess={() => { setIsCreateOpen(false); setSelectedEmployee(undefined); }}
+            onCancel={() => { setIsCreateOpen(false); setSelectedEmployee(undefined); }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <DeleteModal
         isOpen={isDeleteOpen}
