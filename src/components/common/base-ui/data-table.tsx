@@ -27,6 +27,7 @@ import { MoreHorizontal } from "lucide-react";
 import { type DateRange } from "react-day-picker";
 import { Toolbar } from "./data-table/toolbar";
 import { TableView } from "./data-table/table-view";
+import { DeleteModal } from "@/components/ui/delete-modal";
 
 interface ActionButton<TData> {
   label: string;
@@ -58,6 +59,7 @@ interface DataTableProps<TData extends RowData, TValue> {
   isLoading?: boolean;
   dateKey?: keyof TData & string;
   onDateRangeChange?: (range?: DateRange) => void;
+  onBulkDelete?: (selected: TData[]) => void;
 }
 
 export function DataTableGeneric<TData extends RowData, TValue>({
@@ -73,10 +75,25 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   isLoading = false,
   dateKey,
   onDateRangeChange,
+  onBulkDelete,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
+
+  const hasDateColumn = React.useMemo(() => {
+    if (!dateKey) return false;
+    return (columns as any[]).some((col: any) => {
+      const accessorId = (col.id ?? col.accessorKey) as string | undefined;
+      return accessorId === (dateKey as unknown as string);
+    });
+  }, [columns, dateKey]);
+
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>(() => {
+      if (dateKey && !hasDateColumn) {
+        return { [dateKey]: false } as unknown as VisibilityState;
+      }
+      return {};
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -94,6 +111,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   const [tempSelectedRange, setTempSelectedRange] = React.useState<
     DateRange | undefined
   >(undefined);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = React.useState(false);
 
   const dataWithDateFilter = React.useMemo(() => {
     if (!selectedRange || !selectedRange.from || !selectedRange.to || !dateKey)
@@ -124,6 +142,19 @@ export function DataTableGeneric<TData extends RowData, TValue>({
       return col;
     });
 
+    if (dateKey && !hasDateColumn) {
+      finalColumns = [
+        ...finalColumns,
+        {
+          id: dateKey as unknown as string,
+          accessorKey: dateKey as unknown as string,
+          header: "",
+          enableSorting: true,
+          sortingFn: "datetime",
+        } as unknown as ColumnDef<TData, any>,
+      ];
+    }
+
     if (includeSelection) {
       finalColumns = [createSelectionColumn<TData>(), ...finalColumns];
     }
@@ -133,7 +164,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
     }
 
     return finalColumns;
-  }, [columns, includeSelection, rowActions]);
+  }, [columns, includeSelection, rowActions, dateKey, hasDateColumn, searchKey]);
 
   const table = useReactTable<TData>({
     data: dataWithDateFilter,
@@ -174,10 +205,13 @@ export function DataTableGeneric<TData extends RowData, TValue>({
     },
   });
 
-  const hasSelectionColumn = enableRowSelection;
+  const selectedRows = table.getSelectedRowModel().rows ?? [];
+  const totalRows = table.getRowModel().rows.length;
+  const selectedCount = selectedRows.length;
+  const isAllSelected = selectedCount > 0 && selectedCount === totalRows;
 
   return (
-    <div className="w-full max-w-full space-y-4 ">
+    <div className="w-full max-w-full space-y-4 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
       <Toolbar
         table={table}
         placeholder={placeholder}
@@ -203,6 +237,12 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         }}
         searchKey={searchKey}
         dateKey={dateKey}
+        selectedCount={selectedCount}
+        isAllSelected={isAllSelected}
+        onClickDeleteSelected={() => {
+          if (selectedCount === 0) return;
+          setIsBulkDeleteOpen(true);
+        }}
       />
 
       <TableView
@@ -211,10 +251,30 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         colSpan={columnsWithSelection.length}
       />
 
+    
+      {onBulkDelete && (
+        <DeleteModal
+          isOpen={isBulkDeleteOpen}
+          onClose={() => setIsBulkDeleteOpen(false)}
+          onConfirm={() => {
+            const originals = selectedRows.map((r: any) => r.original as TData);
+            onBulkDelete?.(originals);
+            setIsBulkDeleteOpen(false);
+          }}
+          title={isAllSelected ? "Excluir todos" : "Excluir selecionados"}
+          message={
+            isAllSelected
+              ? "Tem certeza que deseja excluir todos os itens selecionados? Esta ação não pode ser desfeita."
+              : `Tem certeza que deseja excluir ${selectedCount} item(ns) selecionado(s)? Esta ação não pode ser desfeita.`
+          }
+          isLoading={false}
+        />
+      )}
+
       <div className="flex items-center justify-end px-4 pt-4 border-t border-border">
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <Button
-            variant="outline"
+            variant="ghost"
             className="h-8 px-3 cursor-pointer"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
@@ -231,7 +291,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
               <Button
                 key={pageIndex}
                 variant={isActive ? "default" : "outline"}
-                className="h-8 w-8 p-0 bg-blue-600 text-white cursor-pointer hover:bg-blue-700"
+                className="h-8 w-8 p-0 cursor-pointer"
                 onClick={() => table.setPageIndex(pageIndex)}
                 aria-current={isActive ? "page" : undefined}
               >
@@ -240,12 +300,12 @@ export function DataTableGeneric<TData extends RowData, TValue>({
             );
           })}
           <Button
-            variant="outline"
+            variant="ghost"
             className="h-8 px-3 cursor-pointer"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Próximo
+            Próximo 
           </Button>
         </div>
       </div>
@@ -318,3 +378,4 @@ export function createActionsColumn<TData extends RowData>(
     size: 30,
   };
 }
+

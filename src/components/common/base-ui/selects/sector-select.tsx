@@ -146,7 +146,7 @@ export function SectorSelect({
             if (createSector.status === "pending") e.preventDefault();
           }}
         >
-          <div className="font-medium mb-2">Criar Setor</div>
+          <div className="font-medium mb-4 text-lg">Criar Setor</div>
           <form
             onSubmit={(e) => {
               e.preventDefault();

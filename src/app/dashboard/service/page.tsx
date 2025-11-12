@@ -13,13 +13,7 @@ export default function ServicePage() {
 
   if (!isGlobalAdmin) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Serviços</h1>
-          <p className="text-muted-foreground">
-            Visualize os serviços disponíveis para sua empresa
-          </p>
-        </div>
+      <div className="space-y-6 py-6">
         <DefaultServices />
       </div>
     );

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { SquareChevronRight  , SquareChevronLeft  } from "lucide-react"
+import {ChevronRight, ChevronLeft  } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -186,7 +186,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-[#121c2d] text-white w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-gray-400 text-white w-(--sidebar-width) p-0 [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -243,7 +243,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="bg-[#121c2d] text-white group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+          className="bg-gray-900 text-white group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
         >
           {children}
         </div>
@@ -264,8 +264,8 @@ function SidebarTrigger({
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon"
-      className={cn("size-6 cursor-pointer text-white hover:text-white", className)}
+      size="sm"
+      className={cn("size-5 cursor-pointer  text-white hover:text-white", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -273,9 +273,9 @@ function SidebarTrigger({
       {...props}
     >
       {open ? (
-        <SquareChevronLeft  className="text-slate-700 size-6 " />
+        <ChevronLeft   className="text-slate-700 size-5 " />
       ) : (
-        <SquareChevronRight   className="text-slate-700 size-6 " />
+        <ChevronRight   className="text-slate-700 size-5 " />
       )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>

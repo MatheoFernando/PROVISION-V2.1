@@ -1,19 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../utils/api";
 import { toast } from "sonner";
+import { api } from "../utils/api";
 import { Role } from "../types/domain";
 
-export function useRoles() {
+interface UseRolesOptions {
+  enabled?: boolean;
+}
+
+interface UseRolesAllOptions {
+  enabled?: boolean;
+}
+
+export function useRoles(name?: string, options: UseRolesOptions = {}) {
+  const normalizedName = name?.trim() ?? "";
+  const isEnabled =
+    (options.enabled ?? (normalizedName.length > 0)) &&
+    normalizedName.length > 0;
+
   return useQuery({
-    queryKey: ["roles"],
+    queryKey: ["roles", normalizedName],
     queryFn: async (): Promise<Role[]> => {
-      const { data } = await api.get("/roles/getByName");
+      const params = { name: normalizedName };
+      const { data } = await api.get("/roles/getByName", { params });
       return (data?.data ?? data) as Role[];
     },
+    enabled: isEnabled,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   });
 }
 
-
+export function useRolesAll(options: UseRolesAllOptions = {}) {
+  return useQuery({
+    queryKey: ["roles"],
+    queryFn: async (): Promise<Role[]> => {
+      const { data } = await api.get("/roles/getAll");
+      return (data?.data ?? data) as Role[];
+    },
+    enabled: options.enabled ?? true,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+}
 
 export function useCreateRole() {
   const queryClient = useQueryClient();

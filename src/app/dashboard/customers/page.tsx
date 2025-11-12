@@ -3,8 +3,6 @@ import { CustomersTable } from "@/components/common/dashboard/customers/customer
 export default function CustomersPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
-
       <CustomersTable />
     </div>
   );

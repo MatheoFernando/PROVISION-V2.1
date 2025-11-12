@@ -1,13 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { Employee } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { EmployeesView } from "./employees-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
@@ -22,23 +20,24 @@ export function EmployeesTable() {
   const companyId = useAuthStore((state) => state.companyId) ?? "";
   const { data: employees = [], isLoading } = useEmployees(companyId);
   const { data: departments = [] } = useDepartments();
-  const deleteEmployee = useDeleteEmployee();
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
+  const { mutateAsync: deleteEmployee, isPending: isDeleting } = useDeleteEmployee();
+  const [isViewOpen, setIsViewOpen] = React.useState(false);
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [selectedEmployee, setSelectedEmployee] = React.useState<Employee | undefined>();
+  const [employeesToDelete, setEmployeesToDelete] = React.useState<Employee[]>([]);
 
-  const departmentIdToName = useMemo(() => {
+  const departmentIdToName = React.useMemo(() => {
     return Object.fromEntries(
       (departments ?? []).map((department) => [department.id, department.name])
     ) as Record<string, string>;
   }, [departments]);
 
-  const columns: ColumnDef<Employee>[] = [
+  const columns = React.useMemo<ColumnDef<Employee>[]>(() => [
     {
       accessorKey: "cod",
       size: 50,
-      header: "Código",
+      header: "Nº Mec",
       cell: ({ row }) => {
         const cod = row.getValue("cod") as string;
         return <div className="text-sm text-muted-foreground font-medium">{cod}</div>;
@@ -50,15 +49,6 @@ export function EmployeesTable() {
       cell: ({ row }) => {
         const fullName = row.getValue("fullName") as string;
         return <div>{fullName}</div>;
-      },
-    },
-    {
-      accessorKey: "contactId",
-      header: "Contato",
-      size: 90,
-      cell: ({ row }) => {
-        const contactId = row.getValue("contactId") as string;
-        return <div>{contactId}</div>;
       },
     },
     {
@@ -86,15 +76,38 @@ export function EmployeesTable() {
         return <div>{functionValue}</div>;
       },
     },
-    {
-      accessorKey: "createdAt",
-      header: "Data de Criação",
-      cell: ({ row }) => {
-        const date = row.getValue("createdAt") as Date;
-        return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
-      },
+  ], [departmentIdToName]);
+
+  const resetDeletionState = React.useCallback(() => {
+    setEmployeesToDelete([]);
+    setIsDeleteOpen(false);
+    setSelectedEmployee(undefined);
+  }, []);
+
+  const executeDeletion = React.useCallback(
+    async (targets: Employee[]) => {
+      let successCount = 0;
+
+      for (const target of targets) {
+        if (!target?.id) continue;
+        try {
+          await deleteEmployee(target.id);
+          successCount += 1;
+        } catch (error) {
+          toast.error(`Erro ao excluir ${target.fullName ?? "funcionário"}`);
+        }
+      }
+
+      if (successCount === 0) return;
+
+      toast.success(
+        successCount === 1
+          ? "Funcionário excluído com sucesso!"
+          : `${successCount} funcionários excluídos com sucesso!`
+      );
     },
-  ];
+    [deleteEmployee]
+  );
 
   const handleView = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -108,22 +121,36 @@ export function EmployeesTable() {
 
   const handleDelete = (employee: Employee) => {
     setSelectedEmployee(employee);
+    setEmployeesToDelete([employee]);
     setIsDeleteOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedEmployee || !selectedEmployee.id) return;
-
-    try {
-      await deleteEmployee.mutateAsync(selectedEmployee.id as string);
-      toast.success("Funcionário excluído com sucesso!");
-      setIsDeleteOpen(false);
-      setSelectedEmployee(undefined);
-    } catch (error) {
-      toast.error("Erro ao excluir funcionário");
+    if (!employeesToDelete.length) {
+      resetDeletionState();
+      return;
     }
+
+    await executeDeletion(employeesToDelete);
+    resetDeletionState();
   };
 
+  const handleBulkDelete = React.useCallback(
+    async (selected: Employee[]) => {
+      if (!selected.length) return;
+      await executeDeletion(selected);
+    },
+    [executeDeletion]
+  );
+
+  const deleteTitle =
+    employeesToDelete.length > 1 ? "Excluir Funcionários" : "Excluir Funcionário";
+  const deleteTargetLabel =
+    employeesToDelete[0]?.fullName ?? "este funcionário";
+  const deleteMessage =
+    employeesToDelete.length > 1
+      ? `Tem certeza que deseja excluir ${employeesToDelete.length} funcionários selecionados? Esta ação não pode ser desfeita.`
+      : `Tem certeza que deseja excluir ${deleteTargetLabel}? Esta ação não pode ser desfeita.`;
 
   return (
     <div className="space-y-4">
@@ -132,6 +159,7 @@ export function EmployeesTable() {
         data={employees}
         isLoading={isLoading}
         searchKey="fullName"
+        onBulkDelete={handleBulkDelete}
         actionButton={{
           label: "Novo Funcionário",
           onClick: () => {
@@ -139,23 +167,23 @@ export function EmployeesTable() {
             setIsCreateOpen(true);
           },
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+        enableRowSelection
+        includeSelection
         dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
-            icon: <Eye className="h-4 w-4 mr-2" />,
+            icon: <Eye className="mr-2 h-3 w-3 text-gray-600" />,
             onClick: (employee) => handleView(employee),
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <Edit className="mr-2 h-3 w-3 text-gray-600" />,
             onClick: (employee) => handleEdit(employee),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            icon: <Trash2 className="mr-2 h-3 w-3 text-gray-600" />,
             onClick: (employee) => handleDelete(employee),
           },
         ]}
@@ -183,14 +211,11 @@ export function EmployeesTable() {
 
       <DeleteModal
         isOpen={isDeleteOpen}
-        onClose={() => {
-          setIsDeleteOpen(false);
-          setSelectedEmployee(undefined);
-        }}
+        onClose={resetDeletionState}
         onConfirm={handleConfirmDelete}
-        title="Excluir Funcionário"
-        isLoading={deleteEmployee.isPending}
-        message={`Tem certeza que deseja excluir este funcionário ${selectedEmployee?.fullName ?? "Não informado"})? Esta ação não pode ser desfeita.`}
+        title={deleteTitle}
+        isLoading={isDeleting}
+        message={deleteMessage}
       />
     </div>
   );

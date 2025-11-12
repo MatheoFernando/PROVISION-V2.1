@@ -142,7 +142,7 @@ export function AreaSelect({
             if (createArea.status === "pending") e.preventDefault();
           }}
         >
-          <div className="font-medium mb-2">Criar Área</div>
+          <div className="font-medium mb-4 text-lg">Criar Área</div>
           <form
             onSubmit={(e) => {
               e.preventDefault();

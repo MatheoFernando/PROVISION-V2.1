@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ type DepartmentForm = z.infer<typeof departmentSchema>;
 interface DepartmentSelectProps {
   value?: string;
   onChange: (value: string) => void;
-  companyId: string;
+  companyId?: string | null;
 }
 
 export function DepartmentSelect({
@@ -36,35 +36,73 @@ export function DepartmentSelect({
 }: DepartmentSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { data: departments = [], isLoading } = useDepartments();
+  const { data: departments = [], isLoading, isFetching } = useDepartments();
   const createDepartment = useCreateDepartment();
+  const normalizedCompanyId = companyId ?? "";
+  const isCompanyUnavailable = !normalizedCompanyId;
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(departmentSchema),
-    defaultValues: { name: "", companyId },
+    defaultValues: { name: "", companyId: normalizedCompanyId },
   });
 
+  useEffect(() => {
+    form.reset({ name: "", companyId: normalizedCompanyId });
+  }, [normalizedCompanyId, form, open]);
+
   function handleSubmit(data: DepartmentForm) {
-    createDepartment.mutate(data, {
-      onSuccess: (created: Department) => {
-        setOpen(false);
-        onChange(created.id!);
-        form.reset();
-      },
-    });
+    if (isCompanyUnavailable) return;
+
+    createDepartment.mutate(
+      { ...data, companyId: normalizedCompanyId },
+      {
+        onSuccess: (created: Department) => {
+          setOpen(false);
+          onChange(created.id!);
+          form.reset({ name: "", companyId: normalizedCompanyId });
+        },
+      }
+    );
   }
 
-  const filtered = (Array.isArray(departments) ? departments : []).filter((d: Department) =>
-    String(d?.name ?? "").toLowerCase().includes(query.toLowerCase())
+  const list = useMemo(
+    () =>
+      (Array.isArray(departments) ? departments : []).filter((department: Department) =>
+        normalizedCompanyId ? department.companyId === normalizedCompanyId : false
+      ),
+    [departments, normalizedCompanyId]
   );
 
+  const filtered = useMemo(
+    () =>
+      list.filter((department: Department) =>
+        String(department?.name ?? "")
+          .toLowerCase()
+          .includes(query.toLowerCase())
+      ),
+    [list, query]
+  );
+
+  const isSaving = createDepartment.status === "pending";
+  const isLoadingOptions = isLoading || isFetching;
+
   return (
-    <div className="flex items-stretch gap-2 w-full">
+    <div className="flex items-end gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading}>
+        <Select
+          value={value}
+          onValueChange={onChange}
+          disabled={isLoadingOptions || isCompanyUnavailable}
+        >
           <SelectTrigger className="w-full ">
-            <SelectValue placeholder="Selecione o departamento" />
+            <SelectValue
+              placeholder={
+                isCompanyUnavailable
+                  ? "Selecione uma empresa primeiro"
+                  : "Selecione o departamento"
+              }
+            />
           </SelectTrigger>
-          {isLoading && (
+          {isLoadingOptions && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -74,12 +112,23 @@ export function DepartmentSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar departamentos..."
                 className="w-full placeholder:text-xs"
+                disabled={isLoadingOptions || list.length === 0}
               />
             </div>
-            {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+            {isCompanyUnavailable ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                Selecione uma empresa para listar departamentos.
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                Não há dados disponíveis.
+              </div>
             ) : (
-              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+              <div
+                className={
+                  filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
+                }
+              >
                 {filtered.map((d: Department) => (
                   <SelectItem key={d.id} value={d.id!} className="cursor-pointer">
                     {d.name}
@@ -93,8 +142,7 @@ export function DepartmentSelect({
       <Popover
         open={open}
         onOpenChange={(next) => {
-          const isSaving = createDepartment.status === "pending";
-          if (isSaving) return;
+          if (isSaving || isCompanyUnavailable) return;
           setOpen(next);
         }}
       >
@@ -104,9 +152,13 @@ export function DepartmentSelect({
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-            disabled={createDepartment.status === "pending"}
+            disabled={isSaving || isCompanyUnavailable}
           >
-            <Plus className="w-4 h-4" />
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -114,21 +166,24 @@ export function DepartmentSelect({
           sideOffset={8}
           className="w-80 p-4"
           onInteractOutside={(e) => {
-            if (createDepartment.status === "pending") e.preventDefault();
+            if (isSaving) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
-            if (createDepartment.status === "pending") e.preventDefault();
+            if (isSaving) e.preventDefault();
           }}
         >
           <div className="space-y-3">
-            <Label htmlFor="name" className="block">Nome do departamento</Label>
+            <Label htmlFor="name" className="block">
+              Nome do departamento
+            </Label>
             <Input
               id="name"
               {...form.register("name")}
               className="w-full"
               placeholder="Nome do departamento"
+              disabled={isSaving}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   e.preventDefault();
                 }
               }}
@@ -143,22 +198,22 @@ export function DepartmentSelect({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  if (createDepartment.status === "pending") return;
-                  form.reset();
+                  if (isSaving) return;
+                  form.reset({ name: "", companyId: normalizedCompanyId });
                   setOpen(false);
                 }}
                 className="cursor-pointer"
-                disabled={createDepartment.status === "pending"}
+                disabled={isSaving}
               >
                 Cancelar
               </Button>
               <Button
                 type="button"
-                disabled={createDepartment.status === "pending"}
+                disabled={isSaving}
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
                 onClick={() => form.handleSubmit(handleSubmit)()}
               >
-                {createDepartment.status === "pending" ? (
+                {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
                   </>

@@ -40,6 +40,7 @@ export function ContactSelect({
   companyId,
   onPhoneChange,
 }: ContactSelectProps) {
+  const maxPhoneNumbers = 3;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedPhone, setSelectedPhone] = useState<string>("");
@@ -241,7 +242,11 @@ export function ContactSelect({
                     variant="outline"
                     size="icon"
                     className="ml-2 cursor-pointer"
-                    onClick={() => append({ phone: "" })}
+                    onClick={() => {
+                      if (fields.length >= maxPhoneNumbers) return;
+                      append({ phone: "" });
+                    }}
+                    disabled={fields.length >= maxPhoneNumbers}
                     aria-label="Adicionar telefone"
                   >
                     <Plus className="w-4 h-4" />
@@ -274,6 +279,11 @@ export function ContactSelect({
                     </div>
                   ))}
                 </div>
+                {fields.length >= maxPhoneNumbers && (
+                  <span className="text-muted-foreground text-xs">
+                    Limite de {maxPhoneNumbers} telefones atingido.
+                  </span>
+                )}
                 {form.formState.errors.phoneNumbers && (
                   <span className="text-red-500 text-xs">
                     {(form.formState.errors.phoneNumbers as any)?.message}

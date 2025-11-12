@@ -20,7 +20,7 @@ const columns: ColumnDef<Customer>[] = [
   {
     accessorKey: "cod",
     header: "Código",
-    size: 40, 
+    size: 20, 
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
@@ -52,14 +52,7 @@ const columns: ColumnDef<Customer>[] = [
       return <div>{nif}</div>;
     },
   },
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
-    },
-  },
+ 
 ];
 
 export function CustomersTable() {

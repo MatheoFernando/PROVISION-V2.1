@@ -19,6 +19,7 @@ import { ContactSelect } from "@/components/common/base-ui/selects/contact-selec
 import { DepartmentSelect } from "@/components/common/base-ui/selects/department-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { AddressSelect } from "@/components/common/base-ui/selects/address-select";
+import { RoleSelect } from "@/components/common/base-ui/selects/role-select";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
@@ -48,7 +49,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       siteId: undefined,
       departmentId: "",
       cod: "",
-      function: "",
+      roleId: "",
     },
   });
 
@@ -64,22 +65,10 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       siteId: (d as any).siteId ?? undefined,
       departmentId: d.departmentId || "",
       cod: d.cod || "",
-      function: (d as any).function || "",
+      roleId: (d as any).roleId || "",
     });
   }, [props.initialData, form, companyId]);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPhotoPreview(result);
-        form.setValue("photo", result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const onSubmit = async (data: CreateEmployeeInput) => {
     try {
@@ -107,47 +96,9 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       <h1 className="text-3xl font-bold text-slate-900">Novo Funcionário</h1>
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="py-4 space-y-6">
-          {/*
-            <div className="bg-blue-400 p-6">
-              <div className="flex flex-col items-center">
-                <div className="relative group">
-                  <div className="w-24 h-24 rounded-full bg-white shadow-lg overflow-hidden border-4 border-white">
-                    {photoPreview ? (
-                      <img
-                        src={photoPreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <User className="w-6 h-6 text-slate-400" />
-                      </div>
-                    )}
-                  </div>
-                  <label
-                    htmlFor="photo-upload"
-                    className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  >
-                    <Upload className="w-6 h-6 text-white" />
-                  </label>
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </div>
-                <p className="text-white text-sm mt-3">
-                  Clique para fazer upload da foto
-                </p>
-              </div>
-            </div>
-      */}
-
+        <div className="py-4 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="fullName" className="text-slate-700">
                 Nome Completo *
               </Label>
@@ -165,7 +116,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-slate-700">
-                Código *
+               Nº Mec *
               </Label>
               <Input
                 id="cod"
@@ -179,22 +130,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
                 </p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="function" className="text-slate-700">
-                Função *
-              </Label>
-              <Input
-                id="function"
-                {...form.register("function")}
-                placeholder="Digite a função"
-                className="rounded-lg"
-              />
-              {form.formState.errors.function && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.function.message}
-                </p>
-              )}
-            </div>
+           
             <div className="space-y-2">
               <Label htmlFor="contactId" className="text-slate-700">
                 Contato *
@@ -259,6 +195,21 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
               {form.formState.errors.addressId && (
                 <p className="text-sm text-red-500">
                   {form.formState.errors.addressId.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="roleId" className="text-slate-700">
+               Função *
+              </Label>
+              <RoleSelect
+                value={form.watch("roleId")}
+                onChange={(value) => form.setValue("roleId", value)}
+                companyId={companyId}
+              />
+              {form.formState.errors.roleId && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.roleId.message}
                 </p>
               )}
             </div>

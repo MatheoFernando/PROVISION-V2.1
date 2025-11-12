@@ -1,12 +1,13 @@
 "use client"
 
 import {
-  User,
+  Building2 ,
   LogOut,
   Settings,
   ChevronDown,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 
 import {
   Avatar,
@@ -43,7 +44,8 @@ export function NavUser({
   user: UserData
 }) {
   const { isMobile } = useSidebar()
-  const AvatarIcon = user.avatarIcon || User
+  const AvatarIcon = user.avatarIcon || Building2
+  const logout = useAuthStore((state) => state.logout)
   const router = useRouter()
   return (
     <SidebarMenu className="w-auto sm:w-fit">
@@ -52,12 +54,12 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
          
-              className="data-[state=open]:bg-white/10 data-[state=open]:text-white cursor-pointer hover:bg-white/5 transition-colors duration-200 px-0   gap-0.5 "
+              className="data-[state=open]:bg-white/10 data-[state=open]:text-gray-500 cursor-pointer hover:bg-white/5 transition-colors duration-200 px-0   gap-0.5 "
             >
                 <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg ">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-full  text-gray-500 dark:text-gray-400 bg-white font-medium uppercase border">
-                  <User className="size-5" />
+                  <AvatarFallback className=" dark:text-gray-400 bg-white font-medium uppercase border-l pl-2 border-gray-900 rounded-none">
+                  <Building2  className="size-5" />
                   </AvatarFallback>
                 </Avatar>
                 <ChevronDown className="text-gray-500" />
@@ -92,13 +94,19 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
            
-              <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500" onClick={() => router.push('/dashboard/user-settings')}>
+              <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500" onClick={() => router.push('/dashboard/profile')}>
                 <Settings className="hover:bg-blue-100 hover:text-blue-500" />
                 Configurações
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500">
+            <DropdownMenuItem
+              className="cursor-pointer hover:bg-blue-100 hover:text-blue-500"
+              onClick={() => {
+                logout()
+                router.push("/login")
+              }}
+            >
               <LogOut className=" hover:bg-blue-100 hover:text-blue-500" />
               Logout
             </DropdownMenuItem>

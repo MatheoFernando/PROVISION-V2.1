@@ -222,7 +222,6 @@ export function OccurrenceTable({
   data,
   isLoading,
 }: OccurrenceTableProps) {
-  const { data: typeOccurrences } = useTypeOccurrences();
   const companyId = useAuthStore((s) => s.companyId || undefined);
   const { data: employees = [] } = useEmployees(companyId);
   const { data: equipments = [] } = useEquipment();

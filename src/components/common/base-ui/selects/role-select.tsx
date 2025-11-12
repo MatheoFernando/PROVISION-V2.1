@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useRoles, useCreateRole } from "@/infrastructure/hooks/useRoles";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -12,77 +15,153 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useRoles, useRolesAll, useCreateRole } from "@/infrastructure/hooks/useRoles";
 import { createRoleSchema } from "@/infrastructure/schema/schema-role";
 import type { Role } from "@/infrastructure/types/domain";
 import { z } from "zod";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { Input } from "@/components/ui/input";
 
 type RoleForm = z.infer<typeof createRoleSchema>;
 
 interface RoleSelectProps {
   value?: string;
   onChange: (value: string) => void;
+  companyId?: string | null;
 }
 
-export function RoleSelect({ value, onChange }: RoleSelectProps) {
+export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { companyId } = useAuthStore();
-  const { data: roles = [], isLoading } = useRoles();
-  const createRole = useCreateRole();
-  const form = useForm<RoleForm>({
-    resolver: zodResolver(createRoleSchema),
-    defaultValues: { name: "", companyId: companyId ?? "" },
+  const { companyId: storeCompanyId } = useAuthStore();
+  const normalizedCompanyId = companyId ?? storeCompanyId ?? "";
+  const isCompanyUnavailable = normalizedCompanyId.length === 0;
+  const searchTerm = query.trim();
+  const shouldSearch = searchTerm.length > 0;
+
+  const rolesAllQuery = useRolesAll({ enabled: !isCompanyUnavailable });
+  const rolesSearchQuery = useRoles(shouldSearch ? searchTerm : undefined, {
+    enabled: shouldSearch && !isCompanyUnavailable,
   });
 
+  const createRole = useCreateRole();
+
+  const form = useForm<RoleForm>({
+    resolver: zodResolver(createRoleSchema),
+    defaultValues: { name: "", description: "", companyId: normalizedCompanyId },
+  });
+
+  useEffect(() => {
+    form.reset({ name: "", description: "", companyId: normalizedCompanyId });
+  }, [normalizedCompanyId, form, open]);
+
   function handleSubmit(data: RoleForm) {
+    if (!normalizedCompanyId) return;
+
     createRole.mutate(
       {
         ...data,
-        companyId: companyId ?? "",
+        companyId: normalizedCompanyId,
         description: data.description ?? "",
       },
       {
         onSuccess: (created: Role) => {
-          setOpen(false);
           onChange(created.id!);
-          form.reset();
+          setOpen(false);
+          form.reset({
+            name: "",
+            description: "",
+            companyId: normalizedCompanyId,
+          });
         },
       }
     );
   }
 
-  const list = Array.isArray(roles) ? roles : [];
-  const filtered = list.filter((r: Role) => String(r?.name ?? "").toLowerCase().includes(query.toLowerCase()));
+  const list = useMemo(() => {
+    if (isCompanyUnavailable) return [];
+
+    const source = shouldSearch
+      ? rolesSearchQuery.data ?? []
+      : rolesAllQuery.data ?? [];
+
+    return (Array.isArray(source) ? source : []).filter(
+      (role: Role) =>
+        !normalizedCompanyId || role.companyId === normalizedCompanyId
+    );
+  }, [
+    rolesAllQuery.data,
+    rolesSearchQuery.data,
+    normalizedCompanyId,
+    shouldSearch,
+    isCompanyUnavailable,
+  ]);
+
+  const isCreating = createRole.status === "pending";
+  const isLoadingOptions = isCompanyUnavailable
+    ? false
+    : shouldSearch
+      ? rolesSearchQuery.isLoading || rolesSearchQuery.isFetching
+      : rolesAllQuery.isLoading || rolesAllQuery.isFetching;
+  const hasError = isCompanyUnavailable
+    ? false
+    : shouldSearch
+      ? rolesSearchQuery.isError
+      : rolesAllQuery.isError;
 
   return (
-  <div className="flex items-stretch gap-2 w-full">
+    <div className="flex items-end gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading || !companyId}>
-          <SelectTrigger className="w-full shadow-sm ">
-            <SelectValue placeholder={isLoading ? 'Carregando papéis...' : 'Selecione papel'} />
+        <Select
+          value={value}
+          onValueChange={onChange}
+          disabled={isLoadingOptions || isCompanyUnavailable}
+        >
+          <SelectTrigger className="w-full shadow-sm">
+            <SelectValue
+              placeholder={
+                isCompanyUnavailable
+                  ? "Selecione uma empresa primeiro"
+                  : isLoadingOptions
+                    ? "A carregar papéis..."
+                    : "Selecione o papel"
+              }
+            />
           </SelectTrigger>
-          {isLoading && (
+          {isLoadingOptions && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
             <div className="p-2 sticky top-0 bg-popover">
               <Input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(event) => setQuery(event.target.value)}
                 placeholder="Filtrar papéis..."
-                className="w-full"
-                disabled={isLoading || list.length === 0}
+                className="w-full placeholder:text-xs"
+                disabled={isLoadingOptions || isCompanyUnavailable}
               />
             </div>
-            {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">Não há dados disponíveis.</div>
+            {hasError ? (
+              <div className="text-sm text-red-500 p-3 text-center">
+                Erro ao carregar papéis.
+              </div>
+            ) : list.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                {isCompanyUnavailable
+                  ? "Selecione uma empresa para listar papéis."
+                  : "Nenhum papel encontrado."}
+              </div>
             ) : (
-              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
-                {filtered.map((r: Role) => (
-                  <SelectItem key={r.id} value={r.id!} className="cursor-pointer">
-                    {r.name}
+              <div
+                className={
+                  list.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
+                }
+              >
+                {list.map((role: Role) => (
+                  <SelectItem key={role.id} value={role.id!}>
+                    {role.name}
                   </SelectItem>
                 ))}
               </div>
@@ -90,60 +169,104 @@ export function RoleSelect({ value, onChange }: RoleSelectProps) {
           </SelectContent>
         </Select>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="text-blue-600 border-blue-200 hover:bg-blue-50 focus-visible:ring-blue-500 cursor-pointer"
-        onClick={() => setOpen(true)}
+      <Popover
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (isCreating) return;
+          if (isCompanyUnavailable) {
+            setOpen(false);
+            return;
+          }
+          setOpen(nextOpen);
+        }}
       >
-        <Plus className="w-4 h-4" />
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm w-full px-4 py-6 rounded-lg">
-          <DialogHeader className="mb-2 text-blue-700 font-semibold text-lg">Criar Papel</DialogHeader>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-2 w-full"
-            autoComplete="off"
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0 cursor-pointer"
+            disabled={isCompanyUnavailable || isCreating}
           >
-            <div className="flex flex-col gap-1">
-              <label htmlFor="name" className="text-sm text-blue-900 font-medium mb-2 block">Nome</label>
-              <input
-                id="name"
+            {isCreating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          className="w-80 p-4"
+          onInteractOutside={(event) => {
+            if (isCreating) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (isCreating) event.preventDefault();
+          }}
+        >
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="role-name">Nome do papel</Label>
+              <Input
+                id="role-name"
                 {...form.register("name")}
-                className="border border-blue-300 rounded focus:border-blue-500 focus-visible:ring-blue-400 px-2 py-2 text-sm transition w-full"
-                placeholder="Nome do papel"
-                autoFocus
+                placeholder="Nome"
+                disabled={isCreating}
               />
               {form.formState.errors.name && (
-                <span className="text-red-500 text-xs mt-1">
+                <span className="text-xs text-red-500">
                   {form.formState.errors.name.message}
                 </span>
               )}
             </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="description" className="text-sm text-blue-900 font-medium block mb-2">Descrição</label>
-              <textarea
-                id="description"
+            <div className="space-y-2">
+              <Label htmlFor="role-description">Descrição</Label>
+              <Textarea
+                id="role-description"
                 {...form.register("description")}
-                placeholder="Descrição (opcional)"
-                className="border border-blue-300 rounded focus:border-blue-500 focus-visible:ring-blue-400 px-2 py-2 text-sm transition resize-none w-full min-h-[70px]"
+                placeholder="Descrição opcional"
+                disabled={isCreating}
+                className="resize-none"
                 rows={3}
               />
             </div>
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-end gap-2">
               <Button
-                type="submit"
-                disabled={createRole.status === "pending"}
-                className="bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500/80 px-6 py-2 rounded transition cursor-pointer"
+                type="button"
+                variant="outline"
+                className="cursor-pointer"
+                disabled={isCreating}
+                onClick={() => {
+                  form.reset({
+                    name: "",
+                    description: "",
+                    companyId: normalizedCompanyId,
+                  });
+                  setOpen(false);
+                }}
               >
-                {createRole.status === "pending" ? "Salvando..." : "Salvar"}
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+                disabled={isCreating}
+                onClick={() => form.handleSubmit(handleSubmit)()}
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                  </>
+                ) : (
+                  "Salvar"
+                )}
               </Button>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

@@ -66,7 +66,7 @@ export function NavMain({
             )
           }
 
-          // Se não tem subitens, renderiza como botão simples
+        
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild tooltip={item.title} isActive={isActiveUrl(item.url)}>

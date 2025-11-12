@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FunnelPlus, Plus, X, ChevronDown } from "lucide-react";
+import { FunnelPlus, Plus, X, ChevronDown, Trash2 } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface ToolbarProps<TData extends RowData> {
+export interface ToolbarProps<TData extends RowData> {
   table: ReactTable<TData>;
   placeholder: string;
   globalFilter: string;
@@ -45,6 +45,9 @@ interface ToolbarProps<TData extends RowData> {
   onClearRange: () => void;
   searchKey?: string;
   dateKey?: string;
+  selectedCount?: number;
+  isAllSelected?: boolean;
+  onClickDeleteSelected?: () => void;
 }
 
 export function Toolbar<TData extends RowData>({
@@ -60,6 +63,9 @@ export function Toolbar<TData extends RowData>({
   onClearRange,
   searchKey,
   dateKey,
+  selectedCount = 0,
+  isAllSelected = false,
+  onClickDeleteSelected,
 }: ToolbarProps<TData>) {
   const [showDatePicker, setShowDatePicker] = React.useState(false);
   const [sortLabel, setSortLabel] = React.useState("Mais recente");
@@ -143,6 +149,19 @@ export function Toolbar<TData extends RowData>({
           </Badge>
         </div>
 
+        {selectedCount > 0 && (
+          <Button
+            variant="destructive"
+            className="h-11 cursor-pointer"
+            onClick={onClickDeleteSelected}
+          >
+            <Trash2 className="mr-2 size-4" />
+            {isAllSelected
+              ? "Excluir todos"
+              : `Excluir ${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}`}
+          </Button>
+        )}
+
         <Drawer
           open={isFilterOpen}
           onOpenChange={setIsFilterOpen}
@@ -151,7 +170,7 @@ export function Toolbar<TData extends RowData>({
           <DrawerTrigger asChild>
             <Button
               variant="ghost"
-              className="h-11 bg-gray-100 dark:bg-gray-900 cursor-pointer"
+              className="h-11 cursor-pointer bg-muted/40 hover:bg-muted/60 dark:bg-muted/20 dark:hover:bg-muted/30"
               aria-label="Filtrar"
             >
               <FunnelPlus className=" size-4" />
@@ -271,10 +290,11 @@ export function Toolbar<TData extends RowData>({
           (actionButton.component || (
             <Button
               size="sm"
-              className="h-11 bg-blue-600 cursor-pointer text-base hover:bg-blue-700 dark:text-white"
+              variant="default"
+              className="h-11 cursor-pointer text-base"
               onClick={actionButton.onClick}
             >
-              <Plus className="mr-2 size-4 dark:text-white" />{" "}
+              <Plus className="mr-2 size-4" />{" "}
               {actionButton.label}
             </Button>
           ))}

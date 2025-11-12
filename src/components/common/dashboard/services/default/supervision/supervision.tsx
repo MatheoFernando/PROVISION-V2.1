@@ -19,13 +19,6 @@ export default function Supervision() {
 
   return (
     <div className=" py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Supervisão</h1>
-        <p className="text-muted-foreground">
-          Gerencie supervisões e monitoramento de equipes
-        </p>
-      </div>
-
       <SupervisionTable
         data={supervisions}
         isLoading={isLoading}

@@ -8,17 +8,20 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
-  SidebarRail,
 } from "@/components/ui/sidebar"
 import { NavMain } from "./nav-main"
-import { TeamSwitcher } from "./team-switcher"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { allNavItems} from "./nav-items"
+import { useCompanyByIdQuery } from '@/infrastructure/hooks/useCompanies'
+import Image from "next/image"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin)
-
+  const companyId = useAuthStore((state) => state.companyId)
+  const companyQuery = useCompanyByIdQuery(companyId ?? undefined)
+ 
   const navMain = React.useMemo(() => {
     return allNavItems.filter((item) => {
       // Se requiresGlobalAdmin é true, só mostrar para global admin
@@ -36,34 +39,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     })
   }, [isGlobalAdmin])
 
-  const sidebarData = {
-    user: {
+  const sidebarData = React.useMemo(() => {
+    const company = companyQuery.data ?? null
+    const user = {
       name: "Provision",
-      email: "admin@provision.com",
       avatarIcon: Building2,
-    },
-    teams: [
+    }
+
+    const teams = [
       {
-        name: "Provision",
+        name: company?.businessName ?? company?.taxName ?? "Provision",
         logoIcon: Building2,
-        plan: "Admin",
       },
-    ],
-    navMain,
-  }
+    ]
+
+    return {
+      user,
+      teams,
+      navMain,
+    }
+  }, [companyQuery.data, navMain])
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" {...props} >
-      <div className="bg-[#121c2d]  h-screen">
-
-      <SidebarHeader className="bg-[#121c2d] border-b border-sidebar-border">
-        <TeamSwitcher teams={sidebarData.teams} />
+      <SidebarHeader className="md:pt-8">
+        <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto"/>
       </SidebarHeader>
-      <SidebarContent className="bg-[#121c2d] ">
+      <SidebarContent>
         <NavMain items={sidebarData.navMain} />
       </SidebarContent>
-      <SidebarRail />
-      </div>
+      <SidebarFooter>
+      V2
+      </SidebarFooter>
     </Sidebar>
   )
 }

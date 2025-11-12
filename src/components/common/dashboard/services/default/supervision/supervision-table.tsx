@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import type { DateRange } from "react-day-picker"
-import { SupervisionDialog } from "./supervision-dialog"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { SupervisionCreate } from "./supervision-create"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"
@@ -28,16 +27,16 @@ import { useEquipment } from "@/infrastructure/hooks/useEquipment"
 import { useSites } from "@/infrastructure/hooks/useSites"
 import { useDepartments } from "@/infrastructure/hooks/useDepartments"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
-import { useRouter } from "next/navigation"
 import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
+import { SupervisionDrawer } from "./supervision-dialog"
 
 interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
 }
 
-function ActionsButtons({ supervision, equipmentCode }: ActionsButtonsProps) {
+function ActionsButtons({ supervision }: ActionsButtonsProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
@@ -83,7 +82,7 @@ function ActionsButtons({ supervision, equipmentCode }: ActionsButtonsProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SupervisionDialog
+      <SupervisionDrawer
         supervision={supervision}
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
@@ -121,7 +120,7 @@ const createSupervisionColumns = (
 ): ColumnDef<Supervision>[] => [
   {
     accessorKey: "cod",
-    header: "Código",
+    header: "Nº Mec",
     size: 50,
     cell: ({ row }) => (
       <div className="font-medium">{row.original.cod}</div>
@@ -130,26 +129,26 @@ const createSupervisionColumns = (
   {
     accessorKey: "desiredNumberWorkers",
     header: "Desejado",
-    size: 50,
+    size: 20,
     cell: ({ row }) => (
-      <div className="text-center">{row.original.desiredNumberWorkers}</div>
+      <div >{row.original.desiredNumberWorkers}</div>
     ),
   },
   {
     accessorKey: "numberWorkerPresent",
     header: "Presente",
-    size: 50,
+    size: 20,
     cell: ({ row }) => (
-      <div className="text-center">{row.original.numberWorkerPresent}</div>
+      <div >{row.original.numberWorkerPresent}</div>
     ),
   },
   {
     accessorFn: (row) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
     id: "equipment",
-    header: "Equipamento",
+    header: `Equipamentos`,
     cell: ({ row }) => {
-      const name = maps.equipmentById[row.original.equipmentId || ""]
-      return <div>{name || 'N/A'}</div>
+      const equipment = maps.equipmentById[row.original.equipmentId] || ""
+      return <div>{equipment || 'N/A'}</div>
     },
   },
   {
@@ -177,11 +176,11 @@ const createSupervisionColumns = (
     },
     id: "time",
     header: "Horário",
-    size: 50,
+    size: 20,
     cell: ({ row }) => {
       const t = row.original.time || ""
       const hhmm = t.includes("T") ? t.slice(11, 16) : t.slice(0, 5)
-      return <div className="text-center">{hhmm}</div>
+      return <div>{hhmm}</div>
     },
   },
   {
@@ -205,19 +204,11 @@ const createSupervisionColumns = (
       )
     },
   },
-  {
-    accessorFn: (row) => new Date(row.createdAt || '').toLocaleDateString('pt-BR'),
-    id: "createdAt",
-    header: "Criado em",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {new Date(row.original.createdAt || '').toLocaleDateString('pt-BR')}
-      </div>
-    ),
-  },
+
   {
     id: "actions",
     header: "Ações",
+    size: 50,
     cell: ({ row }) => (
       <ActionsButtons supervision={row.original} equipmentCode={maps.equipmentById[row.original.equipmentId || ""]} />
     ),
@@ -229,6 +220,7 @@ interface SupervisionTableProps {
   isLoading?: boolean
   onCreateClick?: () => void
   onDateRangeChange?: (range?: DateRange) => void
+  onBulkDelete?: (selected: Supervision[]) => void
 }
 
 export function SupervisionTable({ data, isLoading, onDateRangeChange }: SupervisionTableProps) {

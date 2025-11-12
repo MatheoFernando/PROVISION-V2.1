@@ -157,7 +157,7 @@ export function ZoneSelect({
             if (createZone.status === "pending") e.preventDefault();
           }}
         >
-          <div className="font-medium mb-2">Criar Zona</div>
+          <div className="font-medium mb-4 text-lg">Criar Zona</div>
           <form
             onSubmit={(e) => {
               e.preventDefault();

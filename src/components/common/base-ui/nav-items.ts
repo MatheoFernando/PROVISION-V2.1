@@ -3,7 +3,7 @@ import {
   Home,
   Users,
   Building2,
-  Settings2,
+  Settings,
   User2,
   Briefcase,
   Hammer,
@@ -61,8 +61,8 @@ export const allNavItems: BaseNavItem[] = [
   {
     title: "Configurações",
     url: "/dashboard/settings",
-    requiresGlobalAdmin: true,
-    icon: Settings2,
+    requiresGlobalAdmin: false,
+    icon: Settings,
   },
   {
     title: "Veiculos",

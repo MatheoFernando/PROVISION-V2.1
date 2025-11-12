@@ -116,6 +116,8 @@ export interface User {
   updatedAt?: string;
   roleId?: string;
   password?: string;
+  permissions?: string[];
+  employee?: Employee | null;
 }
 
 export interface CreateUserPayload {
@@ -123,6 +125,9 @@ export interface CreateUserPayload {
   password: string;
   isGlobalAdmin: boolean;
   status: boolean;
+  companyId?: string;
+  departmentId?: string;
+  roleId?: string;
 }
 
 export interface UpdateUserPayload {
@@ -131,6 +136,9 @@ export interface UpdateUserPayload {
   password?: string;
   isGlobalAdmin: boolean;
   status: boolean;
+  companyId?: string;
+  departmentId?: string;
+  roleId?: string;
 }
 
 export interface Container {
@@ -187,6 +195,7 @@ export interface Employee {
   departmentId: string;
   createdAt?: string;
   updatedAt?: string;
+  department?: Department | null;
 }
 
 export interface Equipment {

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { usePathname } from "next/navigation"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { allNavItems } from "./nav-items"
 import { ChevronRight } from "lucide-react"
@@ -38,23 +38,21 @@ export function BreadcrumbClient(): React.ReactElement {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList>
+      <BreadcrumbList className="mx-4 items-end">
         {items.map((c, idx) => (
           <React.Fragment key={c.href}>
             {idx < items.length - 1 ? (
               <>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href={c.href} className="inline-flex items-center gap-2 font-medium text-muted-foreground hover:text-primary underline-offset-4 text-base transition-colors duration-200">
-                    {c.Icon ? <c.Icon className="h-4 w-4" /> : null}
-                    {c.label}
+                  <BreadcrumbLink href={c.href} className="font-medium text-muted-foreground hover:text-primary underline-offset-4 text-base transition-colors duration-200">
+                    {c.Icon ? <c.Icon className="h-5 w-5" /> : null}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <span className="hidden md:block text-muted-foreground"> <ChevronRight /> </span>
               </>
             ) : (
               <BreadcrumbItem>
-                <BreadcrumbPage className="inline-flex items-center gap-2 text-primary underline text-base">
-                  {c.Icon ? <c.Icon className="h-4 w-4 text-primary" /> : null}
+                <BreadcrumbPage className="  font-medium  hover:text-primary underline-offset-4  transition-colors duration-200 underline text-base text-blue-500">
                   {c.label}
                 </BreadcrumbPage>
               </BreadcrumbItem>

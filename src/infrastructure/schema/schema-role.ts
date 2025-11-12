@@ -21,26 +21,5 @@ export interface Role extends z.infer<typeof roleSchema> {}
 export interface CreateRole extends z.infer<typeof createRoleSchema> {}
 export interface UpdateRole extends z.infer<typeof updateRoleSchema> {}
 
-export const ROLES = [
-  {
-    id: "admin",
-    name: "Administrador",
-    description: "Acesso total ao sistema",
-    permissions: ["read", "write", "delete", "manage_users", "manage_roles"],
-  },
-  {
-    id: "manager",
-    name: "Gerente",
-    description: "Gerenciamento de equipe e projetos",
-    permissions: ["read", "write", "manage_team"],
-  },
-  {
-    id: "employee",
-    name: "Funcionário",
-    description: "Acesso básico ao sistema",
-    permissions: ["read"],
-  },
-] as const;
-
 
 

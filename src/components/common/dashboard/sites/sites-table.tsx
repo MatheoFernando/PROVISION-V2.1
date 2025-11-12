@@ -12,14 +12,13 @@ import { SitesView } from "./sites-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import SitesCreatePage from "./site-create";
 
 const columns: ColumnDef<Site>[] = [
   {
     accessorKey: "cod",
-    header: "Código",
+    header: "Nº Mec",
     size: 50,
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;

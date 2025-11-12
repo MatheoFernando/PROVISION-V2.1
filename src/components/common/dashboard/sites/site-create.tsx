@@ -51,7 +51,7 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
       geoLocationId: "",
     },
   });
-  
+
   useEffect(() => {
     const d = props.initialData;
     if (!d) return;
@@ -73,11 +73,21 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
     try {
       setIsSubmitting(true);
       if (props.id && updateSite) {
-        await updateSite.mutateAsync({ id: props.id, data: { ...data, companyId: (data as any).companyId || companyId } as any });
+        await updateSite.mutateAsync({
+          id: props.id,
+          data: {
+            ...data,
+            companyId: (data as any).companyId || companyId,
+          } as any,
+        });
       } else {
-        await createSite.mutateAsync({ ...data, companyId: (data as any).companyId || companyId } as any);
+        await createSite.mutateAsync({
+          ...data,
+          companyId: (data as any).companyId || companyId,
+        } as any);
       }
-      if (props.onSuccess) props.onSuccess(); else form.reset();
+      if (props.onSuccess) props.onSuccess();
+      else form.reset();
     } catch (error) {
     } finally {
       setIsSubmitting(false);
@@ -86,29 +96,12 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
 
   return (
     <div>
-  
-        <h1 className="text-3xl font-bold text-slate-900">Novo Site</h1>
+      <h1 className="text-3xl font-bold text-slate-900">Novo Site</h1>
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className=" py-4 space-y-6">
+        <div className="py-4 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="cod" className="text-slate-700">
-                Código *
-              </Label>
-              <Input
-                id="cod"
-                {...form.register("cod")}
-                placeholder="Digite o código"
-                className="rounded-lg"
-              />
-              {form.formState.errors.cod && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.cod.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="name" className="text-slate-700">
                 Nome *
               </Label>
@@ -125,25 +118,21 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="numberWorkersContract" className="text-slate-700">
-                Número de Trabalhadores *
+              <Label htmlFor="cod" className="text-slate-700">
+               Nº Mec *
               </Label>
               <Input
-                id="numberWorkersContract"
-                type="number"
-                {...form.register("numberWorkersContract", {
-                  valueAsNumber: true,
-                })}
-                placeholder="Digite o número de trabalhadores"
+                id="cod"
+                {...form.register("cod")}
+                placeholder="Digite o código"
                 className="rounded-lg"
               />
-              {form.formState.errors.numberWorkersContract && (
+              {form.formState.errors.cod && (
                 <p className="text-sm text-red-500">
-                  {form.formState.errors.numberWorkersContract.message}
+                  {form.formState.errors.cod.message}
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="customerId" className="text-slate-700">
                 Selecione o Cliente *
@@ -161,18 +150,54 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                 </p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="areaId" className="text-slate-700">
-                Selecione a Área *
-              </Label>
-              <AreaSelect
-                value={form.watch("areaId")}
-                onChange={(value) => form.setValue("areaId", value)}
-                companyId={companyId}
-              />
-            </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="numberWorkersContract" className="text-slate-700">
+                Trabalhadores *
+                </Label>
+                <Input
+                  id="numberWorkersContract"
+                  type="number"
+                  {...form.register("numberWorkersContract", {
+                    valueAsNumber: true,
+                  })}
+                  placeholder="Digite o número de trabalhadores"
+                  className="rounded-lg"
+                />
+                {form.formState.errors.numberWorkersContract && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.numberWorkersContract.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="areaId" className="text-slate-700">
+                  Selecione a Área *
+                </Label>
+                <AreaSelect
+                  value={form.watch("areaId")}
+                  onChange={(value) => {
+                    form.setValue("areaId", value);
+                    form.setValue("zoneId", "");
+                    form.setValue("sectorId", "");
+                  }}
+                  companyId={companyId}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zoneId" className="text-slate-700">
+                  Selecione a Zona
+                </Label>
+                <ZoneSelect
+                  value={form.watch("zoneId")}
+                  onChange={(value: string) => {
+                    form.setValue("zoneId", value);
+                    form.setValue("sectorId", "");
+                  }}
+                  companyId={companyId}
+                  areaId={form.watch("areaId")}
+                />
+              </div>
             <div className="space-y-2">
               <Label htmlFor="sectorId" className="text-slate-700">
                 Selecione o Setor *
@@ -189,7 +214,7 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                 </p>
               )}
             </div>
-
+            </div>
             <div className="space-y-2">
               <Label htmlFor="contactId" className="text-slate-700">
                 Selecione o Contato *
@@ -205,7 +230,6 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="addressId" className="text-slate-700">
                 Selecione o Endereço *
@@ -221,23 +245,7 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                 </p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="zoneId" className="text-slate-700">
-                Selecione a Zona
-              </Label>
-              <ZoneSelect
-                value={form.watch("zoneId")}
-                onChange={(value: string) => {
-                  form.setValue("zoneId", value);
-                  form.setValue("sectorId", "");
-                }}
-                companyId={companyId}
-                areaId={form.watch("areaId")}
-              />
-            </div>
-
-            <div className="space-y-1">
+            <div className="space-y-1 ">
               <Label htmlFor="geoLocationEntityId" className="text-slate-700">
                 Geolocalização *
               </Label>
@@ -246,7 +254,7 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                   id="geoLocationEntityId"
                   {...form.register("geoLocationId")}
                   placeholder="geolocalização (ex.: GEO-XYZ)"
-                  className="rounded-lg "
+                  className="rounded-lg"
                   type="text"
                 />
               </div>
@@ -262,17 +270,25 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => (props.onCancel ? props.onCancel() : router.back())}
+              onClick={() =>
+                props.onCancel ? props.onCancel() : router.back()
+              }
               className="rounded-lg px-6 cursor-pointer"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || (updateSite?.isPending ?? false) || (createSite?.isPending ?? false)}
+              disabled={
+                isSubmitting ||
+                (updateSite?.isPending ?? false) ||
+                (createSite?.isPending ?? false)
+              }
               className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
             >
-              {isSubmitting || (updateSite?.isPending ?? false) || (createSite?.isPending ?? false)
+              {isSubmitting ||
+              (updateSite?.isPending ?? false) ||
+              (createSite?.isPending ?? false)
                 ? "Salvando..."
                 : props.id
                 ? "Atualizar Site"

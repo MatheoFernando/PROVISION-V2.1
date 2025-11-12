@@ -1,12 +1,25 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { toast } from "sonner"
-import { Eye, Edit, Trash2, User, Building, Settings, Building2, MoreHorizontal, Shield, UserX } from "lucide-react"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
+import {
+  Trash2,
+  User,
+  Building,
+  Settings,
+  Shield,
+  UserX,
+  XIcon,
+  Eye,
+  Edit,
+  Plus,
+  Power,
+  ExternalLink,
+} from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
@@ -15,68 +28,62 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
+} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table"
-import { IconDotsVertical } from "@tabler/icons-react"
-import { useUsers } from '@/infrastructure/hooks/useUsers'
-import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
-import type { User as UserEntity, Company } from '@/infrastructure/types/domain'
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { IconDotsVertical } from "@tabler/icons-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
+import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
+import type {
+  User as UserEntity,
+  Company,
+} from "@/infrastructure/types/domain";
+import { useRouter } from "next/navigation";
+import CreateUserDialog from "@/components/common/dashboard/users/create-users";
 
-type User = UserEntity
+type User = UserEntity;
 
-
-// Componente para ações com dropdown
-function ActionsButtons({ 
-  item, 
-  tabType 
-}: { 
-  item: any
-  tabType: 'users' | 'companies'
+function ActionsButtons({
+  item,
+  tabType,
+}: {
+  item: any;
+  tabType: "users" | "companies";
 }) {
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
   const handleAction = (action: string) => {
-    const itemName = tabType === 'users' ? (item?.phone ?? 'Utilizador') : (item?.businessName ?? 'Empresa')
-    
+    const itemName =
+      tabType === "users"
+        ? item?.phone ?? "Utilizador"
+        : item?.businessName ?? "Empresa";
+
     switch (action) {
-      case 'permissions':
-        setIsDrawerOpen(true)
-        break
-      case 'remove':
-        toast.success(`Removendo ${itemName}`)
-        break
-      case 'disable':
-        const actionText = tabType === 'users' ? 'desabilitando usuário' : 'desabilitando empresa'
-        toast.success(`${actionText} ${itemName}`)
-        break
+      case "permissions":
+        setIsDrawerOpen(true);
+        break;
+      case "remove":
+        toast.success(`Removendo ${itemName}`);
+        break;
+      case "disable":
+        const actionText =
+          tabType === "users"
+            ? "desabilitando usuário"
+            : "desabilitando empresa";
+        toast.success(`${actionText} ${itemName}`);
+        break;
       default:
-        break
+        break;
     }
-  }
+  };
 
   return (
     <>
@@ -91,18 +98,22 @@ function ActionsButtons({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={() => handleAction('permissions')}>
+          <DropdownMenuItem onClick={() => handleAction("permissions")}>
             <Shield className="size-4 mr-2" />
             Permissões
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleAction('disable')}>
-            {tabType === 'users' ? <UserX className="size-4 mr-2" /> : <Building className="size-4 mr-2" />}
+          <DropdownMenuItem onClick={() => handleAction("disable")}>
+            {tabType === "users" ? (
+              <UserX className="size-4 mr-2" />
+            ) : (
+              <Building className="size-4 mr-2" />
+            )}
             Desabilitar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            variant="destructive" 
-            onClick={() => handleAction('remove')}
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => handleAction("remove")}
           >
             <Trash2 className="size-4 mr-2" />
             Remover
@@ -117,230 +128,321 @@ function ActionsButtons({
         onOpenChange={setIsDrawerOpen}
       />
     </>
-  )
+  );
 }
 
 // Componente para permissões de configuração
-function PermissionsDrawer({ 
-  item, 
-  tabType,
-  isOpen,
-  onOpenChange
-}: { 
-  item: any
-  tabType: 'users' | 'companies'
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const isMobile = useIsMobile()
-  const itemName = tabType === 'users' ? (item?.phone ?? 'Utilizador') : (item?.businessName ?? 'Empresa')
-  
-  // Estado para os dados editáveis
-  const [permissions, setPermissions] = React.useState("read")
-  const [status, setStatus] = React.useState("active")
-  const [modules, setModules] = React.useState({
-    dashboard: true,
-    users: true,
-    companies: true,
-    settings: false
-  })
-
-  // Carregar dados específicos do item
-  React.useEffect(() => {
-    if (isOpen && item) {
-      // Simular carregamento de dados específicos baseado no ID
-      console.log(`Carregando dados para ${tabType} ID: ${item.id}`)
-      
-      // Aqui você faria uma requisição para buscar os dados específicos
-      // Por exemplo: fetch(`/api/${tabType}/${item.id}/permissions`)
-      
-      // Por enquanto, vamos usar dados baseados no tipo
-      if (tabType === 'users') {
-        const user = item as User
-        setStatus(user.status ? "active" : "inactive")
-        setPermissions(user.isGlobalAdmin ? "admin" : "read")
-      } else {
-        setStatus(item?.status ? "active" : "inactive")
-        setPermissions("read")
-      }
-    }
-  }, [isOpen, item, tabType])
-
-  const handleSave = () => {
-    // Aqui você salvaria as alterações
-    console.log(`Salvando permissões para ${tabType} ID: ${item.id}`, {
-      permissions,
-      status,
-      modules
-    })
-    
-    toast.success(`Permissões salvas para ${itemName}`)
-    onOpenChange(false)
-  }
-
-  const handleModuleChange = (module: keyof typeof modules) => {
-    setModules(prev => ({
-      ...prev,
-      [module]: !prev[module]
-    }))
-  }
-
-  return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange} direction={isMobile ? "bottom" : "right"}>
-      <DrawerContent className={isMobile ? "h-[85vh]" : "h-[100vh] w-[400px] max-w-[90vw]"}>
-        <DrawerHeader className="gap-1">
-          <DrawerTitle>Permissões de Configuração</DrawerTitle>
-          <DrawerDescription>
-            Configure as permissões para {tabType === 'users' ? 'o usuário' : 'a empresa'}: <strong>{itemName}</strong>
-          </DrawerDescription>
-        </DrawerHeader>
-        
-        <div className="flex-1 overflow-y-auto">
-          <Tabs defaultValue="permissions" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="permissions" className="flex items-center gap-2">
-                <Shield className="size-4" />
-                Permissões
-              </TabsTrigger>
-              <TabsTrigger value="modules" className="flex items-center gap-2">
-                <Settings className="size-4" />
-                Módulos
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="permissions" className="p-4 space-y-4">
-              <form className="flex flex-col gap-4">
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="entity-name">Nome</Label>
-                  <Input id="entity-name" value={itemName} disabled />
-                </div>
-                
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="permissions">Permissões</Label>
-                  <Select value={permissions} onValueChange={setPermissions}>
-                    <SelectTrigger id="permissions" className="w-full">
-                      <SelectValue placeholder="Selecione as permissões" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="read">Apenas Leitura</SelectItem>
-                      <SelectItem value="write">Leitura e Escrita</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="none">Sem Acesso</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="status">Status de Acesso</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger id="status" className="w-full">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                      <SelectItem value="suspended">Suspenso</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="modules" className="p-4 space-y-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="modules">Módulos Acessíveis</Label>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="checkbox" 
-                      id="dashboard" 
-                      checked={modules.dashboard}
-                      onChange={() => handleModuleChange('dashboard')}
-                    />
-                    <Label htmlFor="dashboard">Dashboard</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="checkbox" 
-                      id="users" 
-                      checked={modules.users}
-                      onChange={() => handleModuleChange('users')}
-                    />
-                    <Label htmlFor="users">Usuários</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="checkbox" 
-                      id="companies" 
-                      checked={modules.companies}
-                      onChange={() => handleModuleChange('companies')}
-                    />
-                    <Label htmlFor="companies">Empresas</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="checkbox" 
-                      id="settings" 
-                      checked={modules.settings}
-                      onChange={() => handleModuleChange('settings')}
-                    />
-                    <Label htmlFor="settings">Configurações</Label>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <DrawerFooter>
-          <Button onClick={handleSave}>Salvar Permissões</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Cancelar</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-  )
+interface PermissionState {
+  view: boolean;
+  edit: boolean;
+  create: boolean;
+  delete: boolean;
+  habilitate: boolean;
 }
 
-// Definições das colunas para cada tipo
-const createUserColumns = (): ColumnDef<User>[] => [
+interface PermissionItem {
+  key: keyof PermissionState;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const permissionAliasMap: Record<string, keyof PermissionState> = {
+  view: "view",
+  read: "view",
+  consultar: "view",
+  edit: "edit",
+  update: "edit",
+  alterar: "edit",
+  create: "create",
+  add: "create",
+  register: "create",
+  delete: "delete",
+  remove: "delete",
+  destroy: "delete",
+  enable: "habilitate",
+  activate: "habilitate",
+  habilitate: "habilitate",
+  habilitar: "habilitate",
+};
+
+function createPermissionStateTemplate(): PermissionState {
+  return {
+    view: false,
+    edit: false,
+    create: false,
+    delete: false,
+    habilitate: false,
+  };
+}
+
+const permissionItemsConfig: PermissionItem[] = [
   {
-    accessorKey: "phone",
-    header: "Telefone",
+    key: "view",
+    label: "Ver",
+    description: "Permite visualizar informações e relatórios do módulo.",
+    icon: Eye,
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const isActive = Boolean(row.original.status)
-      return (
-        <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {isActive ? 'Ativo' : 'Inativo'}
-        </Badge>
-      )
-    },
+    key: "edit",
+    label: "Editar",
+    description: "Autoriza ajustes em registros existentes.",
+    icon: Edit,
   },
   {
-    accessorKey: "isGlobalAdmin",
-    header: "Tipo",
-    cell: ({ row }) => (
-      <Badge variant={row.original.isGlobalAdmin ? 'default' : 'secondary'} className={row.original.isGlobalAdmin ? 'bg-blue-500' : 'bg-gray-200 text-gray-700'}>
-        {row.original.isGlobalAdmin ? 'Super Admin' : 'Admin'}
-      </Badge>
-    ),
+    key: "create",
+    label: "Criar",
+    description: "Libera a criação de novos registros.",
+    icon: Plus,
   },
   {
-    id: "actions",
-    header: "Ações",
-    cell: ({ row }) => (
-      <ActionsButtons
-        item={row.original}
-        tabType="users"
-      />
-    ),
+    key: "delete",
+    label: "Deletar",
+    description: "Concede permissão para excluir registros.",
+    icon: Trash2,
   },
-]
+  {
+    key: "habilitate",
+    label: "Habilitar",
+    description: "Define a capacidade de ativar ou suspender recursos.",
+    icon: Power,
+  },
+];
+
+function PermissionsDrawer({
+  item,
+  tabType,
+  isOpen,
+  onOpenChange,
+}: {
+  item: any;
+  tabType: "users" | "companies";
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const isMobile = useIsMobile();
+  const router = useRouter();
+  const itemName =
+    tabType === "users"
+      ? item?.phone ?? "Utilizador"
+      : item?.businessName ?? "Empresa";
+  const [permissionState, setPermissionState] = React.useState<PermissionState>(
+    createPermissionStateTemplate
+  );
+  const [hasChanges, setHasChanges] = React.useState(false);
+  const itemIdentifier = React.useMemo(() => {
+    if (!item) return "";
+    if (item?.id) return String(item.id);
+    if (item?.phone) return String(item.phone);
+    if (item?.businessName) return String(item.businessName);
+    if (item?.nif) return String(item.nif);
+    return "";
+  }, [item?.id, item?.phone, item?.businessName, item?.nif]);
+  const normalizedPermissions = React.useMemo(() => {
+    if (!Array.isArray(item?.permissions)) return [];
+    return (item.permissions as string[]).map((permission) =>
+      permission?.toLowerCase?.() ?? permission
+    );
+  }, [item?.permissions]);
+
+  const status = React.useMemo(() => {
+    if (!item) return "inactive";
+    const isActive =
+      tabType === "users" ? Boolean(item?.status) : Boolean(item?.status);
+    return isActive ? "active" : "inactive";
+  }, [item, tabType]);
+
+  const departmentName = React.useMemo(() => {
+    if (!item) return "Sem departamento";
+    if (tabType === "users") {
+      return item?.employee?.department?.name ?? "Sem departamento";
+    }
+    return item?.department?.name ?? item?.department ?? "Sem departamento";
+  }, [item, tabType]);
+
+  const displayName = React.useMemo(() => {
+    if (tabType === "users") {
+      return item?.employee?.fullName ?? item?.phone ?? "Utilizador";
+    }
+    return item?.businessName ?? "Empresa";
+  }, [item, tabType]);
+
+  const secondaryIdentifier = React.useMemo(() => {
+    if (tabType === "users") {
+      return item?.phone ?? "Telefone não informado";
+    }
+    return item?.nif ?? "NIF não informado";
+  }, [item, tabType]);
+
+  const statusLabel = status === "active" ? "Ativo" : "Inativo";
+
+  React.useEffect(() => {
+    if (!isOpen || !itemIdentifier) return;
+
+    const baseState = createPermissionStateTemplate();
+    normalizedPermissions.forEach((permission) => {
+      const mappedKey = permissionAliasMap[permission];
+      if (mappedKey) {
+        baseState[mappedKey] = true;
+      }
+    });
+
+    setPermissionState((prev) => {
+      const hasDifference = (Object.keys(baseState) as Array<
+        keyof PermissionState
+      >).some((key) => prev[key] !== baseState[key]);
+      return hasDifference ? baseState : prev;
+    });
+    setHasChanges(false);
+  }, [isOpen, itemIdentifier, normalizedPermissions]);
+
+  const handleSave = () => {
+    const activePermissions = Object.entries(permissionState)
+      .filter(([, enabled]) => enabled)
+      .map(([key]) => key);
+
+    console.log(`Salvando permissões para ${tabType} ID: ${item?.id}`, {
+      permissions: activePermissions,
+      status,
+    });
+
+    toast.success(`Permissões salvas para ${itemName}`);
+    setHasChanges(false);
+    onOpenChange(false);
+  };
+
+  const handlePermissionToggle = (key: keyof PermissionState) => {
+    setPermissionState((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+    setHasChanges(true);
+  };
+
+  return (
+    <Drawer
+      open={isOpen}
+      onOpenChange={onOpenChange}
+      direction={isMobile ? "bottom" : "right"}
+    >
+      <DrawerContent
+        className={isMobile ? "h-[85vh]" : "h-[100vh] w-[400px] max-w-[90vw]"}
+      >
+        <DrawerHeader className="gap-1 border-b p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <DrawerTitle>Permissões</DrawerTitle>
+              <DrawerDescription className="text-sm text-muted-foreground">
+                Gerencie o acesso
+              </DrawerDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {!hasChanges && (
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push("/dashboard/profile")}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Ver perfil</span>
+                  <ExternalLink className="size-4" />
+                </Button>
+              )}
+              {hasChanges && (
+                <Button
+                  onClick={handleSave}
+                  className="bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500/80 px-6 py-2 rounded transition cursor-pointer"
+                >
+                  Salvar Permissões
+                </Button>
+              )}
+              <DrawerClose asChild>
+                <Button variant="ghost" className="size-8">
+                  <XIcon className="size-4 cursor-pointer" />
+                </Button>
+              </DrawerClose>
+            </div>
+          </div>
+        </DrawerHeader>
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-6 p-4">
+            <div className="flex items-center gap-3 rounded-lg border p-3">
+              <Avatar className="size-12">
+                <AvatarImage src={item?.photo} alt={displayName} />
+                <AvatarFallback>
+                  {displayName?.slice(0, 2)?.toUpperCase?.() ?? "US"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-1 flex-col">
+                <span className="font-semibold leading-tight">
+                  {displayName}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {secondaryIdentifier}
+                </span>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge>{statusLabel}</Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 border rounded-lg overflow-hidden">
+              <div className="space-y-2 col-span-1 flex gap-4 border-b p-4">
+                <Label className="text-sm font-semibold text-muted-foreground uppercase border-r pr-4">
+                  Departamento
+                </Label>
+                <Badge
+                  variant="outline"
+                  className="w-fit text-xs uppercase tracking-wide"
+                >
+                  {departmentName}
+                </Badge>
+              </div>
+
+              <div className="space-y-3 col-span-1 p-4">
+                <span className="text-sm font-semibold text-muted-foreground mb-4">
+                  Permissões
+                </span>
+                <div className="space-y-3">
+                  {permissionItemsConfig.map(
+                    ({ key, label, description, icon: Icon }) => (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
+                        <div className="flex items-center gap-3 flex-1 pr-3">
+                          <div className="flex items-center justify-center size-8 rounded-md bg-blue-50 shrink-0">
+                            <Icon className="size-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium leading-tight">
+                              {label}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {description}
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          id={`permission-${key}`}
+                          checked={permissionState[key]}
+                          onCheckedChange={() => handlePermissionToggle(key)}
+                          className="data-[state=checked]:bg-green-600 data-[state=checked]:hover:bg-green-700"
+                        />
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+       
+      </DrawerContent>
+    </Drawer>
+  );
+}
 
 const createCompanyColumns = (): ColumnDef<Company>[] => [
   {
@@ -350,99 +452,56 @@ const createCompanyColumns = (): ColumnDef<Company>[] => [
       <div className="font-medium">{row.original.businessName}</div>
     ),
   },
+
   {
-    accessorKey: "nif",
-    header: "NIF",
+    accessorKey: "role",
+    header: "Função",
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const isActive = Boolean(row.original.status)
-      return (
-        <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {isActive ? 'Ativa' : 'Inativa'}
-        </Badge>
-      )
-    },
+    accessorKey: "permissions",
+    header: "Permissões",
   },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
+
   {
     id: "actions",
     header: "Ações",
     cell: ({ row }) => (
-      <ActionsButtons
-        item={row.original}
-        tabType="companies"
-      />
+      <ActionsButtons item={row.original} tabType="companies" />
     ),
   },
-]
-
+];
 
 function Management() {
-  const { users, isLoading: usersLoading } = useUsers()
-  const { data: companies, isLoading: companiesLoading } = useCompaniesQuery()
+  const { data: companies, isLoading: companiesLoading } = useCompaniesQuery();
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = React.useState(false);
+
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Gerenciamento</h1>
-        <p className="text-muted-foreground">
-          Gerencie utilizadores, empresas e configurações do sistema
-        </p>
       </div>
-      
-      <Tabs defaultValue="users" className="w-full space-y-6">
-        <TabsList className="max-m-3xl">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <User className="size-4" />
-            Utilizadores
-          </TabsTrigger>
-          <TabsTrigger value="companies" className="flex items-center gap-2">
-            <Building2 className="size-4" />
-            Empresas
-          </TabsTrigger>
-        
-        </TabsList>
-        
-        <TabsContent value="users" className="mt-6">
-          <DataTableGeneric
-            data={users}
-            columns={createUserColumns()}
-            searchKey="phone"
-            placeholder="Pesquisar utilizadores..."
-            enableRowSelection={true}
-            includeSelection={true}
-            isLoading={usersLoading}
-            actionButton={{
-              label: "Adicionar Utilizador",
-              onClick: () => toast.success("Funcionalidade em desenvolvimento"),
-            }}
-          />
-        </TabsContent>
-        
-        <TabsContent value="companies" className="mt-6">
-          <DataTableGeneric
-            data={companies ?? []}
-            columns={createCompanyColumns()}
-            searchKey="businessName"
-            placeholder="Pesquisar empresas..."
-            enableRowSelection={true}
-            includeSelection={true}
-            isLoading={companiesLoading}
-            actionButton={{
-              label: "Adicionar Empresa",
-              onClick: () => toast.success("Funcionalidade em desenvolvimento"),
-            }}
-          />
-        </TabsContent>
- 
-      </Tabs>
+
+      <DataTableGeneric
+        data={companies ?? []}
+        columns={createCompanyColumns()}
+        searchKey="businessName"
+        placeholder="Pesquisar empresas..."
+        enableRowSelection={true}
+        dateKey="createdAt"
+        includeSelection={true}
+        isLoading={companiesLoading}
+        actionButton={{
+          label: "Adicionar Utilizador",
+          onClick: () => setIsCreateUserDialogOpen(true),
+        }}
+      />
+
+      <CreateUserDialog
+        open={isCreateUserDialogOpen}
+        onOpenChange={setIsCreateUserDialogOpen}
+      />
     </div>
-  )
+  );
 }
 
-export default Management
+export default Management;

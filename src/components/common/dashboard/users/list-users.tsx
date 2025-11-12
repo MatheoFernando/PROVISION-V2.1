@@ -7,16 +7,23 @@ import { Badge } from '@/components/ui/badge'
 import { DataTableGeneric } from '../../base-ui/data-table'
 import CreateUserDialog from './create-users'
 import { Edit, Trash2 } from 'lucide-react'
+import { DeleteModal } from '@/components/ui/delete-modal'
 import { useUsers } from '../../../../infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
 
 function buildColumns(companyById: Record<string, Company | undefined>): ColumnDef<User, unknown>[] {
   return [
-   
+    {
+      accessorKey: 'cod',
+      header: 'Nº Mec',
+      size: 50,
+      cell: ({ row }) => {
+        const user = row.original
+        const company = user.companyId ? companyById[user.companyId] : undefined
+        return <span className="text-sm text-foreground whitespace-nowrap">{company?.cod ?? '-'}</span>
+      }
+    },
     {
       accessorKey: 'businessName',
       header: 'Empresa',
@@ -26,15 +33,7 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
         return <span className="text-sm text-foreground whitespace-nowrap">{company?.businessName ?? '-'}</span>
       }
     },
-    {
-      accessorKey: 'cod',
-      header: 'Código',
-      cell: ({ row }) => {
-        const user = row.original
-        const company = user.companyId ? companyById[user.companyId] : undefined
-        return <span className="text-sm text-foreground whitespace-nowrap">{company?.cod ?? '-'}</span>
-      }
-    },
+  
     
     { accessorKey: 'phone', header: 'Telefone', cell: ({ row }) => {
       const phone = row.getValue('phone') as string
@@ -42,7 +41,7 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
     } },
     { 
       accessorKey: 'isGlobalAdmin', 
-      header: 'Tipo', 
+      header: 'Função', 
       cell: ({ getValue }) => {
         const isGlobalAdmin = getValue<boolean>()
         return (
@@ -68,16 +67,17 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
 }
 
 function ListUsers() {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const companyId = useAuthStore((state) => state.companyId) || "";
-  const { users, isLoading, isError, deleteUser, isDeleting } = useUsers(companyId)
+  const [selectedUser, setSelectedUser] = React.useState<User | null>(null)
+  const [usersToDelete, setUsersToDelete] = React.useState<User[]>([])
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
+  const companyId = useAuthStore((state) => state.companyId) || ""
+  const { users, isLoading, deleteUser, isDeleting } = useUsers(companyId)
   const companiesQuery = useCompaniesQuery()
 
   const companyById = React.useMemo<Record<string, Company | undefined>>(() => {
     const map: Record<string, Company | undefined> = {}
-    for (const c of (companiesQuery.data ?? [])) {
+    for (const c of companiesQuery.data ?? []) {
       if (c.id) map[c.id] = c
     }
     return map
@@ -85,92 +85,112 @@ function ListUsers() {
 
   const columns = React.useMemo(() => buildColumns(companyById), [companyById])
 
+  const resetDeletionState = React.useCallback(() => {
+    setUsersToDelete([])
+    setIsDeleteDialogOpen(false)
+    setSelectedUser(null)
+  }, [])
+
+  const executeDeletion = React.useCallback(
+    async (targets: User[]) => {
+      for (const target of targets) {
+        if (!target?.id) continue
+        try {
+          await deleteUser(target.id)
+        } catch (error) {
+          continue
+        }
+      }
+    },
+    [deleteUser]
+  )
+
   const handleEdit = (user: User) => {
     setSelectedUser(user)
     setIsEditDialogOpen(true)
   }
 
-  const handleDelete = async () => {
-    if (!selectedUser) return
-    try {
-      await deleteUser(selectedUser.id!)
-      setIsDeleteDialogOpen(false)
-      setSelectedUser(null)
-    } catch (error) {
-    }
-  }
-
   const handleDeleteClick = (user: User) => {
     setSelectedUser(user)
+    setUsersToDelete([user])
     setIsDeleteDialogOpen(true)
   }
 
+  const handleConfirmDelete = async () => {
+    if (usersToDelete.length === 0) {
+      resetDeletionState()
+      return
+    }
+
+    await executeDeletion(usersToDelete)
+    resetDeletionState()
+  }
+
+  const handleBulkDelete = React.useCallback(
+    async (selected: User[]) => {
+      if (!selected.length) return
+      await executeDeletion(selected)
+    },
+    [executeDeletion]
+  )
+
+  const deleteTitle =
+    usersToDelete.length > 1 ? 'Excluir utilizadores' : 'Excluir utilizador'
+  const deleteTargetLabel =
+    usersToDelete[0]?.employee?.fullName ?? usersToDelete[0]?.phone ?? 'este utilizador'
+  const deleteMessage =
+    usersToDelete.length > 1
+      ? `Tem certeza que deseja excluir ${usersToDelete.length} utilizadores selecionados? Esta ação não pode ser desfeita.`
+      : `Tem certeza que deseja excluir ${deleteTargetLabel}? Esta ação não pode ser desfeita.`
+
   return (
     <div className="space-y-6">
-    
-        <DataTableGeneric
-          data={users}
-          columns={columns}
-          searchKey="phone"
-          placeholder="Pesquisar por telefone..."
-          isLoading={isLoading || companiesQuery.isLoading}
-          actionButton={{
-            label: 'Novo Utilizador',
-            component: <CreateUserDialog />
-          } as any}
-          rowActions={[
-            {
-              label: 'Editar',
-              icon: <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-              onClick: handleEdit,
-              variant: 'ghost'
-            },
-            {
-              label: 'Excluir',
-              icon: <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-              onClick: handleDeleteClick,
-              variant: 'ghost'
-            }
-          ]}
-        />
-   
+      <DataTableGeneric
+        data={users}
+        columns={columns}
+        searchKey="phone"
+        placeholder="Pesquisar por telefone..."
+        enableRowSelection
+        includeSelection
+        dateKey="createdAt"
+        onBulkDelete={handleBulkDelete}
+        isLoading={isLoading || companiesQuery.isLoading}
+        actionButton={{
+          label: 'Novo Utilizador',
+          component: <CreateUserDialog />
+        }}
+        rowActions={[
+          {
+            label: 'Editar',
+            icon: <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+            onClick: handleEdit,
+            variant: 'ghost'
+          },
+          {
+            label: 'Excluir',
+            icon: <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+            onClick: handleDeleteClick,
+            variant: 'ghost'
+          }
+        ]}
+      />
+
       <CreateUserDialog
         user={selectedUser}
-        isEdit={true}
+        isEdit
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         children={null}
       />
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir o utilizador <strong>{selectedUser?.phone}</strong>? 
-              Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={isDeleting}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-pointer"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteModal
+        isOpen={isDeleteDialogOpen}
+        onClose={resetDeletionState}
+        onConfirm={handleConfirmDelete}
+        title={deleteTitle}
+        message={deleteMessage}
+        isLoading={isDeleting}
+      />
     </div>
   )
 }

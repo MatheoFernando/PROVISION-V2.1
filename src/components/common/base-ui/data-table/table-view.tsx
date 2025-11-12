@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   flexRender,
   type RowData,
@@ -29,15 +28,15 @@ export function TableView<TData extends RowData>({
 }: TableViewProps<TData>) {
   return (
     <div className="w-full overflow-x-auto pb-0 mb-0">
-      <Table className="w-full  ">
-        <TableHeader className="bg-muted/30 ">
+      <Table className="w-full">
+        <TableHeader className="bg-muted/30 dark:bg-muted/20">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
                   colSpan={header.colSpan}
-                  className="text-slate-600 font-medium text-sm  whitespace-nowrap"
+                  className="whitespace-nowrap text-sm font-medium text-muted-foreground"
                   style={{
                     width: header.getSize?.() ?? undefined,
                     minWidth: 38,
@@ -69,7 +68,7 @@ export function TableView<TData extends RowData>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-b border-border  hover:bg-muted/50 data-[state=selected]:bg-muted"
+                className="border-b border-border hover:bg-muted/50 dark:hover:bg-muted/30 data-[state=selected]:bg-muted"
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell

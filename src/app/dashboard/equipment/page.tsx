@@ -7,8 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function EquipmentPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Equipamentos</h1>
-
       <Tabs defaultValue="equipments" className="w-full">
         <TabsList>
           <TabsTrigger value="equipments" className="cursor-pointer">

@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,13 +44,7 @@ export function ServicesMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="lg" 
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200  cursor-pointer"
-        >
-          <Grip className="h-56 w-6 " />
-        </Button>
+          <Grip className="h-5 w-5 text-gray-700  cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a] " 

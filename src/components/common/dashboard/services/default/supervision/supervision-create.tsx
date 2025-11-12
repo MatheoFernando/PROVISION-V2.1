@@ -11,18 +11,28 @@ import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-sel
 import { DepartmentSelect } from "@/components/common/base-ui/selects/department-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { EquipmentSelect } from "@/components/common/base-ui/selects/equipment-select";
-import { useCreateSupervisionMutation, useSupervisionQuery, useUpdateSupervisionMutation } from "@/infrastructure/hooks/useSupervisions";
+import {
+  useCreateSupervisionMutation,
+  useSupervisionQuery,
+  useUpdateSupervisionMutation,
+} from "@/infrastructure/hooks/useSupervisions";
 import { useSearchParams } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Loader2, Clock2Icon } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Supervision } from "@/infrastructure/types/domain";
 import { supervisionSchema } from "@/infrastructure/schema/schema-supervision";
 import z from "zod";
 
 interface SupervisionFormProps {
-  id?: string
-  initialData?: Supervision
+  id?: string;
+  initialData?: Supervision;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -49,15 +59,17 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
       siteId: "",
       time: "",
       departmentId: "",
-      status: "Ativo",
+      status: "Em andamento",
     },
   });
 
-  const shouldQuery = !(_props.initialData) && !!id
-  const { data: supervisionData } = useSupervisionQuery(shouldQuery ? (id || "") : "");
+  const shouldQuery = !_props.initialData && !!id;
+  const { data: supervisionData } = useSupervisionQuery(
+    shouldQuery ? id || "" : ""
+  );
 
   React.useEffect(() => {
-    const dataToUse = _props.initialData || supervisionData
+    const dataToUse = _props.initialData || supervisionData;
     if (!id || !dataToUse) return;
     const parseTime = (value: string) => {
       if (!value) return "";
@@ -93,7 +105,6 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
     } as Supervision;
 
     if (id) {
- 
       const { companyId: _omit, ...updateOnly } = basePayload as any;
       updateMutation.mutate(
         { id, data: updateOnly },
@@ -127,9 +138,23 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
       >
         <div className=" py-4 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
+                <div className="space-y-2 col-span-2">
+              <Label className="text-slate-700">Funcionário</Label>
+              <EmployeeSelect
+                value={form.watch("employeeId")}
+                onChange={(v) => form.setValue("employeeId", v)}
+                companyId={companyId}
+              />
+              {form.formState.errors.employeeId && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.employeeId.message}
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="cod" className="text-slate-700">
-                Código
+             Nº Mec
               </Label>
               <Input
                 id="cod"
@@ -143,40 +168,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="time" className="text-slate-700">
-                Horário
-              </Label>
-              <div className="relative flex w-full items-center gap-2">
-                <Clock2Icon className="text-muted-foreground pointer-events-none absolute left-2.5 size-4 select-none" />
-                <Input
-                  id="time"
-                  type="time"
-                  defaultValue=""
-                  className="appearance-none pl-8 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                  {...form.register("time")}
-                />
-              </div>
-              {form.formState.errors.time && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.time.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-slate-700">Funcionário</Label>
-              <EmployeeSelect
-                value={form.watch("employeeId")}
-                onChange={(v) => form.setValue("employeeId", v)}
-                companyId={companyId}
-              />
-              {form.formState.errors.employeeId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.employeeId.message}
-                </p>
-              )}
-            </div>
+      
 
             <div className="space-y-2">
               <Label className="text-slate-700">Equipamento</Label>
@@ -218,9 +210,32 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               )}
             </div>
 
+          </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+               <div className="space-y-2">
+              <Label htmlFor="time" className="text-slate-700">
+                Horário
+              </Label>
+              <div className="relative flex w-full items-center gap-2">
+                <Clock2Icon className="text-muted-foreground pointer-events-none absolute left-2.5 size-4 select-none" />
+                <Input
+                  id="time"
+                  type="time"
+                  defaultValue=""
+                  className="appearance-none pl-8 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  {...form.register("time")}
+                />
+              </div>
+              {form.formState.errors.time && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.time.message}
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="desiredNumberWorkers" className="text-slate-700">
-                Trabalhadores Desejados
+               Desejados
               </Label>
               <Input
                 id="desiredNumberWorkers"
@@ -243,7 +258,7 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="numberWorkerPresent" className="text-slate-700">
-                Número Presente
+               Presente
               </Label>
               <Input
                 id="numberWorkerPresent"
@@ -263,7 +278,31 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
                 </p>
               )}
             </div>
+             <div className="space-y-2">
+            <Label className="text-slate-700">Estado</Label>
+            <Select
+              value={form.watch("status")}
+              onValueChange={(value) =>
+                form.setValue("status", value, { shouldValidate: true })
+              }
+             
+            >
+              <SelectTrigger  className="w-full">
+                <SelectValue placeholder="Selecione o estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Em andamento">Em andamento</SelectItem>
+                <SelectItem value="Finalizado">Finalizado</SelectItem>
+              </SelectContent>
+            </Select>
+            {form.formState.errors.status && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.status.message}
+              </p>
+            )}
           </div>
+
+            </div>
 
           <div className="space-y-2">
             <Label htmlFor="observation" className="text-slate-700">
@@ -281,30 +320,9 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
               </p>
             )}
           </div>
-          <div className="space-y-2">
-            <Label className="text-slate-700">Status</Label>
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.watch("status") === "Ativo"}
-                onCheckedChange={(checked) =>
-                  form.setValue("status", checked ? "Ativo" : "Inativo", {
-                    shouldValidate: true,
-                  })
-                }
-              />
-              <span className="text-sm text-muted-foreground">
-                {form.watch("status") === "Ativo" ? "Ativo" : "Inativo"}
-              </span>
-            </div>
-            {form.formState.errors.status && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.status.message}
-              </p>
-            )}
-          </div>
-
+         
           <div className="space-x-2   flex justify-end gap-3 ">
-          <Button
+            <Button
               type="button"
               variant="outline"
               onClick={() => {
@@ -316,10 +334,10 @@ export function SupervisionCreate(_props: SupervisionFormProps) {
             </Button>
             <Button
               type="submit"
-            disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
             >
-            {createMutation.isPending || updateMutation.isPending ? (
+              {createMutation.isPending || updateMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
                 </>

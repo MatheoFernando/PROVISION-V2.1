@@ -382,7 +382,7 @@ function CompanyFormPage() {
                   </div>
 
                   <div className="pt-6 border-t border-slate-200 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="contact.email"
@@ -469,10 +469,7 @@ function CompanyFormPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2  gap-4">
-                      <FormField
+                            <FormField
                         control={form.control}
                         name="address.commune"
                         render={({ field }) => (
@@ -512,6 +509,8 @@ function CompanyFormPage() {
                         )}
                       />
                     </div>
+
+             
                   </div>
                 </div>
               </div>

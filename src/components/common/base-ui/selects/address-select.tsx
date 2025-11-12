@@ -168,13 +168,13 @@ export function AddressSelect({
             if (createAddress.status === "pending") e.preventDefault();
           }}
         >
-          <div className="font-medium mb-2">Criar Endereço</div>
+          <div className="font-medium mb-4 text-lg">Criar Endereço</div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               form.handleSubmit(handleSubmit)();
             }}
-            className="space-y-3 mt-2 grid grid-cols-2 gap-4"
+            className="space-y-3 mt-2 grid grid-cols-2 gap-3"
           >
             <div className="col-span-2">
               <Label htmlFor="houseHold" className="mb-2 block">
