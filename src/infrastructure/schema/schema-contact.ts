@@ -5,23 +5,17 @@ export const phoneNumberSchema = z.object({
   phone: z.string().min(3, "Telefone inválido"),
 });
 
-const emailDomain = "@gamil.com";
 
 export const contactSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.string().optional(),
   phoneNumbers: z
     .array(phoneNumberSchema)
     .min(1, "Informe ao menos um telefone")
     .max(3, "Informe no máximo 3 telefones"),
   email: z
     .string()
-    .min(1, "Email é obrigatório")
-    .email("Email inválido")
-    .refine(
-      (value) => value.toLowerCase().endsWith(emailDomain),
-      `Email deve terminar com ${emailDomain}`
-    ),
-  companyId: z.string().uuid().optional(),
+    .min(1, "Email é obrigatório"),
+  companyId: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

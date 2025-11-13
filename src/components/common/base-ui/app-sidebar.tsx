@@ -16,6 +16,7 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { allNavItems} from "./nav-items"
 import { useCompanyByIdQuery } from '@/infrastructure/hooks/useCompanies'
 import Image from "next/image"
+import Link from "next/link"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin)
@@ -63,7 +64,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" variant="sidebar" {...props} >
       <SidebarHeader className="md:pt-8">
+        <Link href="/dashboard" prefetch>
         <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto"/>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={sidebarData.navMain} />

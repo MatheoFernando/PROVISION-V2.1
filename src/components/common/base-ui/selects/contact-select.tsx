@@ -64,9 +64,25 @@ export function ContactSelect({
   function handleSubmit(data: ContactForm) {
     createContact.mutate(data, {
       onSuccess: (created: Contact) => {
-        setOpen(false);
+        // seleciona imediatamente o contato criado
         onChange(created.id!);
+        // tenta pré-selecionar e propagar o primeiro telefone válido
+        const createdPhones = Array.isArray(created?.phoneNumbers)
+          ? created.phoneNumbers
+              .map((p: { phone: string }) => p?.phone ?? "")
+              .filter((p: string) => (p ?? "").trim() !== "")
+          : [];
+        const firstPhone =
+          createdPhones[0] ??
+          (Array.isArray(data?.phoneNumbers)
+            ? data.phoneNumbers
+                .map((p) => p?.phone ?? "")
+                .find((p) => (p ?? "").trim() !== "") ?? ""
+            : "");
+        setSelectedPhone(firstPhone);
+        if (firstPhone) onPhoneChange?.(firstPhone);
         form.reset();
+        setOpen(false);
       },
     });
   }
@@ -100,15 +116,6 @@ export function ContactSelect({
               const selected = (Array.isArray(contacts) ? contacts : []).find(
                 (c: Contact) => c.id === val
               );
-              console.log("Contato selecionado:", {
-                id: val,
-                email: selected?.email ?? null,
-                phoneNumbers: Array.isArray(selected?.phoneNumbers)
-                  ? selected!.phoneNumbers.map(
-                      (p: { phone: string }) => p.phone
-                    )
-                  : [],
-              });
               const firstPhone = Array.isArray(selected?.phoneNumbers)
                 ? selected!.phoneNumbers.find(
                     (p: { phone: string }) => (p?.phone ?? "").trim() !== ""

@@ -18,7 +18,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useRoles, useRolesAll, useCreateRole } from "@/infrastructure/hooks/useRoles";
+import { useRoles, useCreateRole } from "@/infrastructure/hooks/useRoles";
 import { createRoleSchema } from "@/infrastructure/schema/schema-role";
 import type { Role } from "@/infrastructure/types/domain";
 import { z } from "zod";
@@ -37,15 +37,8 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
   const [query, setQuery] = useState("");
   const { companyId: storeCompanyId } = useAuthStore();
   const normalizedCompanyId = companyId ?? storeCompanyId ?? "";
-  const isCompanyUnavailable = normalizedCompanyId.length === 0;
-  const searchTerm = query.trim();
-  const shouldSearch = searchTerm.length > 0;
 
-  const rolesAllQuery = useRolesAll({ enabled: !isCompanyUnavailable });
-  const rolesSearchQuery = useRoles(shouldSearch ? searchTerm : undefined, {
-    enabled: shouldSearch && !isCompanyUnavailable,
-  });
-
+  const { data: roles = [], isLoading, isFetching } = useRoles(query);
   const createRole = useCreateRole();
 
   const form = useForm<RoleForm>({
@@ -80,36 +73,18 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
     );
   }
 
-  const list = useMemo(() => {
-    if (isCompanyUnavailable) return [];
+  const list = useMemo(
+    () =>
+      (Array.isArray(roles) ? roles : []).filter(
+        (role: Role) =>
+          !normalizedCompanyId || role.companyId === normalizedCompanyId
+      ),
+    [roles, normalizedCompanyId]
+  );
 
-    const source = shouldSearch
-      ? rolesSearchQuery.data ?? []
-      : rolesAllQuery.data ?? [];
-
-    return (Array.isArray(source) ? source : []).filter(
-      (role: Role) =>
-        !normalizedCompanyId || role.companyId === normalizedCompanyId
-    );
-  }, [
-    rolesAllQuery.data,
-    rolesSearchQuery.data,
-    normalizedCompanyId,
-    shouldSearch,
-    isCompanyUnavailable,
-  ]);
-
+  const isCompanyUnavailable = !normalizedCompanyId;
   const isCreating = createRole.status === "pending";
-  const isLoadingOptions = isCompanyUnavailable
-    ? false
-    : shouldSearch
-      ? rolesSearchQuery.isLoading || rolesSearchQuery.isFetching
-      : rolesAllQuery.isLoading || rolesAllQuery.isFetching;
-  const hasError = isCompanyUnavailable
-    ? false
-    : shouldSearch
-      ? rolesSearchQuery.isError
-      : rolesAllQuery.isError;
+  const isLoadingOptions = isLoading || isFetching;
 
   return (
     <div className="flex items-end gap-2 w-full">
@@ -143,11 +118,7 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
                 disabled={isLoadingOptions || isCompanyUnavailable}
               />
             </div>
-            {hasError ? (
-              <div className="text-sm text-red-500 p-3 text-center">
-                Erro ao carregar papéis.
-              </div>
-            ) : list.length === 0 ? (
+            {list.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 text-center">
                 {isCompanyUnavailable
                   ? "Selecione uma empresa para listar papéis."

@@ -2,10 +2,10 @@ import { z } from "zod";
 
 const addressSchema = z.object({
   houseHold: z.string().min(1, "Endereço é obrigatório"),
-  commune: z.string().min(1, "Comuna é obrigatória"),
-  municipality: z.string().min(1, "Município é obrigatório"),
-  province: z.string().min(1, "Província é obrigatória"),
-  country: z.string().min(1, "País é obrigatório"),
+  commune: z.string().optional(),
+  municipality: z.string().optional(),
+  province: z.string().optional(),
+  country: z.string().optional(),
 });
 
 const contactSchema = z.object({

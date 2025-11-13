@@ -126,25 +126,7 @@ const columns: ColumnDef<Site>[] = [
       return <div>{geoLocationId || "-"}</div>;
     },
   },
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const createdAt = row.getValue("createdAt");
-      
-      if (!createdAt) {
-        return <div>-</div>;
-      }
-      
-      const date = createdAt instanceof Date ? createdAt : new Date(createdAt as string);
-      
-      if (isNaN(date.getTime())) {
-        return <div>-</div>;
-      }
-      
-      return <div>{format(date, "dd/MM/yyyy", { locale: ptBR })}</div>;
-    },
-  },
+  
 ];
 
 export function SitesTable() {

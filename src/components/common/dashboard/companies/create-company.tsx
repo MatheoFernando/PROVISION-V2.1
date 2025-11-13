@@ -8,6 +8,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormField,
   FormItem,
@@ -25,6 +32,10 @@ import {
   useCreateCompanyMutation,
   useUpdateCompanyMutation,
 } from "@/infrastructure/hooks/useCompanies";
+import {
+  useAngolaCountry,
+  useAngolaProvinces,
+} from "@/infrastructure/hooks/useAngolaLocations";
 
 function CompanyFormPage() {
   const params = useSearchParams();
@@ -60,6 +71,33 @@ function CompanyFormPage() {
     useUpdateCompanyMutation();
 
   const isEditing = useMemo(() => !!id, [id]);
+
+  const { data: angolaCountry } = useAngolaCountry();
+  const {
+    data: provincesData = [],
+    isPending: loadingProvinces,
+  } = useAngolaProvinces();
+
+  const provinceValue = form.watch("address.province");
+  const municipalityValue = form.watch("address.municipality");
+
+  const selectedProvince = useMemo(
+    () =>
+      provincesData.find((province) => province.name === provinceValue) ?? null,
+    [provincesData, provinceValue]
+  );
+
+  const municipalities = selectedProvince?.municipalities ?? [];
+
+  const selectedMunicipality = useMemo(
+    () =>
+      municipalities.find(
+        (municipality) => municipality.name === municipalityValue
+      ) ?? null,
+    [municipalities, municipalityValue]
+  );
+
+  const communes = selectedMunicipality?.communes ?? [];
 
   const { data: companies, isLoading: loadingCompanies } = useQuery({
     queryKey: ["companies"],
@@ -118,6 +156,12 @@ function CompanyFormPage() {
       },
     })
   }, [existingCompany, form]);
+
+  useEffect(() => {
+    if (angolaCountry && !form.getValues("address.country")) {
+      form.setValue("address.country", angolaCountry.name);
+    }
+  }, [angolaCountry, form]);
 
   const onSubmit = async (values: z.infer<typeof companySchema>) => {
     try {
@@ -438,13 +482,43 @@ function CompanyFormPage() {
                             <FormLabel className="text-sm font-medium text-slate-700">
                               Província
                             </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Província"
-                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                {...field}
-                              />
-                            </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                form.setValue("address.municipality", "", {
+                                  shouldValidate: true,
+                                });
+                                form.setValue("address.commune", "", {
+                                  shouldValidate: true,
+                                });
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  disabled={loadingProvinces}
+                                >
+                                  <SelectValue
+                                    placeholder={
+                                      loadingProvinces
+                                        ? "Carregando províncias..."
+                                        : "Selecione a província"
+                                    }
+                                  />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {provincesData.map((province) => (
+                                  <SelectItem
+                                    key={province.slug || province.name}
+                                    value={province.name}
+                                  >
+                                    {province.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -458,18 +532,48 @@ function CompanyFormPage() {
                             <FormLabel className="text-sm font-medium text-slate-700">
                               Município
                             </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Município"
-                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                {...field}
-                              />
-                            </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                form.setValue("address.commune", "", {
+                                  shouldValidate: true,
+                                });
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  disabled={municipalities.length === 0}
+                                >
+                                  <SelectValue
+                                    placeholder={
+                                      loadingProvinces
+                                        ? "Carregando municípios..."
+                                        : municipalities.length === 0
+                                          ? "Selecione a província"
+                                          : "Selecione o município"
+                                    }
+                                  />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {municipalities.map((municipality) => (
+                                  <SelectItem
+                                    key={municipality.slug || municipality.name}
+                                    value={municipality.name}
+                                  >
+                                    {municipality.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                            <FormField
+
+                      <FormField
                         control={form.control}
                         name="address.commune"
                         render={({ field }) => (
@@ -477,13 +581,39 @@ function CompanyFormPage() {
                             <FormLabel className="text-sm font-medium text-slate-700">
                               Comuna
                             </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Comuna"
-                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                {...field}
-                              />
-                            </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  disabled={communes.length === 0}
+                                >
+                                  <SelectValue
+                                    placeholder={
+                                      municipalities.length === 0
+                                        ? "Selecione o município"
+                                        : communes.length === 0
+                                          ? "Sem comunas disponíveis"
+                                          : "Selecione a comuna"
+                                    }
+                                  />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {communes.map((commune) => (
+                                  <SelectItem
+                                    key={commune.slug || commune.name}
+                                    value={commune.name}
+                                  >
+                                    {commune.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -497,13 +627,30 @@ function CompanyFormPage() {
                             <FormLabel className="text-sm font-medium text-slate-700">
                               País
                             </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="País"
-                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                {...field}
-                              />
-                            </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900">
+                                  <SelectValue placeholder="Selecione o país" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {[angolaCountry]
+                                  .filter(Boolean)
+                                  .map((country) => (
+                                    <SelectItem
+                                      key={country!.slug || country!.name}
+                                      value={country!.name}
+                                    >
+                                      {country!.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}

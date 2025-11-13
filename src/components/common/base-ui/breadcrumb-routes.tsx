@@ -44,7 +44,7 @@ export function BreadcrumbClient(): React.ReactElement {
             {idx < items.length - 1 ? (
               <>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href={c.href} className="font-medium text-muted-foreground hover:text-primary underline-offset-4 text-base transition-colors duration-200">
+                  <BreadcrumbLink href={c.href} className="font-medium text-muted-foreground hover:text-primary underline-offset-4 text-base transition-colors duration-200" >
                     {c.Icon ? <c.Icon className="h-5 w-5" /> : null}
                   </BreadcrumbLink>
                 </BreadcrumbItem>

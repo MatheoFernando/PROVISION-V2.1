@@ -61,7 +61,7 @@ export function CustomerSelect({ value, onChange }: { value?: string; onChange: 
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => router.push("/dashboard/customers/create")}
+        onClick={() => router.push("/dashboard/customers")}
         className="cursor-pointer shrink-0"
       >
         <Plus className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,6 +25,7 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useAngolaProvinces } from "@/infrastructure/hooks/useAngolaLocations";
 
 type AddressForm = z.infer<typeof addressSchema>;
 
@@ -57,6 +58,32 @@ export function AddressSelect({
       companyId: effectiveCompanyId || undefined,
     },
   });
+
+  const { data: provincesData = [], isPending: loadingProvinces } =
+    useAngolaProvinces();
+
+  const selectedProvinceName = form.watch("province");
+  const selectedMunicipalityName = form.watch("municipality");
+
+  const selectedProvince = useMemo(
+    () =>
+      provincesData.find(
+        (province) => province.name === selectedProvinceName
+      ) ?? null,
+    [provincesData, selectedProvinceName]
+  );
+
+  const municipalities = selectedProvince?.municipalities ?? [];
+
+  const selectedMunicipality = useMemo(
+    () =>
+      municipalities.find(
+        (municipality) => municipality.name === selectedMunicipalityName
+      ) ?? null,
+    [municipalities, selectedMunicipalityName]
+  );
+
+  const communes = selectedMunicipality?.communes ?? [];
 
   function handleSubmit(data: AddressForm) {
     createAddress.mutate(data, {
@@ -178,7 +205,7 @@ export function AddressSelect({
           >
             <div className="col-span-2">
               <Label htmlFor="houseHold" className="mb-2 block">
-                Domicílio
+                Endereço
               </Label>
               <Input
                 id="houseHold"
@@ -191,60 +218,6 @@ export function AddressSelect({
               {form.formState.errors.houseHold && (
                 <span className="text-red-500 text-xs">
                   {form.formState.errors.houseHold.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="commune" className="mb-2 block">
-                Comuna
-              </Label>
-              <Input
-                id="commune"
-                {...form.register("commune")}
-                placeholder="Comuna"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.preventDefault();
-                }}
-              />
-              {form.formState.errors.commune && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.commune.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="municipality" className="mb-2 block">
-                Município
-              </Label>
-              <Input
-                id="municipality"
-                {...form.register("municipality")}
-                placeholder="Município"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.preventDefault();
-                }}
-              />
-              {form.formState.errors.municipality && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.municipality.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="province" className="mb-2 block">
-                Província
-              </Label>
-              <Input
-                id="province"
-                {...form.register("province")}
-                placeholder="Província"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.preventDefault();
-                }}
-              />
-              {form.formState.errors.province && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.province.message}
                 </span>
               )}
             </div>
@@ -266,6 +239,126 @@ export function AddressSelect({
                 </span>
               )}
             </div>
+            <div>
+              <Label htmlFor="province" className="mb-2 block">
+                Província
+              </Label>
+              <Select
+                value={form.watch("province")}
+                onValueChange={(value) => {
+                  form.setValue("province", value, { shouldValidate: true });
+                  form.setValue("municipality", "", { shouldValidate: true });
+                  form.setValue("commune", "", { shouldValidate: true });
+                }}
+                disabled={loadingProvinces}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      loadingProvinces
+                        ? "Carregando províncias..."
+                        : "Selecione uma província"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  {provincesData.map((province) => (
+                    <SelectItem
+                      key={province.slug || province.name}
+                      value={province.name}
+                    >
+                      {province.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.province && (
+                <span className="text-red-500 text-xs">
+                  {form.formState.errors.province.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="municipality" className="mb-2 block">
+                Município
+              </Label>
+              <Select
+                value={form.watch("municipality")}
+                onValueChange={(value) => {
+                  form.setValue("municipality", value, { shouldValidate: true });
+                  form.setValue("commune", "", { shouldValidate: true });
+                }}
+                disabled={municipalities.length === 0}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      loadingProvinces
+                        ? "Carregando municípios..."
+                        : municipalities.length === 0
+                        ? "Selecione a província"
+                        : "Selecione um município"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {municipalities.map((municipality) => (
+                    <SelectItem
+                      key={municipality.slug || municipality.name}
+                      value={municipality.name}
+                    >
+                      {municipality.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.municipality && (
+                <span className="text-red-500 text-xs">
+                  {form.formState.errors.municipality.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="commune" className="mb-2 block">
+                Comuna
+              </Label>
+              <Select
+                value={form.watch("commune")}
+                onValueChange={(value) =>
+                  form.setValue("commune", value, { shouldValidate: true })
+                }
+                disabled={communes.length === 0}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      selectedMunicipality
+                        ? communes.length === 0
+                          ? "Sem comunas disponíveis"
+                          : "Selecione uma comuna"
+                        : "Selecione o município"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {communes.map((commune) => (
+                    <SelectItem
+                      key={commune.slug || commune.name}
+                      value={commune.name}
+                    >
+                      {commune.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.commune && (
+                <span className="text-red-500 text-xs">
+                  {form.formState.errors.commune.message}
+                </span>
+              )}
+            </div>
+       
+       
             <div className="col-span-2 flex justify-end gap-2 mt-4">
               <Button
                 type="button"

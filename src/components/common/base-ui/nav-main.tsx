@@ -1,5 +1,5 @@
-"use client"
-import { usePathname } from "next/navigation"
+"use client";
+import { usePathname } from "next/navigation";
 
 import {
   SidebarGroup,
@@ -7,30 +7,44 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal } from "lucide-react"
-import { useIsMobile } from "@/hooks/use-mobile"
-import type { NavItem } from "./nav-items"
-import { allNavItems } from "./nav-items"
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { allNavItems } from "./nav-items";
+import Link from "next/link";
+
+type NavItem = {
+  title: string;
+  url?: string;
+  icon?: any;
+  items?: NavItem[];
+  children?: NavItem[];
+};
 
 export function NavMain({
   items = allNavItems,
-}: { items?: (NavItem & { isActive?: boolean; items?: NavItem[]; children?: NavItem[] })[] }) {
-  const pathname = usePathname()
-  const isMobile = useIsMobile()
+}: {
+  items?: (NavItem & {
+    isActive?: boolean;
+    items?: NavItem[];
+    children?: NavItem[];
+  })[];
+}) {
+  const pathname = usePathname();
+  const isMobile = useIsMobile();
   const isActiveUrl = (url?: string) => {
-    if (!url) return false
+    if (!url) return false;
     if (url === "/dashboard") {
-      return pathname === "/dashboard"
+      return pathname === "/dashboard";
     }
-    return pathname.startsWith(url)
-  }
+    return pathname.startsWith(url);
+  };
   return (
     <SidebarGroup>
       <SidebarMenu>
@@ -54,31 +68,34 @@ export function NavMain({
                     <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
                     {item.items.map((subItem) => (
                       <DropdownMenuItem asChild key={subItem.title}>
-                        <a href={subItem.url}>
+                        <Link href={subItem.url ?? "#"} prefetch>
                           {subItem.icon && <subItem.icon className="size-4" />}
                           <span>{subItem.title}</span>
-                        </a>
+                        </Link>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </SidebarMenuItem>
               </DropdownMenu>
-            )
+            );
           }
 
-        
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title} isActive={isActiveUrl(item.url)}>
-                <a href={item.url ?? "#"}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={isActiveUrl(item.url)}
+              >
+                <Link href={item.url ?? "#"} prefetch>
                   {item.icon && <item.icon className="size-4" />}
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          )
+          );
         })}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

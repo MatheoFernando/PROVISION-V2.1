@@ -1,10 +1,10 @@
 export interface Address {
   id?: string;
   houseHold: string;
-  commune: string;
-  municipality: string;
-  province: string;
-  country: string;
+  commune?: string;
+  municipality?: string;
+  province?: string;
+  country?: string;
   companyId?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -354,6 +354,40 @@ export interface TypeOccorrence {
   companyId: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface AngolaCommune {
+  name: string;
+  slug: string;
+}
+
+export interface AngolaDistrict {
+  name: string;
+  slug: string;
+}
+
+export interface AngolaMunicipality {
+  name: string;
+  slug: string;
+  districts: AngolaDistrict[];
+  communes: AngolaCommune[];
+}
+
+export interface AngolaProvince {
+  name: string;
+  slug: string;
+  area: string;
+  foundationDate: string;
+  capital: {
+    name: string;
+    slug: string;
+  };
+  municipalities: AngolaMunicipality[];
+}
+
+export interface AngolaCountry {
+  name: string;
+  slug: string;
 }
 
 

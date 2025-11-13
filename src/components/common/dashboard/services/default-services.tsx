@@ -1,13 +1,8 @@
-"use client";
-
 import { Badge } from "@/components/ui/badge";
-import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import Link from "next/link";
 import Image from "next/image";
 
 export function DefaultServices() {
-  const { isGlobalAdmin } = useAuthStore();
-  if (isGlobalAdmin) return null;
 
   const defaultServices = [
     {

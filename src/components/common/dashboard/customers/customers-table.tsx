@@ -6,21 +6,27 @@ import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCustomers } from "@/infrastructure/hooks/useCustomers";
 import { Customer } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { CustomersView } from "./customers-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteCustomer } from "@/infrastructure/hooks/useCustomers";
 import { toast } from "sonner";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import CustomersCreatePage from "./customer-create";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { CustomersCreateForm } from "./customer-create";
 
 const columns: ColumnDef<Customer>[] = [
  
   {
     accessorKey: "cod",
     header: "Código",
-    size: 20, 
+    size: 50, 
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
@@ -135,23 +141,56 @@ export function CustomersTable() {
         ]}
       />
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-    
-        >
-          <CustomersCreatePage
-            id={selectedCustomer?.id}
-            initialData={selectedCustomer as any}
-            onSuccess={() => { setIsCreateOpen(false); setSelectedCustomer(undefined); }}
-            onCancel={() => { setIsCreateOpen(false); setSelectedCustomer(undefined); }}
-          />
-        </DialogContent>
-      </Dialog>
+      <Drawer
+        open={isCreateOpen}
+        direction="right"
+        onOpenChange={(next) => {
+          setIsCreateOpen(next);
+          if (!next) setSelectedCustomer(undefined);
+        }}
+      >
+        <DrawerContent className="h-full w-full sm:max-w-xl">
+          <div className="flex h-full flex-col">
+            <DrawerHeader className="border-b border-border px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    {selectedCustomer ? "Editar Cliente" : "Novo Cliente"}
+                  </DrawerTitle>
+               
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <CustomersCreateForm
+                customer={selectedCustomer}
+                onSuccess={() => {
+                  setIsCreateOpen(false);
+                  setSelectedCustomer(undefined);
+                }}
+                onCancel={() => {
+                  setIsCreateOpen(false);
+                  setSelectedCustomer(undefined);
+                }}
+              />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <CustomersView
-        customer={selectedCustomer as any}
+        customer={selectedCustomer}
+        address={selectedCustomer?.address}
+        contact={selectedCustomer?.contact}
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
       />

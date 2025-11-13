@@ -1,7 +1,5 @@
-import { type ReactElement } from "react";
+import { Settings } from "@/components/common/settings";
 
-import { UserSettings } from "@/components/common/settings";
-
-export default function ProfilePage(): ReactElement {
-  return <UserSettings />;
+export default function ProfilePage() {
+  return <Settings />;
 }

@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit2, HelpCircle, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { shallow } from "zustand/shallow";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
 import { useCompanyByIdQuery } from "@/infrastructure/hooks/useCompanies";
 import { changePassword } from "@/infrastructure/adapters/auth";
@@ -55,107 +56,9 @@ const passwordSchema = z
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
-export function UserSettings(): React.ReactElement {
+export function Settings(): React.ReactElement {
   const router = useRouter();
-  const {
-    userId: storeUserId,
-    companyId: storeCompanyId,
-    isGlobalAdmin,
-  } = useAuthStore((state) => ({
-    userId: state.userId,
-    companyId: state.companyId,
-    isGlobalAdmin: state.isGlobalAdmin,
-  }));
 
-  const resolvedUserId = storeUserId ?? Cookies.get("userId") ?? "";
-  const resolvedCompanyId = storeCompanyId ?? Cookies.get("companyId") ?? "";
-  const hasUserContext = resolvedUserId.length > 0;
-  const hasCompanyContext = resolvedCompanyId.length > 0;
-
-  const { users, isLoading: isUsersLoading } = useUsers(
-    hasCompanyContext ? resolvedCompanyId : undefined
-  );
-
-  const currentUser = React.useMemo(
-    () =>
-      hasUserContext
-        ? users.find((user) => user.id === resolvedUserId) ?? null
-        : null,
-    [users, resolvedUserId, hasUserContext]
-  );
-
-  const companyQuery = useCompanyByIdQuery(
-    hasCompanyContext ? resolvedCompanyId : undefined
-  );
-  const company = companyQuery.data ?? null;
-
-  const [isUserDialogOpen, setIsUserDialogOpen] = React.useState(false);
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
-
-  const passwordFormValues = React.useMemo<PasswordFormData>(
-    () => ({
-      phone: currentUser?.phone ?? "",
-      currentPassword: "",
-      newPassword: "",
-    }),
-    [currentUser?.phone]
-  );
-
-  const passwordForm = useForm<PasswordFormData>({
-    resolver: zodResolver(passwordSchema),
-    defaultValues: passwordFormValues,
-  });
-
-  React.useEffect(() => {
-    const currentPhone = passwordForm.getValues("phone");
-    if (currentPhone === passwordFormValues.phone) return;
-    passwordForm.reset(passwordFormValues);
-  }, [passwordForm, passwordFormValues]);
-
-  async function handleSubmitPassword(values: PasswordFormData) {
-    const parsed = passwordSchema.safeParse(values);
-    if (!parsed.success) {
-      toast.error("Dados inválidos");
-      return;
-    }
-
-    await toast.promise(
-      (async () => {
-        const response = await changePassword(parsed.data);
-        if (!response.success) {
-          throw new Error(
-            response.message ?? "Falha ao alterar palavra-passe"
-          );
-        }
-        return response;
-      })(),
-      {
-        loading: "A atualizar palavra-passe...",
-        success: "Palavra-passe alterada",
-        error: (error: unknown) =>
-          error instanceof Error
-            ? error.message
-            : "Falha ao alterar palavra-passe",
-      }
-    );
-
-    passwordForm.reset({
-      phone: parsed.data.phone,
-      currentPassword: "",
-      newPassword: "",
-    });
-    setIsPasswordDialogOpen(false);
-  }
-
-  const employeeName = currentUser?.employee?.fullName ?? "Utilizador";
-  const displayPhone = currentUser?.phone ?? "+244 9XXXXXXXXX";
-  const displayEmail = currentUser?.employee?.contact?.email ?? "Sem e-mail";
-  const canEditCompany = Boolean(isGlobalAdmin && hasCompanyContext);
-
-  const handleNavigateToCompanyEdit = React.useCallback(() => {
-    if (!resolvedCompanyId) return;
-    router.push(`/dashboard/companies/create?id=${resolvedCompanyId}`);
-  }, [resolvedCompanyId, router]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 p-4 md:p-8">

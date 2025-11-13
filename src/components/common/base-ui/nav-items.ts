@@ -1,6 +1,6 @@
 import {
   type LucideIcon,
-  Home,
+  LayoutDashboard ,
   Users,
   Building2,
   Settings,
@@ -10,6 +10,7 @@ import {
   UserCheck,
   Building,
   Car,
+  ChartNoAxesCombined 
 } from "lucide-react";
 
 export interface BaseNavItem {
@@ -20,25 +21,25 @@ export interface BaseNavItem {
 }
 
 export const allNavItems: BaseNavItem[] = [
-  { title: "Início", url: "/dashboard", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard  },
   { title: "Serviço", url: "/dashboard/service", icon: Briefcase },
   {
     title: "Clientes",
     url: "/dashboard/customers",
     icon: UserCheck,
-    requiresGlobalAdmin: false,
+
   },
   {
     title: "Sites",
     url: "/dashboard/sites",
     icon: Building,
-    requiresGlobalAdmin: false,
+ 
   },
   {
     title: "Funcionários",
     url: "/dashboard/employees",
     icon: User2,
-    requiresGlobalAdmin: false,
+   
   },
   {
     title: "Utilizadores",
@@ -49,26 +50,29 @@ export const allNavItems: BaseNavItem[] = [
     title: "Empresas",
     url: "/dashboard/companies",
     icon: Building2,
-    requiresGlobalAdmin: false,
+   
   },
   {
     title: "Equipamentos",
     url: "/dashboard/equipment",
     icon: Hammer,
-    requiresGlobalAdmin: false,
+ 
   },
 
   {
     title: "Configurações",
     url: "/dashboard/settings",
-    requiresGlobalAdmin: false,
     icon: Settings,
   },
   {
     title: "Veiculos",
     url: "/dashboard/cars",
-    requiresGlobalAdmin: false,
     icon: Car,
+  },
+   {
+    title: "Analitycs",
+    url: "/dashboard/analytics",
+    icon: ChartNoAxesCombined ,
   },
 ];
 
