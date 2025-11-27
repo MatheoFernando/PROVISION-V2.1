@@ -11,7 +11,7 @@ export function useAddresses(companyId?: string) {
       const response = await api.get("/address/getAll");
       return response.data || [];
     },
-    enabled: !!companyId, 
+    enabled: !!companyId,
   });
 }
 
@@ -28,7 +28,7 @@ export function useAddressesByHouseHold(houseHold: string) {
 
 export function useCreateAddress() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (payload: Omit<Address, 'id' | 'createdAt' | 'updatedAt'>): Promise<Address> => {
       const response = await api.post("/address/create", payload);
@@ -46,7 +46,7 @@ export function useCreateAddress() {
 
 export function useUpdateAddress() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: Partial<Omit<Address, 'id' | 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Address> => {
       const response = await api.put("/address", data);
@@ -64,7 +64,7 @@ export function useUpdateAddress() {
 
 export function useDeleteAddress() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/address/${id}`);

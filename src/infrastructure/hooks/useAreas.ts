@@ -13,27 +13,18 @@ export function useAreas() {
   });
 }
 
-export function useAreasByBossId(employeeId: string) {
-  return useQuery({
-    queryKey: ["areas", "boss", employeeId],
-    queryFn: async (): Promise<Area[]> => {
-      const { data } = await api.get("/area/getByBossId", { params: { employeeId } });
-      return (data?.data ?? data) as Area[];
-    },
-    enabled: Boolean(employeeId),
-  });
-}
-
 export function useCreateArea() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<Area, 'id' | 'createdAt' | 'updatedAt'>): Promise<Area> => {
-      
       const { data } = await api.post("/area/create", payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["areas"] });
+    onSuccess: (created) => {
+      queryClient.setQueryData(["areas"], (old: Area[] = []) => {
+        const filtered = old.filter(a => a.id !== created.id);
+        return [created, ...filtered];
+      });
       toast.success("Área criada com sucesso!");
     },
     onError: (error: any) => {
@@ -49,8 +40,10 @@ export function useUpdateArea() {
       const { data } = await api.put("/area", payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["areas"] });
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["areas"], (old: Area[] = []) => {
+        return old.map(a => a.id === updated.id ? updated : a);
+      });
       toast.success("Área atualizada com sucesso!");
     },
     onError: (error: any) => {
@@ -74,5 +67,3 @@ export function useDeleteArea() {
     },
   });
 }
-
-

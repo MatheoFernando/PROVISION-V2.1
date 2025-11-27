@@ -23,7 +23,7 @@ export function DefaultServices() {
       name: "RSU",
       description: "Recolha Seletiva de Resíduos",
       url: "/dashboard/service/rsu",
-      status: false,
+      status: true,
       imageSrc: "/reciclar.png",
     },
   ] as const;

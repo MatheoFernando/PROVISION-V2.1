@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAreas, useCreateArea } from "@/infrastructure/hooks/useAreas";
 import {
   Select,
@@ -17,7 +17,6 @@ import { areaSchema } from "@/infrastructure/schema/schema-area";
 import { Area } from "@/infrastructure/types/domain";
 import { Label } from "@/components/ui/label";
 import { EmployeeSelect } from "./employee-select";
-import { toast } from "sonner";
 
 type AreaForm = {
   name: string;
@@ -40,7 +39,8 @@ export function AreaSelect({
 }: AreaSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { data: areas = [], isLoading } = useAreas();
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+  const { data: areas = [], isLoading, refetch } = useAreas();
   const createArea = useCreateArea();
   const form = useForm<AreaForm>({
     resolver: zodResolver(
@@ -52,24 +52,32 @@ export function AreaSelect({
       employeeId: employeeId ?? "",
     },
   });
+
+  useEffect(() => {
+    if (value) {
+      setSelectedAreaId(value);
+    }
+  }, [value]);
+
   function handleSubmit(data: AreaForm) {
     const effectiveEmployeeId = data.employeeId || employeeId || "";
     if (!effectiveEmployeeId) {
       form.setError("employeeId", { message: "Funcionário é obrigatório" });
       return;
     }
-   
+
     createArea.mutate(
       { ...data, employeeId: effectiveEmployeeId },
       {
         onSuccess: (created) => {
           setOpen(false);
-          onChange(created.id!);
-          form.reset({ name: "", companyId });
+
+          form.reset({ name: "", companyId, employeeId });
         },
       }
     );
   }
+
   const list = Array.isArray(areas) ? areas : [];
   const filtered = list.filter((a: Area) =>
     String(a?.name ?? "")
@@ -80,15 +88,23 @@ export function AreaSelect({
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading}>
-          <SelectTrigger className="w-full ">
+        <Select
+          value={selectedAreaId || undefined}
+          onValueChange={(selected) => {
+            setSelectedAreaId(selected);
+            onChange(selected);
+          }}
+          disabled={isLoading}
+          onOpenChange={() => refetch()}
+        >
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione a área" />
           </SelectTrigger>
           {isLoading && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-1 sticky top-0 bg-popover">
+            <div className="p-1 sticky top-0 bg-popover z-10">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -143,12 +159,7 @@ export function AreaSelect({
           }}
         >
           <div className="font-medium mb-4 text-lg">Criar Área</div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
-            className="space-y-3 mt-2 "
-          >
+          <form className="space-y-3 mt-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name-area">Nome da área</Label>

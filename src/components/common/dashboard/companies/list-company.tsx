@@ -8,9 +8,8 @@ import type { Company } from '@/infrastructure/types/domain'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DataTableGeneric } from '../../base-ui/data-table'
 import { Eye, Edit, Trash2 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { DeleteModal } from '@/components/ui/delete-modal'
+import { CompanyView } from './company-view'
 
 function getPrimaryAddress(company: any) {
   return company?.address ?? company?.addresses?.[0] ?? undefined
@@ -159,67 +158,19 @@ function ListCompany() {
       />
 
   
-      <Dialog open={viewOpen} onOpenChange={(o) => { if (!o) { setViewOpen(false); setSelectedCompany(null) } }}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              {selectedCompany && (
-                <>
-                  <Avatar className="h-10 w-10 rounded-sm">
-                    <AvatarImage src={selectedCompany.photo || undefined} alt={selectedCompany.businessName} className='rounded-sm'/>
-                    <AvatarFallback className="rounded-sm">
-                      {selectedCompany.businessName?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="truncate">{selectedCompany.businessName}</span>
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>Informações da empresa</DialogDescription>
-          </DialogHeader>
-          {selectedCompany && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">Código</div>
-                  <div className="text-foreground font-medium">{selectedCompany.cod}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">NIF</div>
-                  <div className="text-foreground font-medium">{selectedCompany.nif}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">Nome Fiscal</div>
-                  <div className="text-foreground">{selectedCompany.taxName}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">Email</div>
-                  <div className="text-foreground">{getPrimaryContact(selectedCompany as any)?.email ?? '-'}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">País</div>
-                  <div className="text-foreground">{getPrimaryAddress(selectedCompany as any)?.country ?? '-'}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">Município</div>
-                  <div className="text-foreground">{getPrimaryAddress(selectedCompany as any)?.municipality ?? '-'}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-muted-foreground">Estado</div>
-                  <div className="text-foreground">{selectedCompany.status ? 'Ativa' : 'Inativa'}</div>
-                </div>
-              </div>
+      <CompanyView
+        open={viewOpen}
+        company={selectedCompany}
+        onClose={() => {
+          setViewOpen(false)
+          setSelectedCompany(null)
+        }}
+        onEdit={(company) => {
+          setViewOpen(false)
+          handleEdit(company)
+        }}
+      />
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => { setViewOpen(false); setSelectedCompany(null) }} className="cursor-pointer">Fechar</Button>
-                <Button onClick={() => { setViewOpen(false); if (selectedCompany?.id) router.push(`/dashboard/companies/create?id=${selectedCompany.id}`) }} className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer">Editar</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-  
       <DeleteModal
         isOpen={deleteOpen}
         onClose={() => { setDeleteOpen(false); setSelectedCompany(null) }}

@@ -74,7 +74,7 @@ export function PermissionSelect({ value, onChange }: PermissionSelectProps) {
             </div>
             {filtered.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 text-center">
-               Não há dados disponíveis.</div>
+                Não há dados disponíveis.</div>
             ) : (
               <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
                 {filtered.map((p: Permission) => (

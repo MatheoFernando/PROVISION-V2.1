@@ -118,6 +118,8 @@ export interface User {
   password?: string;
   permissions?: string[];
   employee?: Employee | null;
+  departmentId?: string;
+  department?: Department;
 }
 
 export interface CreateUserPayload {
@@ -149,6 +151,7 @@ export interface Container {
   capacity: number;
   containerId?: string;
   status: boolean;
+  name: string;
   companyId: string;
   geoLocationEntityId: string;
   createdAt?: string;
@@ -167,6 +170,7 @@ export interface Customer {
   address?: Address;
   contact?: Contact;
   companyId: string;
+  company?: Company;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -200,8 +204,9 @@ export interface Employee {
 
 export interface Equipment {
   id?: string;
+  cod: string;
   serialNumber: string;
-  status: boolean;
+  status: boolean | string;
   mark: string;
   model: string;
   siteId: string;
@@ -209,7 +214,8 @@ export interface Equipment {
   companyId: string;
   createdAt?: string;
   updatedAt?: string;
-  
+  site?: Site | null;
+  typeEquipment?: TypeEquipment | null;
 }
 
 export interface Module {
@@ -234,8 +240,7 @@ export interface Site {
   zoneId: string;
   companyId: string;
   geoLocationId: string | null | undefined;
-  createdAt?: string;
-  updatedAt?: string;
+  status: string;
   customer?: Customer;
   customers?: Customer | (Customer | null)[];
   address?: Address;
@@ -248,6 +253,9 @@ export interface Site {
   sectors?: Sector | (Sector | null)[];
   contact?: Contact;
   contacts?: Contact | (Contact | null)[];
+  equipments?: Equipment[] | null;
+  employees?: Employee[] | null;
+  cars?: Car[] | null;
 }
 
 export interface Occorrence {
@@ -256,7 +264,7 @@ export interface Occorrence {
   description: string;
   companyId: string;
   typeOccorrenceId: string;
-  equipmentId: string;
+  equipmentId?: string;
   employeeId: string;
   siteId: string;
   time: string;
@@ -307,24 +315,45 @@ export interface Sector {
 export interface Supervision {
   id?: string;
   cod: string;
-  observation: string | undefined;
+  observation?: string;
   companyId: string;
-  desiredNumberWorkers: number;
-  equipmentId: string;
-  employeeId: string;
+  desiredNumberWorkers?: string;
+  equipmentId?: string;
+  employeeId?: string;
   siteId: string;
   time: string;
-  numberWorkerPresent: number;
-  departmentId: string;
-  status: string;
+  numberWorkerPresent?: string;
+  departmentId?: string;
+  status?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Rsu {
+  id?: string;
+  cod: string;
+  containerId: string;
+  companyId: string;
+  quantity: number;
+  comment?: string;
+  employeeId: string;
+  siteId: string;
+  status: string;
+  carId: string;
+  customerSignature: string;
+  createdAt?: string;
+  updatedAt?: string;
+  container?: Container | null;
+  employee?: Employee | null;
+  site?: Site | null;
+  car?: Car | null;
 }
 
 export interface TypeEquipment {
   id?: string;
   name: string;
   description?: string;
+  status?: string | boolean;
   companyId: string;
   createdAt?: string;
   updatedAt?: string;

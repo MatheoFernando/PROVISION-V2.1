@@ -2,12 +2,7 @@
 
 import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  MoreHorizontal
-} from "lucide-react"
+import { Eye, Edit, Trash2, MoreHorizontal } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import type { DateRange } from "react-day-picker"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { SupervisionCreate } from "./supervision-create"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"
 import { useEmployees } from "@/infrastructure/hooks/useEmployees"
@@ -29,19 +23,19 @@ import { useDepartments } from "@/infrastructure/hooks/useDepartments"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
-import { SupervisionDrawer } from "./supervision-dialog"
-
+import { SupervisionDrawer } from "./supervision-view"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+import { X } from "lucide-react"
 interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
+  onEdit?: (supervision: Supervision) => void
 }
 
-function ActionsButtons({ supervision }: ActionsButtonsProps) {
+function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
   const deleteMutation = useDeleteSupervisionMutation()
- 
   const handleConfirmDelete = () => {
     deleteMutation.mutate(supervision.id!, {
       onSuccess: () => setIsDeleteOpen(false),
@@ -65,7 +59,10 @@ function ActionsButtons({ supervision }: ActionsButtonsProps) {
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="cursor-pointer">
+          <DropdownMenuItem
+            onClick={() => onEdit?.(supervision)}
+            className="cursor-pointer"
+          >
             <Edit className="size-4 mr-2" />
             Editar
           </DropdownMenuItem>
@@ -88,14 +85,8 @@ function ActionsButtons({ supervision }: ActionsButtonsProps) {
         onOpenChange={setIsDialogOpen}
       />
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <SupervisionCreate id={supervision.id} initialData={supervision} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
-        </DialogContent>
-      </Dialog>
+
+      
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -110,17 +101,36 @@ function ActionsButtons({ supervision }: ActionsButtonsProps) {
 }
 
 
+const formatHour = (value?: string) => {
+  if (!value) return "--"
+  if (value.includes("T") && Number.isNaN(Date.parse(value))) {
+    const fallback = value.includes(":") ? value : `${value}:00`
+    return fallback.slice(0, 5)
+  }
+  const date = value.includes("T")
+  ? new Date(value)
+  : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = value.includes(":") ? value : `${value}:00`
+    return fallback.slice(0, 5)
+  }
+  return date
+    .toLocaleTimeString("pt-AO", { hour: "2-digit", minute: "2-digit", hour12: false })
+    .replace(".", ":")
+}
+
 const createSupervisionColumns = (
   maps: {
     employeeById: Record<string, string>
     equipmentById: Record<string, string>
     siteById: Record<string, string>
     departmentById: Record<string, string>
+    onEdit?: (supervision: Supervision) => void
   }
 ): ColumnDef<Supervision>[] => [
   {
     accessorKey: "cod",
-    header: "Nº Mec",
+    header: "Código",
     size: 50,
     cell: ({ row }) => (
       <div className="font-medium">{row.original.cod}</div>
@@ -147,7 +157,7 @@ const createSupervisionColumns = (
     id: "equipment",
     header: `Equipamentos`,
     cell: ({ row }) => {
-      const equipment = maps.equipmentById[row.original.equipmentId] || ""
+      const equipment = maps.equipmentById[row.original.equipmentId || ""] || ""
       return <div>{equipment || 'N/A'}</div>
     },
   },
@@ -170,16 +180,12 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorFn: (row) => {
-      const t = row.time || ""
-      return t.includes("T") ? t.slice(11, 16) : t.slice(0, 5)
-    },
+    accessorFn: (row) => formatHour(row.time),
     id: "time",
     header: "Horário",
     size: 20,
     cell: ({ row }) => {
-      const t = row.original.time || ""
-      const hhmm = t.includes("T") ? t.slice(11, 16) : t.slice(0, 5)
+      const hhmm = formatHour(row.original.time)
       return <div>{hhmm}</div>
     },
   },
@@ -196,7 +202,7 @@ const createSupervisionColumns = (
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const isActive = row.original.status === 'Ativo'
+      const isActive = row.original.status === 'Finalizado'
       return (
         <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
           {row.original.status}
@@ -210,7 +216,11 @@ const createSupervisionColumns = (
     header: "Ações",
     size: 50,
     cell: ({ row }) => (
-      <ActionsButtons supervision={row.original} equipmentCode={maps.equipmentById[row.original.equipmentId || ""]} />
+      <ActionsButtons
+        supervision={row.original}
+        equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
+        onEdit={maps.onEdit}
+      />
     ),
   },
 ]
@@ -229,7 +239,8 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
   const { data: equipments = [] } = useEquipment()
   const { data: sites = [] } = useSites()
   const { data: departments = [] } = useDepartments()
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+  const [isFormOpen, setIsFormOpen] = React.useState(false)
+  const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
 
   const employeeById = React.useMemo(() => {
     const map: Record<string, string> = {}
@@ -263,6 +274,21 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
     return map
   }, [departments])
 
+  const handleCreate = () => {
+    setSelectedSupervision(null)
+    setIsFormOpen(true)
+  }
+
+  const handleEdit = (supervision: Supervision) => {
+    setSelectedSupervision(supervision)
+    setIsFormOpen(true)
+  }
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false)
+    setSelectedSupervision(null)
+  }
+
   return (
     <div className="w-full">
       <DataTableGeneric
@@ -272,6 +298,7 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
           equipmentById,
           siteById,
           departmentById,
+          onEdit: handleEdit,
         })}
         searchKey="cod"
         placeholder="Pesquisar..."
@@ -282,18 +309,42 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
         onDateRangeChange={onDateRangeChange}
         actionButton={{
           label: "Nova Supervisão",
-          onClick: () => setIsCreateOpen(true),
+          onClick: handleCreate,
         }}
       />
 
-      <Dialog open={isCreateOpen} onOpenChange={(open) => { if (open) setIsCreateOpen(true) }}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <SupervisionCreate onSuccess={() => setIsCreateOpen(false)} onCancel={() => setIsCreateOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <Drawer open={isFormOpen} onOpenChange={(open) => (open ? setIsFormOpen(true) : handleCloseForm())} direction="right">
+        <DrawerContent className="h-full w-full sm:max-w-xl">
+          <div className="flex h-full flex-col">
+            <DrawerHeader className="border-b border-border px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    {selectedSupervision ? "Editar Supervisão" : "Nova Supervisão"}
+                  </DrawerTitle>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <SupervisionCreate
+                id={selectedSupervision?.id}
+                initialData={selectedSupervision ?? undefined}
+                onSuccess={handleCloseForm}
+                onCancel={handleCloseForm}
+              />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   )
 }

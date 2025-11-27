@@ -24,20 +24,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const companyQuery = useCompanyByIdQuery(companyId ?? undefined)
  
   const navMain = React.useMemo(() => {
-    return allNavItems.filter((item) => {
-      // Se requiresGlobalAdmin é true, só mostrar para global admin
-      if (item.requiresGlobalAdmin === true) {
-        return isGlobalAdmin;
-      }
-      
-      // Se requiresGlobalAdmin é false, só mostrar para usuários normais (não global admin)
-      if (item.requiresGlobalAdmin === false) {
-        return !isGlobalAdmin;
-      }
-      
-      // Se requiresGlobalAdmin é undefined, mostrar para todos os usuários autenticados
-      return true;
-    })
+    return allNavItems
+      .filter((item) => {
+        // Se requiresGlobalAdmin é true, só mostrar para global admin
+        if (item.requiresGlobalAdmin === true) {
+          return isGlobalAdmin;
+        }
+        
+        // Se requiresGlobalAdmin é false, só mostrar para usuários normais (não global admin)
+        if (item.requiresGlobalAdmin === false) {
+          return !isGlobalAdmin;
+        }
+        
+        // Se requiresGlobalAdmin é undefined, mostrar para todos os usuários autenticados
+        return true;
+      })
+      .map((item) => {
+        // Transformar itens para ajustar títulos dinamicamente
+        if (item.items?.length) {
+          return {
+            ...item,
+            items: item.items.map((subItem) => {
+              // Se for o item de empresas, ajustar título baseado no tipo de admin
+              if (subItem.url === "/dashboard/companies") {
+                return {
+                  ...subItem,
+                  title: isGlobalAdmin ? "Empresas" : "Empresa",
+                };
+              }
+              return subItem;
+            }),
+          };
+        }
+        return item;
+      });
   }, [isGlobalAdmin])
 
   const sidebarData = React.useMemo(() => {

@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { type User, type Company } from '@/infrastructure/types/domain'
 import { Badge } from '@/components/ui/badge'
 import { DataTableGeneric } from '../../base-ui/data-table'
-import CreateUserDialog from './create-users'
+import CreateUserDialog from './users-create'
 import { Edit, Trash2 } from 'lucide-react'
 import { DeleteModal } from '@/components/ui/delete-modal'
 import { useUsers } from '../../../../infrastructure/hooks/useUsers'
@@ -14,34 +14,16 @@ import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
 
 function buildColumns(companyById: Record<string, Company | undefined>): ColumnDef<User, unknown>[] {
   return [
+
     {
-      accessorKey: 'cod',
-      header: 'Nº Mec',
-      size: 50,
-      cell: ({ row }) => {
-        const user = row.original
-        const company = user.companyId ? companyById[user.companyId] : undefined
-        return <span className="text-sm text-foreground whitespace-nowrap">{company?.cod ?? '-'}</span>
+      accessorKey: 'phone', header: 'Telefone', cell: ({ row }) => {
+        const phone = row.getValue('phone') as string
+        return <div>{phone}</div>
       }
     },
     {
-      accessorKey: 'businessName',
-      header: 'Empresa',
-      cell: ({ row }) => {
-        const user = row.original
-        const company = user.companyId ? companyById[user.companyId] : undefined
-        return <span className="text-sm text-foreground whitespace-nowrap">{company?.businessName ?? '-'}</span>
-      }
-    },
-  
-    
-    { accessorKey: 'phone', header: 'Telefone', cell: ({ row }) => {
-      const phone = row.getValue('phone') as string
-      return <div>{phone}</div>
-    } },
-    { 
-      accessorKey: 'isGlobalAdmin', 
-      header: 'Função', 
+      accessorKey: 'isGlobalAdmin',
+      header: 'Função',
       cell: ({ getValue }) => {
         const isGlobalAdmin = getValue<boolean>()
         return (
@@ -51,9 +33,9 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
         )
       }
     },
-    { 
-      accessorKey: 'status', 
-      header: 'Status', 
+    {
+      accessorKey: 'status',
+      header: 'Estado',
       cell: ({ getValue }) => {
         const status = getValue<boolean>()
         return (
@@ -182,7 +164,6 @@ function ListUsers() {
         onOpenChange={setIsEditDialogOpen}
         children={null}
       />
-
       <DeleteModal
         isOpen={isDeleteDialogOpen}
         onClose={resetDeletionState}

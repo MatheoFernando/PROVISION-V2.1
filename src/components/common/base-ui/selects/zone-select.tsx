@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import { zoneSchema } from "@/infrastructure/schema/schema-zone";
 import { Label } from "@/components/ui/label";
 import { useCreateZone, useZones } from "@/infrastructure/hooks/useZones";
-import { toast } from "sonner";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
+import { Zone } from "@/infrastructure/types/domain";
 
 const createZoneSchema = zoneSchema.pick({
   name: true,
@@ -49,25 +49,43 @@ export function ZoneSelect({
 }: ZoneSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const { data: zones = [], isLoading } = useZones();
   const createZone = useCreateZone();
   const form = useForm<ZoneForm>({
     resolver: zodResolver(createZoneSchema),
     defaultValues: { name: "", companyId, employeeId, areaId: areaId ?? "" },
   });
+
+  // Sincroniza o valor externo com o estado local
+  useEffect(() => {
+    if (value) {
+      setSelectedZoneId(value);
+      return;
+    }
+    setSelectedZoneId(null);
+  }, [value]);
+
   function handleSubmit(data: ZoneForm) {
     const effectiveEmployeeId = employeeId || data.employeeId;
     if (!effectiveEmployeeId) {
       form.setError("employeeId", { message: "Funcionário é obrigatório" });
       return;
     }
+    if (!areaId) {
+      return;
+    }
 
     createZone.mutate(
-      { ...data, employeeId: effectiveEmployeeId, areaId: areaId as string },
+      { ...data, employeeId: effectiveEmployeeId, areaId },
       {
         onSuccess: (created) => {
           setOpen(false);
-          onChange(created.id!);
+          if (created?.id) {
+            // Auto-seleciona o novo item criado
+            setSelectedZoneId(created.id);
+            onChange(created.id);
+          }
           form.reset({
             name: "",
             companyId,
@@ -78,34 +96,74 @@ export function ZoneSelect({
       }
     );
   }
-  const list = Array.isArray(zones) ? zones : [];
-  const filtered = list.filter((z: any) =>
-    String(z?.name ?? "")
-      .toLowerCase()
-      .includes(query.toLowerCase())
+
+  const hasArea = Boolean(areaId);
+
+  const list = useMemo(() => {
+    return Array.isArray(zones)
+      ? zones.filter((zone): zone is Zone => {
+        if (!zone?.id) return false;
+        const sameCompany =
+          String(zone.companyId ?? "") === String(companyId ?? "");
+        const hasArea = typeof zone.areaId !== "undefined";
+        return sameCompany && hasArea;
+      })
+      : [];
+  }, [companyId, zones]);
+
+  const filtered = useMemo(
+    () =>
+      !hasArea
+        ? []
+        : list.filter(
+          (zone) =>
+            String(zone.areaId ?? "") === String(areaId ?? "") &&
+            String(zone.name ?? "")
+              .toLowerCase()
+              .includes(query.toLowerCase())
+        ),
+    [areaId, hasArea, list, query]
   );
+
+  // Encontra o objeto da zona selecionada para exibir seu name
+  const selectedZone = selectedZoneId ? list.find(z => z.id === selectedZoneId) : undefined;
 
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading}>
-          <SelectTrigger className="w-full ">
-            <SelectValue placeholder="Selecione a zona" />
+        <Select
+          value={selectedZoneId || undefined}
+          onValueChange={(selected) => {
+            setSelectedZoneId(selected);
+            onChange(selected);
+          }}
+          disabled={isLoading || !hasArea}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue
+              placeholder={
+                hasArea ? "Selecione a zona" : "Selecione uma área primeiro"
+              }
+            />
           </SelectTrigger>
           {isLoading && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-1 sticky top-0 bg-popover">
+            <div className="p-1 sticky top-0 bg-popover z-10">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar zonas..."
                 className="w-full placeholder:text-xs"
-                disabled={isLoading || list.length === 0}
+                disabled={isLoading || !hasArea || list.length === 0}
               />
             </div>
-            {filtered.length === 0 ? (
+            {!hasArea ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                Selecione uma área para visualizar zonas.
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 text-center">
                 Não há dados disponíveis.
               </div>
@@ -117,7 +175,7 @@ export function ZoneSelect({
                     : "max-h-full"
                 }
               >
-                {filtered.map((z: any) => (
+                {filtered.map((z) => (
                   <SelectItem key={z.id} value={z.id!}>
                     {z.name}
                   </SelectItem>
@@ -134,12 +192,9 @@ export function ZoneSelect({
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-            disabled={createZone.status === "pending"}
+            disabled={createZone.status === "pending" || !hasArea}
             onClick={() => {
-              if (!areaId) {
-                toast.error("Selecione uma área antes de criar uma zona.");
-                return;
-              }
+              if (!areaId) return;
               form.setValue("areaId", areaId as string, { shouldValidate: true });
             }}
           >
@@ -162,7 +217,7 @@ export function ZoneSelect({
             onSubmit={(e) => {
               e.preventDefault();
             }}
-            className="space-y-3 mt-2 "
+            className="space-y-3 mt-2"
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -174,10 +229,9 @@ export function ZoneSelect({
                   }
                   companyId={companyId}
                 />
-                {(form.formState as any).errors?.employeeId && (
+                {form.formState.errors.employeeId && (
                   <span className="text-red-500 text-xs">
-                    {((form.formState as any).errors.employeeId
-                      ?.message as string) || "Funcionário é obrigatório"}
+                    {form.formState.errors.employeeId.message as string}
                   </span>
                 )}
               </div>

@@ -96,8 +96,8 @@ export function NotificationBell() {
   return (
     <Drawer direction="right">
       <DrawerTrigger asChild>
-        <div className="relative">
-          <Bell className="size-4 md:size-5 text-gray-500 dark:text-gray-400" />
+        <div className="relative border rounded-full p-2">
+          <Bell className="size-4  text-gray-500 dark:text-gray-400" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
           )}

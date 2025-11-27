@@ -3,17 +3,17 @@
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import {
+  Edit2,
+  HelpCircle,
+  Lock,
+  Loader2,
+} from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Edit2, HelpCircle, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { shallow } from "zustand/shallow";
-import { useUsers } from "@/infrastructure/hooks/useUsers";
-import { useCompanyByIdQuery } from "@/infrastructure/hooks/useCompanies";
-import { changePassword } from "@/infrastructure/adapters/auth";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,42 +31,116 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import CreateUserDialog from "@/components/common/dashboard/users/create-users";
+import { DeleteModal } from "@/components/ui/delete-modal";
+import CreateUserDialog from "@/components/common/dashboard/users/users-create";
+import { useUsers } from "@/infrastructure/hooks/useUsers";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useCompanyByIdQuery } from "@/infrastructure/hooks/useCompanies";
+import { useChangePasswordMutation } from "@/infrastructure/hooks/useChangePasswordMutation";
+import type { User } from "@/infrastructure/types/domain";
+import Link from "next/link";
 
-const passwordSchema = z
-  .object({
-    phone: z
-      .string()
-      .min(3, "Telefone obrigatório")
-      .max(30, "Telefone muito longo"),
-    currentPassword: z
-      .string()
-      .min(6, "Senha deve ter no mínimo 6 caracteres"),
-    newPassword: z
-      .string()
-      .min(6, "Senha deve ter no mínimo 6 caracteres"),
-  })
-  .refine(
-    ({ currentPassword, newPassword }) => currentPassword !== newPassword,
-    {
-      message: "A nova palavra-passe deve ser diferente da atual",
-      path: ["newPassword"],
-    }
-  );
+const passwordSchema = z.object({
+  phone: z.string().min(3, "Telefone obrigatório"),
+  currentPassword: z.string().min(6, "Senha atual obrigatória"),
+  newPassword: z.string().min(6, "Nova palavra-passe deve ter 6 caracteres"),
+});
 
-type PasswordFormData = z.infer<typeof passwordSchema>;
+type PasswordSchema = z.infer<typeof passwordSchema>;
+
+interface PasswordFormValues extends PasswordSchema {}
 
 export function Settings(): React.ReactElement {
   const router = useRouter();
+  const { companyId, isGlobalAdmin, userId } = useAuthStore();
+  const targetCompanyId = companyId ?? undefined;
+
+  const {
+    users,
+    isLoading: isUsersLoading,
+    deleteUser,
+    isDeleting,
+  } = useUsers(targetCompanyId);
+  const companyQuery = useCompanyByIdQuery(targetCompanyId);
+  const company = companyQuery.data ?? null;
+  const currentUser = React.useMemo(
+    () => users.find((user) => user.id === userId) ?? null,
+    [users, userId]
+  );
+
+  const employeeName = currentUser?.employee?.fullName ?? "Utilizador";
+  const displayPhone = currentUser?.phone ?? "Telefone não informado";
+  const [isUserDialogOpen, setIsUserDialogOpen] = React.useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
+  const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
+
+  const canEditCompany = Boolean(isGlobalAdmin);
+  const hasUserContext = Boolean(currentUser);
+
+  const changePassword = useChangePasswordMutation();
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      phone: currentUser?.phone ?? "",
+      currentPassword: "",
+      newPassword: "",
+    },
+  });
+
+  React.useEffect(() => {
+    if (currentUser?.phone) {
+      passwordForm.setValue("phone", currentUser.phone);
+    }
+  }, [currentUser?.phone, passwordForm]);
+
+  const handleSubmitPassword = React.useCallback(
+    async (values: PasswordFormValues) => {
+      try {
+        await changePassword.mutateAsync(values);
+        toast.success("Palavra-passe atualizada com sucesso");
+        passwordForm.reset({
+          phone: values.phone,
+          currentPassword: "",
+          newPassword: "",
+        });
+        setIsPasswordDialogOpen(false);
+      } catch {
+        toast.error("Não foi possível alterar a palavra-passe");
+      }
+    },
+    [changePassword, passwordForm]
+  );
+
+  const handleNavigateToCompanyEdit = React.useCallback(() => {
+    if (!canEditCompany) return;
+    router.push("/dashboard/companies");
+  }, [canEditCompany, router]);
+
+
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!userToDelete?.id) {
+      setUserToDelete(null);
+      return;
+    }
+
+    try {
+      await deleteUser(userToDelete.id);
+      toast.success("Utilizador removido com sucesso");
+    } catch {
+      toast.error("Não foi possível remover o utilizador");
+    } finally {
+      setUserToDelete(null);
+    }
+  }, [deleteUser, userToDelete]);
 
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4 dark:bg-neutral-950 md:p-8">
+      <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col gap-6 md:flex-row">
           <div className="flex-shrink-0">
             <Image
-              src="/profile.png"
+              src={currentUser?.employee?.photo ?? "/profile.png"}
               alt="Avatar do utilizador"
               width={160}
               height={160}
@@ -84,8 +158,6 @@ export function Settings(): React.ReactElement {
             </p>
             <div className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400 md:flex-row md:items-center md:gap-4">
               <span>{displayPhone}</span>
-              <span className="hidden h-1 w-1 rounded-full bg-gray-400 md:inline-flex" />
-              <span>{displayEmail}</span>
             </div>
           </div>
         </header>
@@ -114,10 +186,11 @@ export function Settings(): React.ReactElement {
                   <span className="text-sm text-gray-900 dark:text-gray-100">
                     {displayPhone}
                   </span>
+                  
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
-                      className="inline-flex items-center gap-2 text-primary hover:text-primary"
+                      className="inline-flex items-center gap-2 text-primary hover:text-primary cursor-pointer"
                       disabled={!currentUser || isUsersLoading}
                       onClick={() => setIsUserDialogOpen(true)}
                     >
@@ -152,7 +225,7 @@ export function Settings(): React.ReactElement {
                     <DialogTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary"
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary cursor-pointer"
                         disabled={!hasUserContext}
                       >
                         <Lock size={16} />
@@ -224,10 +297,17 @@ export function Settings(): React.ReactElement {
                           />
                           <Button
                             type="submit"
-                            className="cursor-pointer"
+                            className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
                             disabled={passwordForm.formState.isSubmitting}
                           >
-                            Guardar
+                            {passwordForm.formState.isSubmitting ? (
+                              <span className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                A guardar...
+                              </span>
+                            ) : (
+                              "Guardar"
+                            )}
                           </Button>
                         </form>
                       </Form>
@@ -282,30 +362,41 @@ export function Settings(): React.ReactElement {
               </div>
               {!canEditCompany && (
                 <p className="rounded-md bg-gray-100 p-3 text-xs text-gray-600 dark:bg-neutral-800 dark:text-gray-300">
-                  Apenas administradores globais podem editar estes dados.
+                  Apenas administradores  podem editar estes dados.
                 </p>
               )}
             </div>
           </article>
         </section>
 
-        <section className="flex flex-col items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 md:flex-row">
+        <section className="flex flex-col items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 md:flex-row">
           <div className="flex items-center gap-3 text-gray-800 dark:text-gray-100">
-            <HelpCircle size={20} className="text-gray-600 dark:text-gray-300" />
+            <HelpCircle
+              size={20}
+              className="text-gray-600 dark:text-gray-300"
+            />
             <h3 className="text-base font-semibold">Precisa de suporte?</h3>
           </div>
-          <Button
-            variant="outline"
-            className="cursor-pointer"
-            asChild
-          >
-            <a href="/dashboard/help" className="inline-flex items-center gap-2">
+
+            <Link href="/dashboard/help" className="inline-flex items-center gap-2 text-primary hover:text-primary cursor-pointer">
               Central de ajuda ↗
-            </a>
-          </Button>
+            </Link>
+         
         </section>
       </div>
+
+      <DeleteModal
+        isOpen={Boolean(userToDelete)}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Remover utilizador"
+        message={
+          userToDelete
+            ? `Deseja remover ${userToDelete.employee?.fullName ?? userToDelete.phone}?`
+            : ""
+        }
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
-

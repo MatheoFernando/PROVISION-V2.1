@@ -46,10 +46,16 @@ export function TypeOccorrenceSelect({ value, onChange, companyId }: TypeOccorre
     [list, query]
   );
 
+  const normalizedValue = value;
+
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-      <Select value={value} onValueChange={onChange} disabled={isLoading}>
+      <Select
+        value={normalizedValue || undefined}
+        onValueChange={(selected) => onChange(selected)}
+        disabled={isLoading}
+      >
         <SelectTrigger className="w-full ">
           <SelectValue placeholder="Selecione o tipo de ocorrência" />
         {isLoading && (
@@ -74,7 +80,7 @@ export function TypeOccorrenceSelect({ value, onChange, companyId }: TypeOccorre
           ) : (
             <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
               {filtered.map((t: any) => (
-                <SelectItem key={t.id} value={t.id!} className="cursor-pointer">
+                <SelectItem key={t.id} value={t.id} className="cursor-pointer">
                   {t.cod ? `${t.cod}` : t.description}
                 </SelectItem>
               ))}

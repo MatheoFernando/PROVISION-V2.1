@@ -18,7 +18,7 @@ export default function RootLayoutDashboard({
 }>) {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full bg-background text-foreground transition-colors">
+      <div className="flex h-screen w-full bg-[#f7f9fa] text-foreground transition-colors">
         <AppSidebar />
         <SidebarTrigger
           className="hidden md:flex fixed z-50

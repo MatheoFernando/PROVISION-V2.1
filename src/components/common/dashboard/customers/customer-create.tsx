@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,7 @@ type CustomerFormValues = z.output<CustomerFormSchema>;
 
 interface CustomersCreateFormProps {
   customer?: Customer;
-  onSuccess?: () => void;
+  onSuccess?: (customer?: Customer) => void;
   onCancel?: () => void;
 }
 
@@ -48,6 +48,8 @@ export function CustomersCreateForm({
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const authCompanyId = useAuthStore((state) => state.companyId) || "";
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoPreview, setPhotoPreview] = React.useState<string>("");
 
   const buildDefaults = useCallback(
     (
@@ -77,6 +79,7 @@ export function CustomersCreateForm({
   useEffect(() => {
     if (!customer) {
       form.reset(buildDefaults());
+      setPhotoPreview("");
       return;
     }
 
@@ -92,7 +95,24 @@ export function CustomersCreateForm({
         companyId: customer.companyId ?? authCompanyId,
       })
     );
+    
+    if (customer.photo) {
+      setPhotoPreview(customer.photo);
+    }
   }, [customer, form, buildDefaults, authCompanyId]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPhotoPreview(result);
+        form.setValue("photo", result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (data: CustomerFormInput) => {
     const parsed: CustomerFormValues = createCustomerSchema.parse({
@@ -106,18 +126,20 @@ export function CustomersCreateForm({
     };
 
     try {
+      let savedCustomer: Customer | undefined;
       if (customer?.id) {
-        const { companyId: _omit, ...updateOnly } = payload;
-        await updateCustomer.mutateAsync({
+        const { ...updateOnly } = payload;
+        savedCustomer = await updateCustomer.mutateAsync({
           id: customer.id,
-          data: updateOnly,
+          data: updateOnly
         });
       } else {
-        await createCustomer.mutateAsync(payload);
+        savedCustomer = await createCustomer.mutateAsync(payload);
         form.reset(buildDefaults());
+        setPhotoPreview("");
       }
 
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(savedCustomer);
       else router.back();
     } catch (error) {
       console.error(error);
@@ -130,37 +152,40 @@ export function CustomersCreateForm({
         onSubmit={form.handleSubmit(handleSubmit)}
         className="flex flex-col gap-8"
       >
-        <section className="p-4 border-b md:p-6">
-          <div className="flex flex-col gap-1">
-     
-            <h2 className="text-lg font-semibold text-foreground">
-              Dados gerais do cliente
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Informe os dados obrigatórios para cadastrar ou atualizar o
-              cliente.
-            </p>
+        {/* Header com Foto à esquerda */}
+        <div className="flex gap-6 items-start">
+          {/* Preview da Foto - Esquerda */}
+          <div className="flex flex-col gap-3 flex-shrink-0">
+            <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300">
+              {photoPreview ? (
+                <img 
+                  src={photoPreview} 
+                  alt="Preview" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Upload className="w-10 h-10 text-gray-400" />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+            >
+              Alterar foto
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="cod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Código *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Digite o código"
-                      className="rounded-xl"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+          {/* Campos à direita */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Nome em primeiro */}
             <FormField
               control={form.control}
               name="name"
@@ -171,7 +196,7 @@ export function CustomersCreateForm({
                     <Input
                       {...field}
                       placeholder="Digite o nome"
-                      className="rounded-xl"
+                      className="rounded-lg"
                     />
                   </FormControl>
                   <FormMessage />
@@ -179,100 +204,113 @@ export function CustomersCreateForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="taxName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome fiscal *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Digite o nome fiscal"
-                      className="rounded-xl"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="nif"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>NIF *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Digite o NIF"
-                      className="rounded-xl"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Email e Código pequeno */}
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="cod"
+                render={({ field }) => (
+                  <FormItem className="w-32">
+                    <FormLabel className="text-sm">Código *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Código"
+                        className="rounded-lg text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
-        </section>
+        </div>
 
-        <section className=" p-4  md:p-6">
-          <div className="flex flex-col gap-1">
-       
-            <h2 className="text-lg font-semibold text-foreground">
-              Contato e endereço
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Selecione um contato e um endereço cadastrados ou crie novos
-              rapidamente.
-            </p>
-          </div>
+        {/* Campos Adicionais */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="taxName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome fiscal *</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Digite o nome fiscal"
+                    className="rounded-lg"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="contactId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contato *</FormLabel>
-                  <FormControl>
-                    <ContactSelect
-                      value={field.value}
-                      onChange={(value) => field.onChange(value)}
-                      companyId={authCompanyId}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="nif"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>NIF *</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Digite o NIF"
+                    className="rounded-lg"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-            <FormField
-              control={form.control}
-              name="addressId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço *</FormLabel>
-                  <FormControl>
-                    <AddressSelect
-                      value={field.value}
-                      onChange={(value) => field.onChange(value)}
-                      companyId={authCompanyId}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </section>
+        {/* Seleções */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="contactId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contato *</FormLabel>
+                <FormControl>
+                  <ContactSelect
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    companyId={authCompanyId}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <FormField
+            control={form.control}
+            name="addressId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Endereço *</FormLabel>
+                <FormControl>
+                  <AddressSelect
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    companyId={authCompanyId}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Botões */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-6 border-t">
           <Button
             type="button"
             variant="outline"
-            className="w-full  sm:w-auto cursor-pointer"
+            className="w-full sm:w-auto cursor-pointer"
             onClick={() => {
               if (onCancel) onCancel();
               else router.back();

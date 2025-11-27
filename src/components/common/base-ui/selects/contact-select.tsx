@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -24,6 +24,7 @@ import type { Contact } from "@/infrastructure/types/domain";
 import { contactSchema } from "@/infrastructure/schema/schema-contact";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneField } from "@/components/common/base-ui/inputs/phone-field";
 
 type ContactForm = z.infer<typeof contactSchema>;
 
@@ -64,20 +65,19 @@ export function ContactSelect({
   function handleSubmit(data: ContactForm) {
     createContact.mutate(data, {
       onSuccess: (created: Contact) => {
-        // seleciona imediatamente o contato criado
         onChange(created.id!);
         // tenta pré-selecionar e propagar o primeiro telefone válido
         const createdPhones = Array.isArray(created?.phoneNumbers)
           ? created.phoneNumbers
-              .map((p: { phone: string }) => p?.phone ?? "")
-              .filter((p: string) => (p ?? "").trim() !== "")
+            .map((p: { phone: string }) => p?.phone ?? "")
+            .filter((p: string) => (p ?? "").trim() !== "")
           : [];
         const firstPhone =
           createdPhones[0] ??
           (Array.isArray(data?.phoneNumbers)
             ? data.phoneNumbers
-                .map((p) => p?.phone ?? "")
-                .find((p) => (p ?? "").trim() !== "") ?? ""
+              .map((p) => p?.phone ?? "")
+              .find((p) => (p ?? "").trim() !== "") ?? ""
             : "");
         setSelectedPhone(firstPhone);
         if (firstPhone) onPhoneChange?.(firstPhone);
@@ -91,8 +91,8 @@ export function ContactSelect({
   const selectedContact = list.find((c) => c.id === value);
   const phoneOptions = Array.isArray(selectedContact?.phoneNumbers)
     ? selectedContact!.phoneNumbers
-        .map((p: { phone: string }) => p.phone)
-        .filter((p) => (p ?? "").trim() !== "")
+      .map((p: { phone: string }) => p.phone)
+      .filter((p) => (p ?? "").trim() !== "")
     : [];
   const filtered = list.filter((c: Contact) => {
     const phones = (Array.isArray(c.phoneNumbers) ? c.phoneNumbers : [])
@@ -111,15 +111,15 @@ export function ContactSelect({
       <div className="flex items-end gap-2 mb-2">
         <div className="flex-1 relative min-w-0">
           <Select
-            value={value}
+            value={value || undefined}
             onValueChange={(val) => {
               const selected = (Array.isArray(contacts) ? contacts : []).find(
                 (c: Contact) => c.id === val
               );
               const firstPhone = Array.isArray(selected?.phoneNumbers)
                 ? selected!.phoneNumbers.find(
-                    (p: { phone: string }) => (p?.phone ?? "").trim() !== ""
-                  )?.phone ?? ""
+                  (p: { phone: string }) => (p?.phone ?? "").trim() !== ""
+                )?.phone ?? ""
                 : "";
               setSelectedPhone(firstPhone);
               if (firstPhone) {
@@ -260,16 +260,24 @@ export function ContactSelect({
                   </Button>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {fields.map((field, idx) => (
-                    <div key={field.id} className="flex gap-2 items-center">
-                      <Input
-                        {...form.register(`phoneNumbers.${idx}.phone` as const)}
-                        placeholder={`Telefone ${idx + 1}`}
-                        className="w-full mb-0"
-                        type="number"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.preventDefault();
-                        }}
+                  {fields.map((fieldItem, idx) => (
+                    <div key={fieldItem.id} className="flex items-center gap-2">
+                      <Controller
+                        control={form.control}
+                        name={`phoneNumbers.${idx}.phone`}
+                        render={({ field }) => (
+                          <PhoneField
+                            value={field.value ?? ""}
+                            onChange={(value) => field.onChange(value ?? "")}
+                            onBlur={field.onBlur}
+                            placeholder={`Telefone ${idx + 1}`}
+                            size="md"
+                            disabled={createContact.status === "pending"}
+                            onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+                              if (event.key === "Enter") event.preventDefault();
+                            }}
+                          />
+                        )}
                       />
                       {fields.length > 1 && (
                         <Button

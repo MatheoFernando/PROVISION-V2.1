@@ -1,20 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import * as React from "react";
+import { Eye, Edit, Trash2, X } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
-import { useEquipment } from "@/infrastructure/hooks/useEquipment";
+import {
+  useCreateEquipment,
+  useCreateGrossEquipment,
+  useDeleteEquipment,
+  useEquipment,
+} from "@/infrastructure/hooks/useEquipment";
 import { Equipment } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { EquipmentView } from "./equipment-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteEquipment } from "@/infrastructure/hooks/useEquipment";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import EquipmentCreatePage from "./equipment-create";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import {
+  type CreateGrossEquipmentPayload,
+} from "@/infrastructure/schema/schema-equipment";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Equipment>[] = [
+  {
+    accessorKey: "cod",
+    header: "Código",
+    size: 80,
+    cell: ({ row }) => {
+      const cod = row.getValue("cod") as string;
+      return <div>{cod}</div>;
+    },
+  },
   {
     accessorKey: "serialNumber",
     header: "Número de Série",
@@ -40,6 +66,26 @@ const columns: ColumnDef<Equipment>[] = [
       return <div>{model}</div>;
     },
   },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = (row.getValue("status") as string | undefined) ?? "-";
+      const isActive = status.toUpperCase() === "ACTIVE";
+      return (
+        <Badge
+          variant={isActive ? "default" : "secondary"}
+          className={
+            isActive
+              ? "bg-emerald-500 text-white"
+              : "bg-red-500 text-white"
+          }
+        >
+          {isActive ? "Ativo" : "Inativo"}
+        </Badge>
+      );
+    },
+  },
 
   {
     accessorKey: "siteId",
@@ -61,25 +107,77 @@ const columns: ColumnDef<Equipment>[] = [
       return <div>{typeEquipmentName ?? "-"}</div>;
     },
   },
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
-    },
-  },
 ];
+interface EquipmentTableProps {
+  openCreateOnLoad?: boolean;
+  shouldNavigateBack?: boolean;
+  customerId?: string;
+  data?: Equipment[];
+  isLoadingOverride?: boolean;
+}
 
-export function EquipmentTable() {
-  const { data: equipment = [], isLoading } = useEquipment();
+export function EquipmentTable({
+  openCreateOnLoad = false,
+  shouldNavigateBack = false,
+  customerId,
+  data,
+  isLoadingOverride,
+}: EquipmentTableProps = {}) {
+  const router = useRouter();
+  const shouldFetch = !data;
+  const {
+    data: allEquipment = [],
+    isLoading,
+    refetch: refetchEquipment,
+  } = useEquipment(customerId, { enabled: shouldFetch });
+  
+  const equipment = React.useMemo(() => {
+    if (data) return data;
+    if (!customerId) return allEquipment;
+    // Filtrar equipamentos através dos sites do cliente
+    // Isso será feito pelo hook, mas garantimos aqui também
+    return allEquipment;
+  }, [data, allEquipment, customerId]);
   const deleteEquipment = useDeleteEquipment();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const createGrossEquipment = useCreateGrossEquipment();
+  const companyId = useAuthStore((s) => s.companyId) ?? "";
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<
     Equipment | undefined
   >();
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+
+  const resetCreateState = () => {
+    setIsCreateOpen(false);
+    setSelectedEquipment(undefined);
+  };
+
+  const handleReturn = () => {
+    if (shouldNavigateBack) router.back();
+  };
+
+  const handleCreateCancel = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateSuccess = () => {
+    if (shouldFetch) {
+      void refetchEquipment();
+    }
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateDialogChange = (open: boolean) => {
+    if (open) {
+      setIsCreateOpen(true);
+      return;
+    }
+    handleCreateCancel();
+  };
 
   const handleView = (equipment: Equipment) => {
     setSelectedEquipment(equipment);
@@ -111,7 +209,7 @@ export function EquipmentTable() {
       <DataTableGeneric
         columns={columns}
         data={equipment ?? []}
-        isLoading={isLoading}
+        isLoading={isLoadingOverride ?? isLoading}
         searchKey="serialNumber"
         actionButton={{
           label: "Novo Equipamento",
@@ -119,6 +217,10 @@ export function EquipmentTable() {
             setSelectedEquipment(undefined);
             setIsCreateOpen(true);
           },
+        }}
+        bulkImportButton={{
+          label: "Importar equipamentos",
+          onClick: () => setIsBulkOpen(true),
         }}
         enableRowSelection={true}
         includeSelection={true}
@@ -136,7 +238,7 @@ export function EquipmentTable() {
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            icon: <Trash2 className="h-4 w-4 mr-2 text-red-600" />,
             onClick: (equipment) => handleDelete(equipment),
           },
         ]}
@@ -148,19 +250,45 @@ export function EquipmentTable() {
         onClose={() => setIsViewOpen(false)}
       />
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <EquipmentCreatePage
-            id={selectedEquipment?.id}
-            initialData={selectedEquipment as any}
-            onSuccess={() => { setIsCreateOpen(false); setSelectedEquipment(undefined); }}
-            onCancel={() => { setIsCreateOpen(false); setSelectedEquipment(undefined); }}
-          />
-        </DialogContent>
-      </Dialog>
+      <Drawer
+        open={isCreateOpen}
+        onOpenChange={handleCreateDialogChange}
+        direction="right"
+      >
+        <DrawerContent className="h-full w-full sm:max-w-xl">
+          <div className="flex h-full flex-col">
+            <DrawerHeader className="border-b border-border px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    {selectedEquipment
+                      ? "Editar Equipamento"
+                      : "Novo Equipamento"}
+                  </DrawerTitle>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <EquipmentCreatePage
+                id={selectedEquipment?.id}
+                initialData={selectedEquipment as any}
+                customerId={customerId}
+                onSuccess={handleCreateSuccess}
+                onCancel={handleCreateCancel}
+              />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -172,6 +300,41 @@ export function EquipmentTable() {
         title="Excluir Equipamento"
         message="Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita."
         isLoading={deleteEquipment.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossEquipmentPayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de equipamentos"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "serialNumber", label: "Número de Série", required: true },
+          { key: "mark", label: "Marca", required: true },
+          { key: "model", label: "Modelo", required: true },
+          { key: "status", label: "Estado", required: true },
+          { key: "nameSite", label: "Nome do Site registrado", required: true },
+          { key: "nameTypeEquipment", label: "Tipo de Equipamento", required: true },
+        ]}
+        templateFilename="modelo-equipamentos.csv"
+        mapRawToInput={(raw) => {
+          const normalizedStatus = (raw.status ?? "")
+            .trim()
+            .toUpperCase() as CreateGrossEquipmentPayload["status"];
+
+          return {
+            cod: raw.cod?.trim() ?? "",
+            serialNumber: raw.serialNumber?.trim() ?? "",
+            mark: raw.mark?.trim() ?? "",
+            model: raw.model?.trim() ?? "",
+            status: normalizedStatus || "ACTIVE",
+            nameSite: raw.nameSite?.trim() ?? "",
+            nameTypeEquipment: raw.nameTypeEquipment?.trim() ?? "",
+            companyId: (companyId || raw.companyId || "").trim(),
+          };
+        }}
+        onCreate={async (payload) => {
+          await createGrossEquipment.mutateAsync(payload);
+        }}
       />
     </div>
   );

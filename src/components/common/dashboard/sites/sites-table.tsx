@@ -1,24 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import * as React from "react";
+import { Eye, Edit, Trash2, X } from "lucide-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
-import { useSites } from "@/infrastructure/hooks/useSites";
+import {
+  useSites,
+  useDeleteSite,
+  useCreateGrossSite,
+} from "@/infrastructure/hooks/useSites";
 import { Site } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { SitesView } from "./sites-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import SitesCreatePage from "./site-create";
+import { useRouter } from "next/navigation";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import {
+  createGrossSiteSchema,
+  type CreateGrossSitePayload,
+} from "@/infrastructure/schema/schema-sites";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 const columns: ColumnDef<Site>[] = [
   {
     accessorKey: "cod",
-    header: "Nº Mec",
+    header: "Código",
     size: 50,
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
@@ -102,41 +118,82 @@ const columns: ColumnDef<Site>[] = [
       return <div>{display}</div>;
     },
   },
-  {
-    accessorKey: "addressId",
-    header: "Endereço",
-    cell: ({ row }) => {
-      const original = row.original as Site;
-      const address = Array.isArray(original.addresses)
-        ? original.addresses.find((a) => a && (a as any).country)
-        : (original.addresses as any) || (original as any).address;
-      if (!address) return <div>-</div>;
-      const parts = [address.houseHold, address.commune, address.municipality, address.province, address.country]
-        .filter(Boolean)
-        .join(", ");
-      return <div className="truncate max-w-[220px]" title={parts}>{parts || '-'}</div>;
-    },
-  },
 
-  {
-    accessorKey: "geoLocationId",
-    header: "Localização",
-    cell: ({ row }) => {
-      const geoLocationId = row.getValue("geoLocationId") as string | null | undefined;
-      return <div>{geoLocationId || "-"}</div>;
-    },
-  },
   
 ];
 
-export function SitesTable() {
-  const { data: sites = [], isLoading } = useSites();
+interface SitesTableProps {
+  openCreateOnLoad?: boolean;
+  shouldNavigateBack?: boolean;
+  customerId?: string;
+  data?: Site[];
+  isLoadingOverride?: boolean;
+}
+
+interface StatusCodeError extends Error {
+  statusCode: number;
+}
+
+function throwMissingStatusCodeError(elementKey: string): never {
+  const error = new Error(
+    `O elemento ${elementKey} falta statusCode: 404`,
+  ) as StatusCodeError;
+  error.statusCode = 404;
+  throw error;
+}
+
+function parseWorkersCount(rawValue: string | undefined) {
+  if (!rawValue) return 0;
+  const normalized = rawValue.replace(/[^\d]/g, "");
+  if (!normalized) return 0;
+  return Number.parseInt(normalized, 10);
+}
+
+export function SitesTable({
+  openCreateOnLoad = false,
+  shouldNavigateBack = false,
+  customerId,
+  data,
+  isLoadingOverride,
+}: SitesTableProps = {}) {
+  const router = useRouter();
+  const shouldFetch = !data;
+  const { data: sites = [], isLoading } = useSites(customerId, { enabled: shouldFetch });
   const deleteSite = useDeleteSite();
+  const createGrossSite = useCreateGrossSite();
+  const companyId = useAuthStore((state) => state.companyId) || "";
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
+  const resetCreateState = () => {
+    setIsCreateOpen(false);
+    setSelectedSite(undefined);
+  };
+
+  const handleReturn = () => {
+    if (shouldNavigateBack) router.back();
+  };
+
+  const handleCreateCancel = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateSuccess = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateDialogChange = (open: boolean) => {
+    if (open) {
+      setIsCreateOpen(true);
+      return;
+    }
+    handleCreateCancel();
+  };
 
   const handleView = (site: Site) => {
     setSelectedSite(site);
@@ -166,12 +223,15 @@ export function SitesTable() {
     }
   };
 
+  const resolvedData = data ?? sites;
+  const resolvedIsLoading = isLoadingOverride ?? isLoading;
+
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={sites}
-        isLoading={isLoading}
+        data={resolvedData}
+        isLoading={resolvedIsLoading}
         searchKey="cod"
         actionButton={{
           label: "Novo Site",
@@ -180,9 +240,13 @@ export function SitesTable() {
             setIsCreateOpen(true);
           },
         }}
+        bulkImportButton={{
+          label: "Importar sites",
+          onClick: () => setIsBulkOpen(true),
+        }}
         enableRowSelection={true}
         includeSelection={true}
-        dateKey="createdAt"
+        dateKey={"createdAt" as keyof Site}
         rowActions={[
           {
             label: "Visualizar",
@@ -202,26 +266,52 @@ export function SitesTable() {
         ]}
       />
 
-   
       <SitesView
         site={selectedSite}
         isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
+        onClose={() => {
+          setIsViewOpen(false);
+          setSelectedSite(undefined);
+        }}
       />
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <SitesCreatePage
-            id={selectedSite?.id}
-            initialData={selectedSite as any}
-            onSuccess={() => { setIsCreateOpen(false); setSelectedSite(undefined); }}
-            onCancel={() => { setIsCreateOpen(false); setSelectedSite(undefined); }}
-          />
-        </DialogContent>
-      </Dialog>
+      <Drawer
+        open={isCreateOpen}
+        onOpenChange={handleCreateDialogChange}
+        direction="right"
+      >
+        <DrawerContent className="h-full w-full sm:max-w-xl">
+          <div className="flex h-full flex-col">
+            <DrawerHeader className="border-b border-border px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    {selectedSite ? "Editar Site" : "Novo Site"}
+                  </DrawerTitle>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <SitesCreatePage
+                id={selectedSite?.id}
+                initialData={selectedSite as any}
+                customerId={customerId}
+                onSuccess={handleCreateSuccess}
+                onCancel={handleCreateCancel}
+              />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -233,6 +323,67 @@ export function SitesTable() {
         title="Excluir Site"
         message="Tem certeza que deseja excluir este site? Esta ação não pode ser desfeita."
         isLoading={deleteSite.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossSitePayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de sites"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "name", label: "Nome do Site", required: true },
+          { key: "numberWorkersContract", label: "Trabalhadores", required: true },
+          { key: "codCustomer", label: "Código do Cliente registrado", required: true },
+          { key: "nameArea", label: "Área registrada", required: true },
+          { key: "nameZone", label: "Zona registrada", required: true },
+          { key: "nameSector", label: "Setor registrado", required: true },
+          { key: "contactEmail", label: "Email", required: false },
+          { key: "contactPhones", label: "Telefone", required: false },
+          { key: "addressHouseHold", label: "Morada", required: true },
+          { key: "addressCommune", label: "Comuna", required: true },
+          { key: "addressMunicipality", label: "Município", required: true },
+          { key: "addressProvince", label: "Província", required: true },
+          { key: "addressCountry", label: "País", required: true },
+          
+        ]}
+        templateFilename="modelo-sites.csv"
+        schema={createGrossSiteSchema}
+        shouldValidate={false}
+        mapRawToInput={(raw) => {
+          const phoneNumbers = (raw.contactPhones ?? "")
+            .split(/[;,]/)
+            .map((phone) => phone.trim())
+            .filter(Boolean)
+            .map((phone) => ({ phone }));
+          const numberWorkersContract = parseWorkersCount(raw.numberWorkersContract);
+
+          return {
+            cod: raw.cod ?? "",
+            name: raw.name ?? "",
+            numberWorkersContract,
+            nameArea: raw.nameArea ?? "",
+            codCustomer: raw.codCustomer ?? "",
+            contact: {
+              phoneNumbers: phoneNumbers.length ? phoneNumbers : undefined,
+              email: raw.contactEmail || undefined,
+              companyId,
+            },
+            address: {
+              houseHold: raw.addressHouseHold ?? "",
+              commune: raw.addressCommune ?? "",
+              municipality: raw.addressMunicipality ?? "",
+              province: raw.addressProvince ?? "",
+              country: raw.addressCountry ?? "",
+              companyId,
+            },
+            nameZone: raw.nameZone ?? "",
+            nameSector: raw.nameSector ?? "",
+            companyId,
+          };
+        }}
+        onCreate={async (payload) => {
+          await createGrossSite.mutateAsync(payload);
+        }}
       />
     </div>
   );

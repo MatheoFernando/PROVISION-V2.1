@@ -47,7 +47,7 @@ import type {
   Company,
 } from "@/infrastructure/types/domain";
 import { useRouter } from "next/navigation";
-import CreateUserDialog from "@/components/common/dashboard/users/create-users";
+import CreateUserDialog from "@/components/common/dashboard/users/users-create";
 
 type User = UserEntity;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Trash2 } from "lucide-react";
+import { Loader2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DeleteModalProps {
@@ -56,8 +56,16 @@ export function DeleteModal({
               onClick={onConfirm}
               className="flex-1 rounded-lg bg-red-500 hover:bg-red-600 text-white cursor-pointer"
               disabled={isLoading}
+              aria-busy={isLoading}
             >
-              {isLoading ? "Excluindo..." : "Eliminar"}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2 text-sm font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Excluindo...
+                </span>
+              ) : (
+                "Eliminar"
+              )}
             </Button>
           </div>
         </div>

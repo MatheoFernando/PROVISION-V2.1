@@ -10,6 +10,7 @@ export function useDepartments() {
       const { data } = await api.get("/department/GetAll");
       return (data?.data ?? data) as Department[];
     },
+  
   });
 }
 
@@ -29,7 +30,7 @@ export function useCreateDepartment() {
   return useMutation({
     mutationFn: async (payload: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>): Promise<Department> => {
       const { data } = await api.post("/department/create", payload);
-      return data;
+      return (data?.data ?? data) as Department;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
@@ -46,7 +47,7 @@ export function useUpdateDepartment() {
   return useMutation({
     mutationFn: async (payload: Partial<Omit<Department, 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Department> => {
       const { data } = await api.put("/department", payload);
-      return data;
+      return (data?.data ?? data) as Department;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });

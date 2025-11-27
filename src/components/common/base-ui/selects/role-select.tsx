@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useRoles, useCreateRole } from "@/infrastructure/hooks/useRoles";
+import { useRolesAll, useCreateRole } from "@/infrastructure/hooks/useRoles";
 import { createRoleSchema } from "@/infrastructure/schema/schema-role";
 import type { Role } from "@/infrastructure/types/domain";
 import { z } from "zod";
@@ -32,19 +32,33 @@ interface RoleSelectProps {
   companyId?: string | null;
 }
 
-export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
+export function RoleSelect({ value: valueProp, onChange, companyId }: RoleSelectProps) {
+  // Normaliza o value: converte string vazia para undefined
+  const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [createdRoles, setCreatedRoles] = useState<Array<Role & { createdAt?: string }>>([]);
+
   const { companyId: storeCompanyId } = useAuthStore();
   const normalizedCompanyId = companyId ?? storeCompanyId ?? "";
 
-  const { data: roles = [], isLoading, isFetching } = useRoles(query);
+  const { data: roles = [], isLoading, isFetching, refetch } = useRolesAll();
   const createRole = useCreateRole();
-
   const form = useForm<RoleForm>({
     resolver: zodResolver(createRoleSchema),
     defaultValues: { name: "", description: "", companyId: normalizedCompanyId },
   });
+
+  // Sincroniza o valor externo com o estado local
+  useEffect(() => {
+    if (value) {
+      setSelectedRoleId(value);
+    } else {
+      setSelectedRoleId(null);
+    }
+  }, [value]);
 
   useEffect(() => {
     form.reset({ name: "", description: "", companyId: normalizedCompanyId });
@@ -61,47 +75,112 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
       },
       {
         onSuccess: (created: Role) => {
-          onChange(created.id!);
           setOpen(false);
+          if (created?.id) {
+            const roleWithMeta = created as Role & { createdAt?: string };
+            const normalizedRole: Role & { createdAt?: string } = {
+              ...roleWithMeta,
+              id: created.id,
+              name: created?.name ?? "",
+              createdAt: roleWithMeta.createdAt ?? new Date().toISOString(),
+            };
+
+            setCreatedRoles((prev) => {
+              if (prev.some((item) => item.id === created.id)) return prev;
+              return [normalizedRole, ...prev];
+            });
+
+            // Auto-seleciona o novo item criado
+            setTimeout(() => {
+              setSelectedRoleId(created.id!);
+              onChange(created.id!);
+            }, 0);
+          }
           form.reset({
             name: "",
             description: "",
             companyId: normalizedCompanyId,
           });
+          void refetch();
         },
       }
     );
   }
 
-  const list = useMemo(
+  const rolesList = useMemo<Role[]>(() => {
+    const baseList = Array.isArray(roles) ? roles : [];
+    const merged: Array<Role & { createdAt?: string }> = [
+      ...createdRoles,
+      ...baseList,
+    ];
+    const map = new Map<string, Role & { createdAt?: string }>();
+    merged.forEach((role) => {
+      if (!role?.id) return;
+      map.set(role.id, {
+        ...role,
+        id: role.id,
+        name: role.name ?? "",
+        createdAt:
+          (role as Role & { createdAt?: string }).createdAt ??
+          new Date().toISOString(),
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [createdRoles, roles]);
+
+  const filtered = useMemo(
     () =>
-      (Array.isArray(roles) ? roles : []).filter(
-        (role: Role) =>
-          !normalizedCompanyId || role.companyId === normalizedCompanyId
+      rolesList.filter((role: Role) =>
+        String(role?.name ?? "")
+          .toLowerCase()
+          .includes(query.toLowerCase())
       ),
-    [roles, normalizedCompanyId]
+    [rolesList, query]
   );
 
-  const isCompanyUnavailable = !normalizedCompanyId;
+  // Garante que o valor selecionado seja atualizado quando a lista carregar
+  useEffect(() => {
+    if (value && rolesList.length > 0) {
+      const exists = rolesList.some(item => item.id === value);
+      if (exists) {
+        setSelectedRoleId(value);
+      }
+    }
+  }, [value, rolesList, selectedRoleId]);
+
   const isCreating = createRole.status === "pending";
   const isLoadingOptions = isLoading || isFetching;
+
+  // Valor a ser exibido no Select
+  const displayValue = useMemo(() => {
+    const normalizedValue = value && value.trim() !== '' ? value : undefined;
+    if (!normalizedValue) return undefined;
+    const exists = rolesList.some(item => item.id === normalizedValue);
+    return exists ? normalizedValue : undefined;
+  }, [value, rolesList, selectedRoleId]);
 
   return (
     <div className="flex items-end gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
         <Select
-          value={value}
-          onValueChange={onChange}
-          disabled={isLoadingOptions || isCompanyUnavailable}
+          value={displayValue}
+          onValueChange={(selected) => {
+            setSelectedRoleId(selected);
+            onChange(selected);
+          }}
+          disabled={isLoadingOptions}
+          onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full shadow-sm">
             <SelectValue
               placeholder={
-                isCompanyUnavailable
-                  ? "Selecione uma empresa primeiro"
-                  : isLoadingOptions
-                    ? "A carregar papéis..."
-                    : "Selecione o papel"
+                isLoadingOptions
+                  ? "A carregar papéis..."
+                  : "Selecione o papel"
               }
             />
           </SelectTrigger>
@@ -115,22 +194,22 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Filtrar papéis..."
                 className="w-full placeholder:text-xs"
-                disabled={isLoadingOptions || isCompanyUnavailable}
+                disabled={isLoadingOptions || rolesList.length === 0}
               />
             </div>
-            {list.length === 0 ? (
+            {filtered.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 text-center">
-                {isCompanyUnavailable
-                  ? "Selecione uma empresa para listar papéis."
+                {isLoadingOptions
+                  ? "A carregar..."
                   : "Nenhum papel encontrado."}
               </div>
             ) : (
               <div
                 className={
-                  list.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
+                  filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
                 }
               >
-                {list.map((role: Role) => (
+                {filtered.map((role: Role) => (
                   <SelectItem key={role.id} value={role.id!}>
                     {role.name}
                   </SelectItem>
@@ -144,10 +223,6 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
         open={open}
         onOpenChange={(nextOpen) => {
           if (isCreating) return;
-          if (isCompanyUnavailable) {
-            setOpen(false);
-            return;
-          }
           setOpen(nextOpen);
         }}
       >
@@ -157,7 +232,7 @@ export function RoleSelect({ value, onChange, companyId }: RoleSelectProps) {
             variant="outline"
             size="icon"
             className="shrink-0 cursor-pointer"
-            disabled={isCompanyUnavailable || isCreating}
+            disabled={isCreating}
           >
             {isCreating ? (
               <Loader2 className="w-4 h-4 animate-spin" />

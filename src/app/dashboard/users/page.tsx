@@ -1,16 +1,15 @@
-import ListUsers from '@/components/common/dashboard/users/list-users'
-import React from 'react'
+"use client";
+
+import React from "react";
+import ListUsers from "@/components/common/dashboard/users/users-table";
 
 function User() {
   return (
     <div className="space-y-6">
-      <ListUsers /> 
+      <h1 className="text-2xl font-semibold text-foreground">Utilizadores</h1>
+      <ListUsers />
     </div>
-  )
+  );
 }
 
-export default User
-
-
-
-
+export default User;

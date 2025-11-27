@@ -37,7 +37,7 @@ export function useRolesAll(options: UseRolesAllOptions = {}) {
     queryKey: ["roles"],
     queryFn: async (): Promise<Role[]> => {
       const { data } = await api.get("/roles/getAll");
-      return (data?.data ?? data) as Role[];
+      return (data?.data) as Role[];
     },
     enabled: options.enabled ?? true,
     staleTime: 5 * 60 * 1000,
@@ -95,6 +95,30 @@ export function useDeleteRole() {
       toast.error(error?.response?.data?.message || "Erro ao excluir papel");
     },
   });
+}
+
+export function useRolesComposite() {
+  const rolesQuery = useRolesAll();
+  const createRole = useCreateRole();
+  const updateRole = useUpdateRole();
+  const deleteRole = useDeleteRole();
+
+  return {
+    roles: rolesQuery.data ?? [],
+    isLoading: rolesQuery.isLoading,
+    isError: rolesQuery.isError,
+    error: rolesQuery.error,
+
+    isCreating: createRole.isPending,
+    isUpdating: updateRole.isPending,
+    isDeleting: deleteRole.isPending,
+
+    createRole: createRole.mutateAsync,
+    updateRole: updateRole.mutateAsync,
+    deleteRole: deleteRole.mutateAsync,
+
+    refetch: rolesQuery.refetch,
+  };
 }
 
 

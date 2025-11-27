@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
 import { Contact } from "../types/domain";
@@ -28,14 +33,18 @@ export function useContactsByEmail(email: string) {
 
 export function useCreateContact() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (payload: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>): Promise<Contact> => {
+    mutationFn: async (
+      payload: Omit<Contact, "id" | "createdAt" | "updatedAt">
+    ): Promise<Contact> => {
       const response = await api.post("/contact/create", payload);
       return response.data;
     },
     onSuccess: (_created, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["contacts", (variables as any).companyId] });
+      queryClient.invalidateQueries({
+        queryKey: ["contacts", (variables as Contact).companyId],
+      });
       toast.success("Contato criado com sucesso!");
     },
     onError: (error: any) => {
@@ -46,9 +55,13 @@ export function useCreateContact() {
 
 export function useUpdateContact() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (data: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Contact> => {
+    mutationFn: async (
+      data: Partial<Omit<Contact, "id" | "createdAt" | "updatedAt">> & {
+        id: string;
+      }
+    ): Promise<Contact> => {
       const response = await api.put("/contact", data);
       return response.data;
     },
@@ -64,7 +77,7 @@ export function useUpdateContact() {
 
 export function useDeleteContact() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/contact/${id}`);

@@ -7,6 +7,22 @@ import { toast } from "sonner";
 import { Supervision } from "../types/domain";
 
 const QUERY_KEY = ["supervisions"] as const;
+const BY_DATE_QUERY_KEY = ["supervisions", "byDate"] as const;
+const DETAIL_KEY = (id: string) => ["supervisions", id] as const;
+type QueryClientInstance = ReturnType<typeof useQueryClient>;
+
+const syncLists = (queryClient: QueryClientInstance) => {
+  queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+  queryClient.invalidateQueries({ queryKey: BY_DATE_QUERY_KEY, exact: false });
+};
+
+const setDetailCache = (
+  queryClient: QueryClientInstance,
+  entity: Supervision
+) => {
+  if (!entity.id) return;
+  queryClient.setQueryData(DETAIL_KEY(entity.id), entity);
+};
 
 export function useSupervisionsQuery() {
   return useQuery({
@@ -59,8 +75,9 @@ export function useCreateSupervisionMutation() {
       const response = await api.post("/supervision/create", data );
       return (response.data?.data ?? response.data) as Supervision;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisions"] });
+    onSuccess: (created) => {
+      setDetailCache(queryClient, created);
+      syncLists(queryClient);
       toast.success("Supervisão criada com sucesso");
     },
     onError: (error: any) => {
@@ -73,21 +90,14 @@ export function useUpdateSupervisionMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Supervision;
-    }): Promise<Supervision> => {
-      const response = await api.put(`/supervision/${id}`, data);
-      return response.data;
+    mutationFn: async (data: Supervision): Promise<Supervision> => {
+      const response = await api.put("/supervision", data);
+      const payload = (response.data?.data ?? response.data) as Supervision;
+      return payload;
     },
-    onSuccess: (updated, variables) => {
-      queryClient.setQueryData<Supervision[] | undefined>(QUERY_KEY, (old) => {
-        if (!old) return old;
-        return old.map((e) => (e.id === variables.id ? (updated as Supervision) : e));
-      });
+    onSuccess: (updated) => {
+      setDetailCache(queryClient, updated);
+      syncLists(queryClient);
       toast.success("Supervisão atualizada com sucesso");
     },
     onError: (error: any) => {
@@ -105,8 +115,9 @@ export function useDeleteSupervisionMutation() {
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/supervision/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisions"] });
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({ queryKey: DETAIL_KEY(id) });
+      syncLists(queryClient);
       toast.success("Supervisão excluída com sucesso");
     },
     onError: (error: any) => {

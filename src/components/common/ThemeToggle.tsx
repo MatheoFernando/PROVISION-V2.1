@@ -3,7 +3,6 @@ import React from 'react';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '../ui/button';
 
 export default function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -17,10 +16,10 @@ export default function ThemeToggle() {
   };
 
   const getIcon = () => {
-    return theme === 'dark' ? <Sun className='size-6' /> : <Moon className='size-6' />;
+    return theme === 'dark' ? <Sun className='size-4' /> : <Moon className='size-4' />;
   };
   return (
-    <Button  variant="ghost"  onClick={cycle} className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300 p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800">
+    <div   onClick={cycle} className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 border rounded-full dark:hover:text-gray-300 transition-colors duration-300 p-2  hover:bg-gray-200 dark:hover:bg-gray-800">
       <AnimatePresence mode="wait" initial={false}>
         <motion.span 
           key={theme} 
@@ -32,7 +31,7 @@ export default function ThemeToggle() {
           {getIcon()}
         </motion.span>
       </AnimatePresence>
-    </Button>
+    </div>
   );
 }
 

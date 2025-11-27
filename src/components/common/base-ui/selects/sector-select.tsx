@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,7 +17,6 @@ import { sectorSchema } from "@/infrastructure/schema/schema-sector";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
-import { normalizeId } from "@/lib/normalize-id";
 
 interface SectorSelectProps {
   value?: string;
@@ -36,14 +35,20 @@ export function SectorSelect({
 }: SectorSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [createdSectors, setCreatedSectors] = useState<Sector[]>([]);
-
+  const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
   const { data: sectors = [], isLoading } = useSectors();
   const createSector = useCreateSector();
   const form = useForm<Sector>({
     resolver: zodResolver(sectorSchema),
     defaultValues: { name: "", employeeId, zoneId, companyId },
   });
+
+  // Sincroniza o valor externo
+  useEffect(() => {
+    if (value) {
+      setSelectedSectorId(value);
+    }
+  }, [value]);
 
   function handleSubmit(data: Sector) {
     const effectiveEmployeeId = employeeId || data.employeeId;
@@ -66,12 +71,9 @@ export function SectorSelect({
         onSuccess: (created: Sector) => {
           setOpen(false);
           if (created?.id) {
-            const normalizedId = normalizeId(created.id);
-            onChange(normalizedId);
-            setCreatedSectors((prev) => {
-              if (prev.some((sector) => sector.id === normalizedId)) return prev;
-              return [{ ...created, id: normalizedId }, ...prev];
-            });
+            // Auto-seleciona o novo item
+            setSelectedSectorId(created.id);
+            onChange(created.id);
           }
           form.reset({
             name: "",
@@ -85,29 +87,28 @@ export function SectorSelect({
   }
 
   const hasZone = Boolean(zoneId);
-  const normalizedValue = normalizeId(value);
   const list = useMemo(() => {
-    const merged = [...createdSectors, ...(Array.isArray(sectors) ? sectors : [])];
-    const map = new Map<string, Sector>();
-    merged.forEach((sector) => {
-      if (sector?.id) map.set(sector.id, sector);
-    });
-    return Array.from(map.values()).filter(
-      (sector): sector is Sector =>
-        Boolean(sector?.id) && sector.companyId === companyId
-    );
-  }, [companyId, createdSectors, sectors]);
+    return Array.isArray(sectors)
+      ? sectors.filter((sector): sector is Sector => {
+        if (!sector?.id) return false;
+        const sameCompany =
+          String(sector.companyId ?? "") === String(companyId ?? "");
+        return sameCompany;
+      })
+      : [];
+  }, [companyId, sectors]);
+
   const filtered = useMemo(
     () =>
       !hasZone
         ? []
         : list.filter(
-            (sector) =>
-              sector.zoneId === zoneId &&
-              String(sector.name ?? "")
-                .toLowerCase()
-                .includes(query.toLowerCase())
-          ),
+          (sector) =>
+            String(sector.zoneId ?? "") === String(zoneId ?? "") &&
+            String(sector.name ?? "")
+              .toLowerCase()
+              .includes(query.toLowerCase())
+        ),
     [hasZone, list, query, zoneId]
   );
 
@@ -115,11 +116,14 @@ export function SectorSelect({
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
         <Select
-          value={normalizedValue || undefined}
-          onValueChange={(selected) => onChange(normalizeId(selected))}
+          value={selectedSectorId || undefined}
+          onValueChange={(selected) => {
+            setSelectedSectorId(selected);
+            onChange(selected);
+          }}
           disabled={isLoading || !hasZone}
         >
-          <SelectTrigger className="w-full ">
+          <SelectTrigger className="w-full">
             <SelectValue
               placeholder={
                 hasZone ? "Selecione o setor" : "Selecione uma zona primeiro"
@@ -130,7 +134,7 @@ export function SectorSelect({
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-1 sticky top-0 bg-popover">
+            <div className="p-1 sticky top-0 bg-popover z-10">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -156,7 +160,7 @@ export function SectorSelect({
                 }
               >
                 {filtered.map((s) => (
-                  <SelectItem key={s.id} value={normalizeId(s.id)}>
+                  <SelectItem key={s.id} value={s.id!}>
                     {s.name}
                   </SelectItem>
                 ))}
@@ -193,12 +197,7 @@ export function SectorSelect({
           }}
         >
           <div className="font-medium mb-4 text-lg">Criar Setor</div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
-            className="space-y-3 mt-2"
-          >
+          <form className="space-y-3 mt-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name-sector">Nome do setor</Label>
@@ -230,7 +229,7 @@ export function SectorSelect({
               </div>
             </div>
 
-            <div className="col-span-2 flex justify-end mt-4">
+            <div className="flex justify-end mt-4">
               <Button
                 type="button"
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"

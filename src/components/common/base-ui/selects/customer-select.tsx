@@ -15,7 +15,7 @@ import {
   useCustomers
 } from "@/infrastructure/hooks/useCustomers";
 
-export function CustomerSelect({ value, onChange }: { value?: string; onChange: (value: string) => void; companyId: string; }) {
+export function CustomerSelect({ value, onChange, disabled }: { value?: string; onChange: (value: string) => void; companyId: string; disabled?: boolean; }) {
   const router = useRouter();
   const { data: customers = [], isLoading } = useCustomers();
   const [search, setSearch] = useState("");
@@ -26,7 +26,7 @@ export function CustomerSelect({ value, onChange }: { value?: string; onChange: 
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading}>
+        <Select value={value} onValueChange={onChange} disabled={isLoading || disabled}>
           <SelectTrigger className="w-full ">
             <SelectValue placeholder="Selecione um cliente" />
           </SelectTrigger>

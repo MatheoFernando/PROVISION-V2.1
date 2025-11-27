@@ -112,14 +112,7 @@ export function AddressSelect({
             const selected = (Array.isArray(addresses) ? addresses : []).find(
               (a: Address) => a.id === val
             );
-            console.log("Endereço selecionado:", {
-              id: val,
-              houseHold: selected?.houseHold ?? null,
-              commune: selected?.commune ?? null,
-              municipality: selected?.municipality ?? null,
-              province: selected?.province ?? null,
-              country: selected?.country ?? null,
-            });
+
             onChange(val);
           }}
           disabled={isLoading}
@@ -296,8 +289,8 @@ export function AddressSelect({
                       loadingProvinces
                         ? "Carregando municípios..."
                         : municipalities.length === 0
-                        ? "Selecione a província"
-                        : "Selecione um município"
+                          ? "Selecione a província"
+                          : "Selecione um município"
                     }
                   />
                 </SelectTrigger>
@@ -357,8 +350,8 @@ export function AddressSelect({
                 </span>
               )}
             </div>
-       
-       
+
+
             <div className="col-span-2 flex justify-end gap-2 mt-4">
               <Button
                 type="button"

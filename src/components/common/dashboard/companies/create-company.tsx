@@ -36,6 +36,7 @@ import {
   useAngolaCountry,
   useAngolaProvinces,
 } from "@/infrastructure/hooks/useAngolaLocations";
+import { PhoneField } from "@/components/common/base-ui/inputs/phone-field";
 
 function CompanyFormPage() {
   const params = useSearchParams();
@@ -457,16 +458,13 @@ function CompanyFormPage() {
                               Telefone
                             </FormLabel>
                             <FormControl>
-                              <Input
+                              <PhoneField
+                                value={field.value ?? ""}
+                                onChange={(value) => field.onChange(value ?? "")}
+                                onBlur={field.onBlur}
                                 placeholder="999 999 999"
-                                type="number"
-                                maxLength={9}
-                                minLength={9}
-                                pattern="[0-9]*"
-                                title="Digite apenas números"
                                 required
-                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                {...field}
+                                className="h-9 "
                               />
                             </FormControl>
                             <FormMessage />
@@ -496,7 +494,7 @@ function CompanyFormPage() {
                             >
                               <FormControl>
                                 <SelectTrigger
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 w-full"
                                   disabled={loadingProvinces}
                                 >
                                   <SelectValue
@@ -543,7 +541,7 @@ function CompanyFormPage() {
                             >
                               <FormControl>
                                 <SelectTrigger
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 w-full"
                                   disabled={municipalities.length === 0}
                                 >
                                   <SelectValue
@@ -589,7 +587,7 @@ function CompanyFormPage() {
                             >
                               <FormControl>
                                 <SelectTrigger
-                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 w-full"
                                   disabled={communes.length === 0}
                                 >
                                   <SelectValue
@@ -634,7 +632,7 @@ function CompanyFormPage() {
                               }}
                             >
                               <FormControl>
-                                <SelectTrigger className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900">
+                                <SelectTrigger className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 w-full">
                                   <SelectValue placeholder="Selecione o país" />
                                 </SelectTrigger>
                               </FormControl>
@@ -657,7 +655,7 @@ function CompanyFormPage() {
                       />
                     </div>
 
-             
+
                   </div>
                 </div>
               </div>

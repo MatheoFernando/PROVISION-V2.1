@@ -1,16 +1,16 @@
-  "use client"
+"use client"
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/infrastructure/utils/api'
-import type { 
-  Company, 
-  CreateCompanyPayload, 
-  UpdateCompanyPayload 
+import type {
+  Company,
+  CreateCompanyPayload,
+  UpdateCompanyPayload
 } from '@/infrastructure/types/domain'
-import type { 
-  CompanyModuleWithDetails, 
-  UpdateCompanyModule, 
-  CompanyModule 
+import type {
+  CompanyModuleWithDetails,
+  UpdateCompanyModule,
+  CompanyModule
 } from '@/infrastructure/schema/schema-company-module'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -18,14 +18,15 @@ import { companySchema } from '@/infrastructure/schema/schema-company'
 
 
 
-export function useCompaniesQuery() {
+export function useCompaniesQuery(options?: { enabled?: boolean }) {
   return useQuery<Company[]>({
     queryKey: ['companies'],
     queryFn: async (): Promise<Company[]> => {
       const { data } = await api.get('/company/GetAll')
-     
+
       return data?.data ?? data ?? []
     },
+    enabled: options?.enabled ?? true,
     staleTime: 5 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -186,4 +187,28 @@ export function useDeleteCompanyModuleMutation() {
       toast.error(error.response?.data?.message || 'Erro ao excluir associação')
     },
   })
+}
+
+export function useCompanies() {
+  const companiesQuery = useCompaniesQuery()
+  const createCompany = useCreateCompanyMutation()
+  const updateCompany = useUpdateCompanyMutation()
+  const deleteCompany = useDeleteCompanyMutation()
+
+  return {
+    companies: companiesQuery.data ?? [],
+    isLoading: companiesQuery.isLoading,
+    isError: companiesQuery.isError,
+    error: companiesQuery.error,
+
+    isCreating: createCompany.isPending,
+    isUpdating: updateCompany.isPending,
+    isDeleting: deleteCompany.isPending,
+
+    createCompany: createCompany.mutateAsync,
+    updateCompany: updateCompany.mutateAsync,
+    deleteCompany: deleteCompany.mutateAsync,
+
+    refetch: companiesQuery.refetch,
+  }
 }

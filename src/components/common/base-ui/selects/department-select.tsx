@@ -30,13 +30,19 @@ interface DepartmentSelectProps {
 }
 
 export function DepartmentSelect({
-  value,
+  value: valueProp,
   onChange,
   companyId,
 }: DepartmentSelectProps) {
+  const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { data: departments = [], isLoading, isFetching } = useDepartments();
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
+  const [createdDepartments, setCreatedDepartments] = useState<
+    Array<Department & { createdAt?: string }>
+  >([]);
+  const { data: departments = [], isLoading, isFetching, refetch } = useDepartments();
   const createDepartment = useCreateDepartment();
   const normalizedCompanyId = companyId ?? "";
   const isCompanyUnavailable = !normalizedCompanyId;
@@ -44,6 +50,14 @@ export function DepartmentSelect({
     resolver: zodResolver(departmentSchema),
     defaultValues: { name: "", companyId: normalizedCompanyId },
   });
+
+  useEffect(() => {
+    if (value) {
+      setSelectedDepartmentId(value);
+    } else {
+      setSelectedDepartmentId(null);
+    }
+  }, [value]);
 
   useEffect(() => {
     form.reset({ name: "", companyId: normalizedCompanyId });
@@ -57,43 +71,103 @@ export function DepartmentSelect({
       {
         onSuccess: (created: Department) => {
           setOpen(false);
-          onChange(created.id!);
+          if (created?.id) {
+            const departmentWithMeta = created as Department & { createdAt?: string };
+            const normalizedDepartment: Department & { createdAt?: string } = {
+              ...departmentWithMeta,
+              id: created.id,
+              name: created?.name ?? "",
+              createdAt: departmentWithMeta.createdAt ?? new Date().toISOString(),
+            };
+
+            setCreatedDepartments((prev) => {
+              if (prev.some((item) => item.id === created.id)) return prev;
+              return [normalizedDepartment, ...prev];
+            });
+   
+            setTimeout(() => {
+              setSelectedDepartmentId(created.id!);
+              onChange(created.id!);
+            }, 0);
+          }
           form.reset({ name: "", companyId: normalizedCompanyId });
+          void refetch();
         },
       }
     );
   }
 
-  const list = useMemo(
-    () =>
-      (Array.isArray(departments) ? departments : []).filter((department: Department) =>
-        normalizedCompanyId ? department.companyId === normalizedCompanyId : false
-      ),
-    [departments, normalizedCompanyId]
-  );
+  const departmentsList = useMemo<Department[]>(() => {
+    const baseList = Array.isArray(departments) ? departments : [];
+    const merged: Array<Department & { createdAt?: string }> = [
+      ...createdDepartments,
+      ...baseList,
+    ];
+    const map = new Map<string, Department & { createdAt?: string }>();
+    merged.forEach((dept) => {
+      if (!dept?.id) return;
+      map.set(dept.id, {
+        ...dept,
+        id: dept.id,
+        name: dept.name ?? "",
+        createdAt:
+          (dept as Department & { createdAt?: string }).createdAt ??
+          new Date().toISOString(),
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [createdDepartments, departments]);
 
   const filtered = useMemo(
     () =>
-      list.filter((department: Department) =>
+      departmentsList.filter((department: Department) =>
         String(department?.name ?? "")
           .toLowerCase()
           .includes(query.toLowerCase())
       ),
-    [list, query]
+    [departmentsList, query]
   );
+
+  useEffect(() => {
+    if (value && departmentsList.length > 0) {
+      const departmentExists = departmentsList.some(dept => dept.id === value);
+      if (departmentExists) {
+        setSelectedDepartmentId(value);
+      }
+    }
+  }, [value, departmentsList, selectedDepartmentId]);
 
   const isSaving = createDepartment.status === "pending";
   const isLoadingOptions = isLoading || isFetching;
+
+  const displayValue = useMemo(() => {
+    const normalizedValue = value && value.trim() !== '' ? value : undefined;
+
+    if (!normalizedValue) {
+      return undefined;
+    }
+
+    const exists = departmentsList.some(dept => dept.id === normalizedValue);
+    return exists ? normalizedValue : undefined;
+  }, [value, departmentsList, selectedDepartmentId]);
 
   return (
     <div className="flex items-end gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
         <Select
-          value={value}
-          onValueChange={onChange}
+          value={displayValue}
+          onValueChange={(selected) => {
+            setSelectedDepartmentId(selected);
+            onChange(selected);
+          }}
           disabled={isLoadingOptions || isCompanyUnavailable}
+          onOpenChange={() => refetch()}
         >
-          <SelectTrigger className="w-full ">
+          <SelectTrigger className="w-full " >
             <SelectValue
               placeholder={
                 isCompanyUnavailable
@@ -112,7 +186,7 @@ export function DepartmentSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar departamentos..."
                 className="w-full placeholder:text-xs"
-                disabled={isLoadingOptions || list.length === 0}
+                disabled={isLoadingOptions || departmentsList.length === 0}
               />
             </div>
             {isCompanyUnavailable ? (

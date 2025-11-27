@@ -48,13 +48,15 @@ export function useUpdateOccurrenceMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Occorrence, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Occorrence> => {
-      const { data: response } = await api.put(`/occorrence`, { id, ...data });
+    mutationFn: async (data: Occorrence): Promise<Occorrence> => {
+      const { data: response } = await api.put('/occorrence', data);
       return response?.data ?? response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
-      queryClient.invalidateQueries({ queryKey: ['occurrence', id] });
+      if (updated.id) {
+        queryClient.invalidateQueries({ queryKey: ['occurrence', updated.id] });
+      }
       toast.success('Ocorrência atualizada com sucesso!');
     },
     onError: (error) => {

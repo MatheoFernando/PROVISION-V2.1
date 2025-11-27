@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Eye, Edit, Trash2, MoreHorizontal, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,18 +13,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
-import { OccurrenceDialog } from "./occurrence-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { OccurrenceDialog } from "./occurrence-view";
 import { OccurrenceCreate } from "./occurrence-create";
 import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
-import { useTypeOccurrences } from "@/infrastructure/hooks/useTypeOccurrences";
 import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { useRouter } from "next/navigation";
 import { DeleteModal } from "@/components/ui/delete-modal";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -61,7 +65,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
             onClick={() => setIsEditOpen(true)}
             className="cursor-pointer"
           >
-            <Edit className="size-4 mr-2" />
+            <Edit className="size-4 mr-2 text-blue-600" />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -83,14 +87,42 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
         onOpenChange={setIsDialogOpen}
       />
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <OccurrenceCreate id={occurrence.id} initialData={occurrence as any} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <Drawer
+        open={isEditOpen}
+        onOpenChange={(open) => setIsEditOpen(open)}
+        direction="right"
+      >
+        <DrawerContent className="h-full w-full sm:max-w-xl">
+          <div className="flex h-full flex-col">
+            <DrawerHeader className="border-b border-border px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    Editar Ocorrência
+                  </DrawerTitle>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <OccurrenceCreate
+                id={occurrence.id}
+                initialData={occurrence as any}
+                onSuccess={() => setIsEditOpen(false)}
+                onCancel={() => setIsEditOpen(false)}
+              />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -104,8 +136,25 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
   );
 }
 
-const createOccurrenceColumns = (
-): ColumnDef<Occurrence>[] => [
+const formatHour = (value?: string) => {
+  if (!value) return "--";
+  if (value.includes("T") && Number.isNaN(Date.parse(value))) {
+    const fallback = value.includes(":") ? value : `${value}:00`;
+    return fallback.slice(0, 5);
+  }
+  const date = value.includes("T")
+    ? new Date(value)
+    : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`);
+  if (Number.isNaN(date.getTime())) {
+    const fallback = value.includes(":") ? value : `${value}:00`;
+    return fallback.slice(0, 5);
+  }
+  return date
+    .toLocaleTimeString("pt-AO", { hour: "2-digit", minute: "2-digit", hour12: false })
+    .replace(".", ":");
+};
+
+const createOccurrenceColumns = (): ColumnDef<Occurrence>[] => [
   {
     accessorKey: "cod",
     header: "Código",
@@ -126,6 +175,7 @@ const createOccurrenceColumns = (
   {
     accessorKey: "siteId",
     header: "Site",
+    size: 120,
     cell: ({ row }) => <div>{row.getValue<string>("siteId")}</div>,
   },
 
@@ -159,8 +209,10 @@ const createOccurrenceColumns = (
             variant === "destructive"
               ? "bg-red-500 text-white"
               : variant === "default"
-              ? "bg-green-500 text-white"
-              : "bg-orange-200 text-red-500"
+              ? "bg-orange-200 text-red-500"
+              : variant === "secondary"
+              ? " bg-green-500 text-white"
+              : "bg-gray-200 text-gray-500"
           }
         >
           {gravity}
@@ -170,7 +222,7 @@ const createOccurrenceColumns = (
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Estado",
     cell: ({ row }) => {
       const isOpen = row.original.status === "Ativo";
       return (
@@ -186,23 +238,13 @@ const createOccurrenceColumns = (
     },
   },
   {
-    accessorKey: "time",
+    accessorFn: (row) => formatHour(row.time),
     header: "Horário",
     size: 40,
     cell: ({ row }) => {
-      const t = row.original.time || "";
-      const hhmm = t.includes("T") ? t.slice(11, 16) : t.slice(0, 5);
+      const hhmm = formatHour(row.original.time);
       return <div className="text-center">{hhmm}</div>;
     },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Criado em",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {new Date(row.original.createdAt || "").toLocaleDateString("pt-BR")}
-      </div>
-    ),
   },
 
   {
@@ -277,14 +319,40 @@ export function OccurrenceTable({
           onClick: () => setIsCreateOpen(true),
         }}
       />
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <OccurrenceCreate onSuccess={() => setIsCreateOpen(false)} onCancel={() => setIsCreateOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <Drawer
+        open={isCreateOpen}
+        onOpenChange={(open) => setIsCreateOpen(open)}
+        direction="right"
+      >
+        <DrawerContent className="h-full w-full sm:max-w-xl">
+          <div className="flex h-full flex-col">
+            <DrawerHeader className="border-b border-border px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    Nova Ocorrência
+                  </DrawerTitle>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <OccurrenceCreate
+                onSuccess={() => setIsCreateOpen(false)}
+                onCancel={() => setIsCreateOpen(false)}
+              />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

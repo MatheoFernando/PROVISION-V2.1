@@ -1,18 +1,28 @@
-import { z } from 'zod';
+import { z } from 'zod'
+
+const optionalNonNegativeNumber = z
+  .preprocess((value) => {
+    if (value === '' || value === null || value === undefined) return undefined
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+      const parsedValue = Number(value)
+      return Number.isNaN(parsedValue) ? value : parsedValue
+    }
+    return value
+  }, z.number().min(0, 'Número não pode ser negativo'))
+  .optional()
 
 export const supervisionSchema = z.object({
   id: z.string().optional(),
   cod: z.string().min(1, 'Código é obrigatório'),
-  observation: z.string().optional(),
+  observation: z.string().min(1, 'Observação é obrigatória'),
   companyId: z.string().min(1, 'Empresa é obrigatória'),
-  desiredNumberWorkers: z.number().min(0, 'Número desejado de trabalhadores não pode ser negativo'),
-  numberWorkerPresent: z.number().min(0, 'Número presente não pode ser negativo'),
-  equipmentId: z.string().min(1, 'Equipamento é obrigatório'),
+  desiredNumberWorkers: optionalNonNegativeNumber,
+  numberWorkerPresent: optionalNonNegativeNumber,
+  equipmentId: z.string().optional(),
   employeeId: z.string().min(1, 'Funcionário é obrigatório'),
   siteId: z.string().min(1, 'Site é obrigatório'),
   time: z.string().min(1, 'Horário é obrigatório'),
-  departmentId: z.string().min(1, "Departamento é obrigatório"),
-  status: z.string().min(1, "Status é obrigatório"),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-});
+  departmentId: z.string().min(1, 'Departamento é obrigatório'),
+  status: z.string().min(1, 'Estado é obrigatório'),
+})

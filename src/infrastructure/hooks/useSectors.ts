@@ -20,8 +20,11 @@ export function useCreateSector() {
       const { data } = await api.post("/sector/create", payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sectors"] });
+    onSuccess: (created) => {
+      queryClient.setQueryData(["sectors"], (old: Sector[] = []) => {
+        const filtered = old.filter(s => s.id !== created.id);
+        return [created, ...filtered];
+      });
       toast.success("Setor criado com sucesso!");
     },
     onError: (error: any) => {
@@ -37,8 +40,10 @@ export function useUpdateSector() {
       const { data } = await api.put("/sector", payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sectors"] });
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["sectors"], (old: Sector[] = []) => {
+        return old.map(s => s.id === updated.id ? updated : s);
+      });
       toast.success("Setor atualizado com sucesso!");
     },
     onError: (error: any) => {
@@ -62,5 +67,3 @@ export function useDeleteSector() {
     },
   });
 }
-
-

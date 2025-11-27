@@ -33,15 +33,15 @@ export function TypeEquipmentCreate({ typeEquipment, isOpen, onClose }: TypeEqui
     resolver: zodResolver(createTypeEquipmentSchema),
     defaultValues: typeEquipment
       ? {
-          name: typeEquipment.name,
-          description: typeEquipment.description ?? "",
-          companyId: typeEquipment.companyId,
-        }
+        name: typeEquipment.name,
+        description: typeEquipment.description ?? "",
+        companyId: typeEquipment.companyId,
+      }
       : {
-      name: "",
-      description: "",
-      companyId,
-    },
+        name: "",
+        description: "",
+        companyId,
+      },
   });
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function TypeEquipmentCreate({ typeEquipment, isOpen, onClose }: TypeEqui
   const onSubmit = async (data: CreateTypeEquipment) => {
     try {
       setIsSubmitting(true);
-      
+
       if (typeEquipment && typeEquipment.id) {
         await updateTypeEquipment.mutateAsync({ id: typeEquipment.id, data: { ...data, companyId: data.companyId || companyId } });
         toast.success("Tipo de equipamento atualizado com sucesso!");
@@ -69,7 +69,7 @@ export function TypeEquipmentCreate({ typeEquipment, isOpen, onClose }: TypeEqui
         await createTypeEquipment.mutateAsync({ ...data, companyId: data.companyId || companyId });
         toast.success("Tipo de equipamento criado com sucesso!");
       }
-      
+
       onClose();
       form.reset();
     } catch (error) {
@@ -87,22 +87,22 @@ export function TypeEquipmentCreate({ typeEquipment, isOpen, onClose }: TypeEqui
             {typeEquipment ? "Editar Tipo de Equipamento" : "Novo Tipo de Equipamento"}
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-         
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
-              <Input
-                id="name"
-                {...form.register("name")}
-                placeholder="Digite o nome do tipo de equipamento"
-              />
-              {form.formState.errors.name && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.name.message}
-                </p>
-              )}
-            </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome *</Label>
+            <Input
+              id="name"
+              {...form.register("name")}
+              placeholder="Digite o nome do tipo de equipamento"
+            />
+            {form.formState.errors.name && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.name.message}
+              </p>
+            )}
+          </div>
 
 
           <div className="space-y-2">

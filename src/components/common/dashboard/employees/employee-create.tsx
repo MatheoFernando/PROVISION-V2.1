@@ -19,7 +19,6 @@ import { ContactSelect } from "@/components/common/base-ui/selects/contact-selec
 import { DepartmentSelect } from "@/components/common/base-ui/selects/department-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { AddressSelect } from "@/components/common/base-ui/selects/address-select";
-import { RoleSelect } from "@/components/common/base-ui/selects/role-select";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
@@ -33,7 +32,6 @@ interface EmployeesCreatePageProps {
 export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState("");
   const companyId = useAuthStore((s) => s.companyId) ?? "";
   const createEmployee = useCreateEmployee();
   const updateEmployee = useUpdateEmployee();
@@ -49,7 +47,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       siteId: undefined,
       departmentId: "",
       cod: "",
-      roleId: "",
+      function: "",
     },
   });
 
@@ -65,7 +63,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       siteId: (d as any).siteId ?? undefined,
       departmentId: d.departmentId || "",
       cod: d.cod || "",
-      roleId: (d as any).roleId || "",
+      function: (d as any).function || "",
     });
   }, [props.initialData, form, companyId]);
 
@@ -93,7 +91,6 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-slate-900">Novo Funcionário</h1>
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="py-4 space-y-8">
@@ -116,7 +113,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-slate-700">
-               Nº Mec *
+                Código *
               </Label>
               <Input
                 id="cod"
@@ -130,7 +127,7 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
                 </p>
               )}
             </div>
-           
+
             <div className="space-y-2">
               <Label htmlFor="contactId" className="text-slate-700">
                 Contato *
@@ -199,13 +196,14 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="roleId" className="text-slate-700">
-               Função *
+              <Label htmlFor="function" className="text-slate-700">
+                Função *
               </Label>
-              <RoleSelect
-                value={form.watch("roleId")}
-                onChange={(value) => form.setValue("roleId", value)}
-                companyId={companyId}
+              <Input
+                id="function"
+                {...form.register("function")}
+                placeholder="Digite a função"
+                className="rounded-lg"
               />
               {form.formState.errors.roleId && (
                 <p className="text-sm text-red-500">
@@ -236,12 +234,12 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
               className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
             >
               {isSubmitting ||
-              createEmployee.isPending ||
-              updateEmployee.isPending
+                createEmployee.isPending ||
+                updateEmployee.isPending
                 ? "Salvando..."
                 : props.id
-                ? "Atualizar Funcionário"
-                : "Criar Funcionário"}
+                  ? "Atualizar Funcionário"
+                  : "Criar Funcionário"}
             </Button>
           </div>
         </div>

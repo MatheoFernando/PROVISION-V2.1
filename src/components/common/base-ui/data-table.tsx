@@ -16,18 +16,11 @@ import {
 } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-
-import { MoreHorizontal } from "lucide-react";
 import { type DateRange } from "react-day-picker";
 import { Toolbar } from "./data-table/toolbar";
 import { TableView } from "./data-table/table-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ActionButton<TData> {
   label: string;
@@ -53,6 +46,10 @@ interface DataTableProps<TData extends RowData, TValue> {
     onClick?: () => void;
     component?: React.ReactNode;
   };
+  bulkImportButton?: {
+    label: string;
+    onClick: () => void;
+  };
   rowActions?: ActionButton<TData>[];
   toolbar?: (table: ReactTable<TData>) => React.ReactNode;
   includeSelection?: boolean;
@@ -69,6 +66,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   placeholder = "Pesquisar...",
   enableRowSelection = false,
   actionButton,
+  bulkImportButton,
   rowActions,
   toolbar,
   includeSelection = false,
@@ -218,6 +216,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
         actionButton={actionButton}
+      bulkImportButton={bulkImportButton}
         toolbar={toolbar}
         view={viewAsCard ? "cards" : "table"}
         onChangeView={(v) => setViewAsCard(v === "cards")}
@@ -352,30 +351,35 @@ export function createActionsColumn<TData extends RowData>(
     id: "actions",
     header: "Ações",
     cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
-            <span className="sr-only">Abrir menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          {actions.map((action, index) => (
-            <DropdownMenuItem
-              key={index}
-              onClick={() => action.onClick(row.original)}
-              className="cursor-pointer"
-            >
-              {action.icon}
-              <span className="ml-2">{action.label}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-2">
+        {actions.map((action, index) => (
+          <Tooltip key={index}>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={action.variant ?? "ghost"}
+                size="icon"
+                className="h-8 w-8 rounded-full p-0 cursor-pointer"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  action.onClick(row.original);
+                }}
+                aria-label={action.label}
+              >
+                {action.icon ?? (
+                  <span className="text-xs font-medium">{action.label}</span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent sideOffset={6}>{action.label}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 30,
+    size: Math.max(48, actions.length * 32),
   };
 }
 

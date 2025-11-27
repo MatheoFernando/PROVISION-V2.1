@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FunnelPlus, Plus, X, ChevronDown, Trash2 } from "lucide-react";
+import { FunnelPlus, Plus, X, ChevronDown, Trash2, UploadCloud } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -17,7 +17,6 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import type { RowData, Table as ReactTable } from "@tanstack/react-table";
-import Badge from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +33,10 @@ export interface ToolbarProps<TData extends RowData> {
     label: string;
     onClick?: () => void;
     component?: React.ReactNode;
+  };
+  bulkImportButton?: {
+    label: string;
+    onClick: () => void;
   };
   toolbar?: (table: ReactTable<TData>) => React.ReactNode;
   view: "table" | "cards";
@@ -55,6 +58,7 @@ export function Toolbar<TData extends RowData>({
   placeholder,
   globalFilter,
   actionButton,
+  bulkImportButton,
   toolbar,
   isFilterOpen,
   setIsFilterOpen,
@@ -90,6 +94,9 @@ export function Toolbar<TData extends RowData>({
     if (searchKey) table.setSorting([{ id: searchKey, desc: true } as any]);
     setSortLabel("Z–A");
   }
+  const totalItems = table.getPrePaginationRowModel().rows.length;
+  const totalLabel = totalItems === 1 ? "item" : "itens";
+
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between ">
       <div className="flex w-full items-center gap-3">
@@ -106,12 +113,15 @@ export function Toolbar<TData extends RowData>({
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-9 cursor-pointer">
+            <Button
+              variant="outline"
+              className="h-9 min-w-[180px] cursor-pointer justify-between px-3 font-medium"
+            >
               {sortLabel}
               <ChevronDown className="ml-2 size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={setSortRecent}
@@ -143,11 +153,6 @@ export function Toolbar<TData extends RowData>({
       </div>
 
       <div className="flex items-center gap-2  w-full justify-end">
-        <div className="text-sm text-muted-foreground flex items-center  pr-2">
-          <Badge variant="outline" className="border-none text-base">
-            Total: {table.getRowModel().rows.length} item
-          </Badge>
-        </div>
 
         {selectedCount > 0 && (
           <Button
@@ -286,6 +291,18 @@ export function Toolbar<TData extends RowData>({
           </DrawerContent>
         </Drawer>
 
+        {bulkImportButton && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-11 cursor-pointer text-base"
+            onClick={bulkImportButton.onClick}
+          >
+            <UploadCloud className="mr-2 size-4" />
+            {bulkImportButton.label}
+          </Button>
+        )}
+
         {actionButton &&
           (actionButton.component || (
             <Button
@@ -294,7 +311,7 @@ export function Toolbar<TData extends RowData>({
               className="h-11 cursor-pointer text-base"
               onClick={actionButton.onClick}
             >
-              <Plus className="mr-2 size-4" />{" "}
+              <Plus className="mr-2 size-4" />
               {actionButton.label}
             </Button>
           ))}

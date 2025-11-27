@@ -66,7 +66,11 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading}>
+        <Select
+          value={value || undefined}
+          onValueChange={(selected) => onChange(selected)}
+          disabled={isLoading}
+        >
           <SelectTrigger className="w-full ">
             <SelectValue placeholder="Selecione o tipo de equipamento" />
           </SelectTrigger>
@@ -145,7 +149,7 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
               <span className="text-red-500 text-xs">{form.formState.errors.name.message}</span>
             )}
             <Label htmlFor="type_desc" className="block">Descrição</Label>
-            <Textarea id="type_desc" rows={3} {...form.register("description")} placeholder="Descrição" className="resize-none"/>
+            <Textarea id="type_desc" rows={3} {...form.register("description")} placeholder="Descrição" className="resize-none" />
             {form.formState.errors.description && (
               <span className="text-red-500 text-xs">{(form.formState.errors.description as any)?.message}</span>
             )}

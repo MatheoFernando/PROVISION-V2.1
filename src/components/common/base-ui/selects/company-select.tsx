@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {  Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 
@@ -39,7 +39,7 @@ export function CompanySelect({ value, onChange, required = false }: CompanySele
             />
           </div>
           {filtered.length === 0 ? (
-            <div className="text-sm text-muted-foreground p-4">Nenhum dado</div>
+            <div className="text-sm text-muted-foreground p-4 text-center">Nenhum dado encontrado</div>
           ) : (
             <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
               {filtered.map((company: any) => (

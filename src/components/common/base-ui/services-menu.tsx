@@ -39,12 +39,18 @@ export function ServicesMenu() {
       label: "Ocorrências",
       imageClass: "bg-accent/10",
     },
+    {
+      path: "/dashboard/service/rsu",
+      imageSrc: "/reciclar.png",
+      label: "RSU",
+      imageClass: "bg-accent/10",
+    },
   ];
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-          <Grip className="h-5 w-5 text-gray-700  cursor-pointer" />
+    <DropdownMenu >
+      <DropdownMenuTrigger asChild >
+          <Grip className="h-4 w-4 text-gray-700  cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a] " 
@@ -55,7 +61,7 @@ export function ServicesMenu() {
           Serviços Rápidos
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border/50 mb-3" />
-        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {menuItems.map((item, index) => (
             <DropdownMenuItem 
               key={index}

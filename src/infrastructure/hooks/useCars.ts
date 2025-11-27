@@ -2,12 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { Car } from "../types/domain";
 import { z } from "zod";
-import { createCarSchema } from "../schema/schema-cars";
+import { createCarSchema, createGrossCarSchema } from "../schema/schema-cars";
 import { toast } from "sonner";
+import { resolveApiErrorPayload, resolveApiResponse } from "../utils/api-response";
 
 type CreateCarInput = z.infer<typeof createCarSchema>;
+type CreateGrossCarInput = z.infer<typeof createGrossCarSchema>;
 
-export function useCars() {
+interface CarsQueryOptions {
+  enabled?: boolean;
+}
+
+export function useCars(options?: CarsQueryOptions) {
   return useQuery({
     queryKey: ["cars"],
     queryFn: async (): Promise<Car[]> => {
@@ -27,12 +33,13 @@ export function useCars() {
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     retry: 1,
+    enabled: options?.enabled ?? true,
   });
 }
 
 export function useCreateCar() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<Car, unknown, CreateCarInput>({
     mutationFn: async (data: CreateCarInput): Promise<Car> => {
       const payload = {
@@ -58,7 +65,7 @@ export function useCreateCar() {
 
 export function useUpdateCar() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Car, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Car> => {
       const response = await api.put(`/car`, { id, ...data });
@@ -77,7 +84,7 @@ export function useUpdateCar() {
 
 export function useDeleteCar() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/car/${id}`);
@@ -89,6 +96,46 @@ export function useDeleteCar() {
     },
     onError: () => {
       toast.error("Erro ao excluir viatura");
+    },
+  });
+}
+
+export function useCreateGrossCar() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Car, unknown, CreateGrossCarInput>({
+    mutationFn: async data => {
+      const response = await api.post("/car/AddGrossCar", data);
+      const result = resolveApiResponse<Car>(response);
+      const isSuccess = result.statusCode === 200 || result.statusCode === 201;
+
+      if (isSuccess && result.payload) {
+        return result.payload;
+      }
+
+      const fallbackData =
+        typeof result.payload === "string" ? result.payload : undefined;
+      const errorMessage = result.message || fallbackData || "Erro ao importar viatura";
+
+      const error = new Error(errorMessage);
+      (error as { response?: unknown }).response = {
+        status: result.statusCode,
+        data: result.envelope ?? result.payload,
+      };
+      throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cars"] });
+      await queryClient.refetchQueries({ queryKey: ["cars"], type: "active" });
+      toast.success("Viatura importada com sucesso!");
+    },
+    onError: error => {
+      const resolved = resolveApiErrorPayload<Car>(error);
+      const message =
+        resolved.message ||
+        (typeof resolved.payload === "string" ? resolved.payload : undefined) ||
+        "Erro ao importar viatura";
+      toast.error(message);
     },
   });
 }

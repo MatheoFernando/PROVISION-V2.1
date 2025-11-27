@@ -20,8 +20,11 @@ export function useCreateZone() {
       const { data } = await api.post("/zone/create", payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["zones"] });
+    onSuccess: (created) => {
+      queryClient.setQueryData(["zones"], (old: Zone[] = []) => {
+        const filtered = old.filter(z => z.id !== created.id);
+        return [created, ...filtered];
+      });
       toast.success("Zona criada com sucesso!");
     },
     onError: (error: any) => {
@@ -37,8 +40,10 @@ export function useUpdateZone() {
       const { data } = await api.put("/zone", payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["zones"] });
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["zones"], (old: Zone[] = []) => {
+        return old.map(z => z.id === updated.id ? updated : z);
+      });
       toast.success("Zona atualizada com sucesso!");
     },
     onError: (error: any) => {
@@ -62,9 +67,3 @@ export function useDeleteZone() {
     },
   });
 }
-
-
-
-
-
-

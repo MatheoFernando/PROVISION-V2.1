@@ -56,7 +56,7 @@ export function TableView<TData extends RowData>({
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={colSpan} className="h-24 text-center">
+              <TableCell colSpan={colSpan} className="h-20 text-center">
                 <div className="flex items-center justify-center gap-3">
                   <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                   <span className="text-sm text-muted-foreground">carregando dados…</span>
@@ -73,7 +73,7 @@ export function TableView<TData extends RowData>({
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className="py-0 text-sm text-foreground"
+                    className="py-0 h-7 text-sm text-foreground"
                     style={{
                       width: cell.column.getSize?.() ?? undefined,
                       minWidth: 48,

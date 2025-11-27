@@ -19,7 +19,7 @@ export function useTypeEquipment() {
 
 export function useCreateTypeEquipment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: Omit<TypeEquipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<TypeEquipment> => {
       const response = await api.post("/typeEquipment/create", data);
@@ -41,7 +41,7 @@ export function useCreateTypeEquipment() {
 
 export function useUpdateTypeEquipment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<TypeEquipment, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<TypeEquipment> => {
       const response = await api.put(`/typeEquipment`, { id, ...data });
@@ -63,7 +63,7 @@ export function useUpdateTypeEquipment() {
 
 export function useDeleteTypeEquipment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/typeEquipment/${id}`);

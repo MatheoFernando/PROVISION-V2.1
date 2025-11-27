@@ -1,15 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table";
-import { useCustomers } from "@/infrastructure/hooks/useCustomers";
-import { Customer } from "@/infrastructure/types/domain";
+import { Eye, Edit, Trash2, X } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { CustomersView } from "./customers-view";
-import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteCustomer } from "@/infrastructure/hooks/useCustomers";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import {
+  useCreateGrossCustomer,
+  useDeleteCustomer,
+  useCustomersByCompanyId,
+} from "@/infrastructure/hooks/useCustomers";
+import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { Customer, Company } from "@/infrastructure/types/domain";
+import {
+  type CreateGrossCustomerPayload,
+} from "@/infrastructure/schema/schema-customers";
+import { DeleteModal } from "@/components/ui/delete-modal";
 import {
   Drawer,
   DrawerClose,
@@ -18,33 +27,22 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import { CustomersCreateForm } from "./customer-create";
+import { CustomersView } from "./customers-view";
 
-const columns: ColumnDef<Customer>[] = [
- 
+// Colunas para clientes (isGlobalAdmin = false)
+const customerColumns: ColumnDef<Customer>[] = [
   {
     accessorKey: "cod",
     header: "Código",
-    size: 50, 
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
     },
   },
   {
-    accessorKey: "name",
-    header: "Nome",
-    cell: ({ row }) => {
-      const name = row.getValue("name") as string;
-      return <div>{name}</div>;
-    },
-  },
-
-  {
     accessorKey: "taxName",
     header: "Nome Fiscal",
-    size: 60,
     cell: ({ row }) => {
       const taxName = row.getValue("taxName") as string;
       return <div>{taxName}</div>;
@@ -58,35 +56,120 @@ const columns: ColumnDef<Customer>[] = [
       return <div>{nif}</div>;
     },
   },
- 
 ];
 
-export function CustomersTable() {
-  const { data: customers = [], isLoading } = useCustomers();
-  const deleteCustomer = useDeleteCustomer();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
+interface CustomersTableProps {
+  openCreateOnLoad?: boolean;
+  shouldNavigateBack?: boolean;
+}
 
-  const handleView = (customer: Customer) => {
-    setSelectedCustomer(customer);
+type TableData = Customer | Company;
+
+// Colunas para empresas (isGlobalAdmin = true)
+const companyColumns: ColumnDef<Company>[] = [
+  {
+    accessorKey: "businessName",
+    header: "Nome Comercial",
+    cell: ({ row }) => {
+      const businessName = row.getValue("businessName") as string;
+      return <div className="font-semibold ">{businessName}</div>;
+    },
+  },
+  {
+    accessorKey: "taxName",
+    header: "Nome Fiscal",
+    cell: ({ row }) => {
+      const taxName = row.getValue("taxName") as string;
+      return <div>{taxName}</div>;
+    },
+  },
+  {
+    accessorKey: "nif",
+    header: "NIF",
+    cell: ({ row }) => {
+      const nif = row.getValue("nif") as string;
+      return <div>{nif}</div>;
+    },
+  },
+];
+
+export function CustomersTable({
+  openCreateOnLoad = false,
+  shouldNavigateBack = false,
+}: CustomersTableProps = {}) {
+  const router = useRouter();
+  const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin);
+  const companyId = useAuthStore((state) => state.companyId) || "";
+
+  const { data: companies = [], isLoading: isLoadingCompanies } = useCompaniesQuery({
+    enabled: isGlobalAdmin,
+  });
+
+  const { data: customers = [], isLoading: isLoadingCustomers } = useCustomersByCompanyId(companyId, {
+    enabled: !isGlobalAdmin && !!companyId,
+  });
+
+  const deleteCustomer = useDeleteCustomer();
+  const createGrossCustomer = useCreateGrossCustomer();
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    Customer | Company | undefined
+  >();
+
+  const data = isGlobalAdmin ? companies : customers;
+  const isLoading = isGlobalAdmin ? isLoadingCompanies : isLoadingCustomers;
+  const tableColumns = isGlobalAdmin ? companyColumns : customerColumns;
+  const searchKey = "businessName";
+
+  const resetCreateState = () => {
     setIsCreateOpen(false);
-    setIsDeleteOpen(false);
-    setIsViewOpen(true);
+    setSelectedCustomer(undefined);
   };
 
-  const handleEdit = (customer: Customer) => {
+  const handleReturn = () => {
+    if (shouldNavigateBack) router.back();
+  };
+
+  const handleCreateCancel = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateSuccess = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateDialogChange = (open: boolean) => {
+    if (open) {
+      setIsCreateOpen(true);
+      return;
+    }
+    handleCreateCancel();
+  };
+
+
+  const handleView = (customer: Customer | Company) => {
+    if (!customer?.id) return;
+    if (!isGlobalAdmin) {
+      router.push(`/dashboard/customers/${customer.id}`);
+      return;
+    }
     setSelectedCustomer(customer);
-    setIsViewOpen(false);
+    setIsViewOpen(true);
+  };
+  const handleEdit = (customer: Customer | Company) => {
+    setSelectedCustomer(customer);
     setIsDeleteOpen(false);
     setIsCreateOpen(true);
   };
 
-  const handleDelete = (customer: Customer) => {
+  const handleDelete = (customer: Customer | Company) => {
     setSelectedCustomer(customer);
     setIsCreateOpen(false);
-    setIsViewOpen(false);
     setIsDeleteOpen(true);
   };
 
@@ -103,21 +186,24 @@ export function CustomersTable() {
     }
   };
 
-
   return (
     <div className="space-y-4">
-      <DataTableGeneric
-        columns={columns}
-        data={customers}
+      <DataTableGeneric<TableData, any>
+        columns={tableColumns as ColumnDef<TableData>[]}
+        data={data as TableData[]}
         isLoading={isLoading}
-         actionButton={{
+        actionButton={{
           label: "Novo Cliente",
           onClick: () => {
             setSelectedCustomer(undefined);
             setIsCreateOpen(true);
           },
         }}
-        searchKey="name"
+        bulkImportButton={{
+          label: "Importar clientes",
+          onClick: () => setIsBulkOpen(true),
+        }}
+        searchKey={searchKey as any}
         placeholder="Pesquisar..."
         dateKey="createdAt"
         enableRowSelection={true}
@@ -126,7 +212,7 @@ export function CustomersTable() {
           {
             label: "Visualizar",
             icon: <Eye className="h-4 w-4 mr-2" />,
-           onClick: (customer) => handleView(customer),
+            onClick: (customer) => handleView(customer),
           },
           {
             label: "Editar",
@@ -144,10 +230,7 @@ export function CustomersTable() {
       <Drawer
         open={isCreateOpen}
         direction="right"
-        onOpenChange={(next) => {
-          setIsCreateOpen(next);
-          if (!next) setSelectedCustomer(undefined);
-        }}
+        onOpenChange={handleCreateDialogChange}
       >
         <DrawerContent className="h-full w-full sm:max-w-xl">
           <div className="flex h-full flex-col">
@@ -157,7 +240,6 @@ export function CustomersTable() {
                   <DrawerTitle className="text-2xl font-bold text-foreground">
                     {selectedCustomer ? "Editar Cliente" : "Novo Cliente"}
                   </DrawerTitle>
-               
                 </div>
                 <DrawerClose asChild>
                   <Button
@@ -172,15 +254,9 @@ export function CustomersTable() {
             </DrawerHeader>
             <div className="flex-1 overflow-y-auto px-6 py-6">
               <CustomersCreateForm
-                customer={selectedCustomer}
-                onSuccess={() => {
-                  setIsCreateOpen(false);
-                  setSelectedCustomer(undefined);
-                }}
-                onCancel={() => {
-                  setIsCreateOpen(false);
-                  setSelectedCustomer(undefined);
-                }}
+                customer={selectedCustomer as Customer | undefined}
+                onSuccess={handleCreateSuccess}
+                onCancel={handleCreateCancel}
               />
             </div>
           </div>
@@ -188,11 +264,12 @@ export function CustomersTable() {
       </Drawer>
 
       <CustomersView
-        customer={selectedCustomer}
-        address={selectedCustomer?.address}
-        contact={selectedCustomer?.contact}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
+        isOpen={isViewOpen && isGlobalAdmin}
+        onClose={() => {
+          setIsViewOpen(false);
+          setSelectedCustomer(undefined);
+        }}
+        customer={selectedCustomer as Customer | undefined}
       />
 
       <DeleteModal
@@ -205,6 +282,65 @@ export function CustomersTable() {
         title="Excluir Cliente"
         message="Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita."
         isLoading={deleteCustomer.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossCustomerPayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de clientes"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "name", label: "Nome", required: true },
+          { key: "taxName", label: "Nome Fiscal", required: true },
+          { key: "nif", label: "NIF", required: true },
+          { key: "contactEmail", label: "Email", required: false },
+          { key: "contactPhones", label: "Telefone", required: false },
+          { key: "addressHouseHold", label: "Morada", required: true },
+          { key: "addressCommune", label: "Comuna", required: true },
+          { key: "addressMunicipality", label: "Município", required: true },
+          { key: "addressProvince", label: "Província", required: true },
+          { key: "addressCountry", label: "País", required: true },
+        ]}
+        templateFilename="modelo-clientes.csv"
+        mapRawToInput={(raw) => {
+          const phoneNumbers = (raw.contactPhones ?? "")
+            .split(/[;,]/)
+            .map((phone) => phone.trim())
+            .filter((phone) => phone.length > 0)
+            .map((phone) => ({ phone }));
+
+          const baseCustomerData = {
+            cod: raw.cod ?? "",
+            name: raw.name ?? "",
+            taxName: raw.taxName ?? "",
+            nif: raw.nif ?? "",
+            companyId,
+          };
+
+          return {
+            ...baseCustomerData,
+            customer: {
+              ...baseCustomerData,
+              photo: "",
+            },
+            contact: {
+              email: raw.contactEmail || undefined,
+              phoneNumbers,
+              companyId,
+            },
+            address: {
+              houseHold: raw.addressHouseHold ?? "",
+              commune: raw.addressCommune ?? "",
+              municipality: raw.addressMunicipality ?? "",
+              province: raw.addressProvince ?? "",
+              country: raw.addressCountry ?? "",
+              companyId,
+            },
+          };
+        }}
+        onCreate={async (payload) => {
+          await createGrossCustomer.mutateAsync(payload);
+        }}
       />
     </div>
   );

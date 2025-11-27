@@ -17,14 +17,11 @@ export default function Supervision() {
   const supervisions = (singleDay ? byDay : all) ?? [];
   const isLoading = singleDay ? loadingByDay : loadingAll;
 
-  return (
-    <div className=" py-6">
-      <SupervisionTable
+  return <SupervisionTable
         data={supervisions}
         isLoading={isLoading}
         onCreateClick={() => setIsCreateOpen(true)}
         onDateRangeChange={setRange}
       />
-    </div>
-  );
+
 }

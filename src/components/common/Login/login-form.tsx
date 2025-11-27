@@ -11,7 +11,7 @@ import { useLoginMutation } from "@/infrastructure/hooks/useLoginMutation"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
-import { Input } from "@/components/ui/input"
+import { PhoneField } from "@/components/common/base-ui/inputs/phone-field"
 
 export default function LoginForm() {
   const router = useRouter()
@@ -48,13 +48,14 @@ export default function LoginForm() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input
+              <PhoneField
                 id="phone"
-                type="tel"
+                name="phone"
                 placeholder="Digite seu telefone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(value) => setPhone(value)}
                 required
+                size="lg"
               />
             </div>
 
