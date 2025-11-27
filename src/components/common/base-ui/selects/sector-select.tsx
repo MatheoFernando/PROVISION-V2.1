@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,15 +16,15 @@ import { Sector } from "@/infrastructure/types/domain";
 import { sectorSchema } from "@/infrastructure/schema/schema-sector";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
+import { normalizeId } from "@/lib/normalize-id";
 
 interface SectorSelectProps {
   value?: string;
   onChange: (value: string) => void;
   companyId: string;
   employeeId?: string;
-  zoneId: string;
+  zoneId?: string;
 }
 
 export function SectorSelect({
@@ -36,6 +36,7 @@ export function SectorSelect({
 }: SectorSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [createdSectors, setCreatedSectors] = useState<Sector[]>([]);
 
   const { data: sectors = [], isLoading } = useSectors();
   const createSector = useCreateSector();
@@ -50,37 +51,80 @@ export function SectorSelect({
       form.setError("employeeId", { message: "Funcionário é obrigatório" });
       return;
     }
+    if (!zoneId) {
+      return;
+    }
 
     createSector.mutate(
       {
-        ...(data as any),
+        ...data,
         employeeId: effectiveEmployeeId,
         zoneId,
         companyId,
-      } as any,
+      },
       {
-        onSuccess: (created: any) => {
+        onSuccess: (created: Sector) => {
           setOpen(false);
-          onChange(created.id);
-          form.reset({ name: "", employeeId, zoneId, companyId });
+          if (created?.id) {
+            const normalizedId = normalizeId(created.id);
+            onChange(normalizedId);
+            setCreatedSectors((prev) => {
+              if (prev.some((sector) => sector.id === normalizedId)) return prev;
+              return [{ ...created, id: normalizedId }, ...prev];
+            });
+          }
+          form.reset({
+            name: "",
+            employeeId,
+            zoneId: zoneId ?? "",
+            companyId,
+          });
         },
       }
     );
   }
 
-  const list = Array.isArray(sectors) ? sectors : [];
-  const filtered = list.filter((s: Sector) =>
-    String(s?.name ?? "")
-      .toLowerCase()
-      .includes(query.toLowerCase())
+  const hasZone = Boolean(zoneId);
+  const normalizedValue = normalizeId(value);
+  const list = useMemo(() => {
+    const merged = [...createdSectors, ...(Array.isArray(sectors) ? sectors : [])];
+    const map = new Map<string, Sector>();
+    merged.forEach((sector) => {
+      if (sector?.id) map.set(sector.id, sector);
+    });
+    return Array.from(map.values()).filter(
+      (sector): sector is Sector =>
+        Boolean(sector?.id) && sector.companyId === companyId
+    );
+  }, [companyId, createdSectors, sectors]);
+  const filtered = useMemo(
+    () =>
+      !hasZone
+        ? []
+        : list.filter(
+            (sector) =>
+              sector.zoneId === zoneId &&
+              String(sector.name ?? "")
+                .toLowerCase()
+                .includes(query.toLowerCase())
+          ),
+    [hasZone, list, query, zoneId]
   );
 
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select value={value} onValueChange={onChange} disabled={isLoading}>
+        <Select
+          value={normalizedValue || undefined}
+          onValueChange={(selected) => onChange(normalizeId(selected))}
+          disabled={isLoading || !hasZone}
+        >
           <SelectTrigger className="w-full ">
-            <SelectValue placeholder="Selecione o setor" />
+            <SelectValue
+              placeholder={
+                hasZone ? "Selecione o setor" : "Selecione uma zona primeiro"
+              }
+            />
           </SelectTrigger>
           {isLoading && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -92,10 +136,14 @@ export function SectorSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar setores..."
                 className="w-full placeholder:text-xs"
-                disabled={isLoading || list.length === 0}
+                disabled={isLoading || !hasZone || list.length === 0}
               />
             </div>
-            {filtered.length === 0 ? (
+            {!hasZone ? (
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                Selecione uma zona para visualizar setores.
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 text-center">
                 Não há dados disponíveis.
               </div>
@@ -107,8 +155,8 @@ export function SectorSelect({
                     : "max-h-full"
                 }
               >
-                {filtered.map((s: Sector) => (
-                  <SelectItem key={s.id} value={s.id!}>
+                {filtered.map((s) => (
+                  <SelectItem key={s.id} value={normalizeId(s.id)}>
                     {s.name}
                   </SelectItem>
                 ))}
@@ -124,12 +172,10 @@ export function SectorSelect({
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-            disabled={createSector.status === "pending"}
+            disabled={createSector.status === "pending" || !hasZone}
             onClick={() => {
-              if (!zoneId) {
-                toast.error("Selecione uma zona antes de criar um setor.");
-                return;
-              }
+              if (!zoneId) return;
+              form.setValue("zoneId", zoneId, { shouldValidate: true });
             }}
           >
             <Plus className="w-4 h-4" />
@@ -176,10 +222,9 @@ export function SectorSelect({
                   }
                   companyId={companyId}
                 />
-                {(form.formState as any).errors?.employeeId && (
+                {form.formState.errors.employeeId && (
                   <span className="text-red-500 text-xs">
-                    {((form.formState as any).errors.employeeId
-                      ?.message as string) || "Funcionário é obrigatório"}
+                    {form.formState.errors.employeeId.message as string}
                   </span>
                 )}
               </div>
@@ -189,8 +234,12 @@ export function SectorSelect({
               <Button
                 type="button"
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-                disabled={createSector.status === "pending"}
-                onClick={() => form.handleSubmit(handleSubmit)()}
+                disabled={createSector.status === "pending" || !hasZone}
+                onClick={() => {
+                  if (!zoneId) return;
+                  form.setValue("zoneId", zoneId, { shouldValidate: true });
+                  form.handleSubmit(handleSubmit)();
+                }}
               >
                 {createSector.status === "pending" ? (
                   <>
