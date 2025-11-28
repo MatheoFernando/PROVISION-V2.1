@@ -22,25 +22,25 @@ export function ServicesMenu() {
     return null;
   }
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
+  const handleNavigation = (id: string) => {
+    router.push(`/dashboard/service?view=${id}`);
   };
 
   const menuItems = [
     {
-      path: "/dashboard/service/supervision",
+      id: "supervision",
       imageSrc: "/supervisionado.png",
       label: "Supervisão",
       imageClass: "bg-accent/10",
     },
     {
-      path: "/dashboard/service/occurrence",
+      id: "occurrence",
       imageSrc: "/incidente.png",
       label: "Ocorrências",
       imageClass: "bg-accent/10",
     },
     {
-      path: "/dashboard/service/rsu",
+      id: "rsu",
       imageSrc: "/reciclar.png",
       label: "RSU",
       imageClass: "bg-accent/10",
@@ -48,12 +48,12 @@ export function ServicesMenu() {
   ];
 
   return (
-    <DropdownMenu >
-      <DropdownMenuTrigger asChild >
-        <DotsNine className="h-6 w-6 text-gray-700  cursor-pointer" />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <DotsNine className="h-6 w-6 text-gray-700 cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a] "
+        className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a]"
         align="end"
         sideOffset={8}
       >
@@ -65,10 +65,10 @@ export function ServicesMenu() {
           {menuItems.map((item, index) => (
             <DropdownMenuItem
               key={index}
-              onClick={() => handleNavigation(item.path)}
+              onClick={() => handleNavigation(item.id)}
               className="flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-muted/50 transition-all duration-200 rounded-lg border border-border/20 hover:border-border/40"
             >
-              <div className={`rounded-lg p-2  ${item.imageClass}`}>
+              <div className={`rounded-lg p-2 ${item.imageClass}`}>
                 <Image
                   src={item.imageSrc}
                   alt={item.label}

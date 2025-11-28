@@ -4,16 +4,25 @@
 
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Supervision from "./default/supervision/supervision";
 import Occurrence from "./default/occurrence/occurrence";
 import { Rsu } from "./default/rsu/rsu";
 
 type ServiceType = "supervision" | "occurrence" | "rsu" | null;
 
-
 export function DefaultServices() {
-  const [selectedService, setSelectedService] = useState<ServiceType>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const view = searchParams.get("view") as ServiceType;
+
+  const [selectedService, setSelectedService] = useState<ServiceType>(view);
+
+  useEffect(() => {
+    setSelectedService(view);
+  }, [view]);
 
   const defaultServices = [
     {
@@ -40,7 +49,16 @@ export function DefaultServices() {
   ] as const;
 
   const handleServiceClick = (serviceId: ServiceType) => {
-    setSelectedService(selectedService === serviceId ? null : serviceId);
+    const newService = selectedService === serviceId ? null : serviceId;
+    setSelectedService(newService);
+
+    const params = new URLSearchParams(searchParams);
+    if (newService) {
+      params.set("view", newService);
+    } else {
+      params.delete("view");
+    }
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
