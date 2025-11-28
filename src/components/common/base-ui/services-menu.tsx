@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Grip } from "lucide-react";
+import { DotsNine } from "phosphor-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import Image from "next/image";
@@ -50,10 +50,10 @@ export function ServicesMenu() {
   return (
     <DropdownMenu >
       <DropdownMenuTrigger asChild >
-          <Grip className="h-4 w-4 text-gray-700  cursor-pointer" />
+        <DotsNine className="h-6 w-6 text-gray-700  cursor-pointer" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a] " 
+      <DropdownMenuContent
+        className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a] "
         align="end"
         sideOffset={8}
       >
@@ -63,14 +63,14 @@ export function ServicesMenu() {
         <DropdownMenuSeparator className="bg-border/50 mb-3" />
         <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {menuItems.map((item, index) => (
-            <DropdownMenuItem 
+            <DropdownMenuItem
               key={index}
               onClick={() => handleNavigation(item.path)}
               className="flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-muted/50 transition-all duration-200 rounded-lg border border-border/20 hover:border-border/40"
             >
               <div className={`rounded-lg p-2  ${item.imageClass}`}>
                 <Image
-                  src={item.imageSrc} 
+                  src={item.imageSrc}
                   alt={item.label}
                   width={32}
                   height={32}

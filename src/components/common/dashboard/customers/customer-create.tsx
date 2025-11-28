@@ -48,8 +48,6 @@ export function CustomersCreateForm({
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const authCompanyId = useAuthStore((state) => state.companyId) || "";
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [photoPreview, setPhotoPreview] = React.useState<string>("");
 
   const buildDefaults = useCallback(
     (
@@ -59,7 +57,6 @@ export function CustomersCreateForm({
       name: "",
       taxName: "",
       nif: "",
-      photo: "",
       contactId: "",
       addressId: "",
       companyId: authCompanyId,
@@ -79,7 +76,6 @@ export function CustomersCreateForm({
   useEffect(() => {
     if (!customer) {
       form.reset(buildDefaults());
-      setPhotoPreview("");
       return;
     }
 
@@ -89,30 +85,16 @@ export function CustomersCreateForm({
         name: customer.name ?? "",
         taxName: customer.taxName ?? "",
         nif: customer.nif ?? "",
-        photo: customer.photo ?? "",
         contactId: customer.contactId ?? "",
         addressId: customer.addressId ?? "",
         companyId: customer.companyId ?? authCompanyId,
       })
     );
     
-    if (customer.photo) {
-      setPhotoPreview(customer.photo);
-    }
+
   }, [customer, form, buildDefaults, authCompanyId]);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPhotoPreview(result);
-        form.setValue("photo", result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   const handleSubmit = async (data: CustomerFormInput) => {
     const parsed: CustomerFormValues = createCustomerSchema.parse({
@@ -136,7 +118,6 @@ export function CustomersCreateForm({
       } else {
         savedCustomer = await createCustomer.mutateAsync(payload);
         form.reset(buildDefaults());
-        setPhotoPreview("");
       }
 
       if (onSuccess) onSuccess(savedCustomer);
@@ -152,83 +133,43 @@ export function CustomersCreateForm({
         onSubmit={form.handleSubmit(handleSubmit)}
         className="flex flex-col gap-8"
       >
-        {/* Header com Foto à esquerda */}
-        <div className="flex gap-6 items-start">
-          {/* Preview da Foto - Esquerda */}
-          <div className="flex flex-col gap-3 flex-shrink-0">
-            <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300">
-              {photoPreview ? (
-                <img 
-                  src={photoPreview} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Upload className="w-10 h-10 text-gray-400" />
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
-            >
-              Alterar foto
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
-          </div>
-
-          {/* Campos à direita */}
-          <div className="flex-1 flex flex-col gap-6">
-            {/* Nome em primeiro */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Digite o nome"
-                      className="rounded-lg"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Email e Código pequeno */}
-            <div className="flex gap-4">
-              <FormField
-                control={form.control}
-                name="cod"
-                render={({ field }) => (
-                  <FormItem className="w-32">
-                    <FormLabel className="text-sm">Código *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Código"
-                        className="rounded-lg text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Campos Adicionais */}
         <div className="grid gap-6 md:grid-cols-2">
+        <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome *</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Digite o nome"
+                    className="rounded-lg"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código *</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Digite o código"
+                    className="rounded-lg"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="taxName"
@@ -246,7 +187,7 @@ export function CustomersCreateForm({
               </FormItem>
             )}
           />
-
+         
           <FormField
             control={form.control}
             name="nif"
@@ -305,8 +246,8 @@ export function CustomersCreateForm({
           />
         </div>
 
-        {/* Botões */}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-6 border-t">
+       
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-6 ">
           <Button
             type="button"
             variant="outline"

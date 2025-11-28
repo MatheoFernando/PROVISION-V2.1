@@ -4,7 +4,7 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Empresas</h1>
       <CustomersTable
       />
     </div>

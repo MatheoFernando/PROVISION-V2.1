@@ -159,15 +159,7 @@ export default function CustomerDetailsPage() {
         <Card className="border-none bg-transparent shadow-none">
           <CardHeader className="space-y-6 p-0">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="h-24 w-24 md:size-36 overflow-hidden rounded-full border border-border bg-muted">
-                <Image
-                  src={photoSrc}
-                  alt={`Foto de ${customer.name}`}
-                  width={150}
-                  height={150}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+         
               <div className="space-y-2">
                 <div className="space-y-1">
                   <CardTitle className="text-xl text-foreground">{companyLabel}</CardTitle>

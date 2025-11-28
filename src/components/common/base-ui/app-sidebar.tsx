@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import {
- Building2
-} from "lucide-react"
+  Buildings
+} from "phosphor-react"
 
 import {
   Sidebar,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar"
 import { NavMain } from "./nav-main"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
-import { allNavItems} from "./nav-items"
+import { allNavItems } from "./nav-items"
 import { useCompanyByIdQuery } from '@/infrastructure/hooks/useCompanies'
 import Image from "next/image"
 import Link from "next/link"
@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin)
   const companyId = useAuthStore((state) => state.companyId)
   const companyQuery = useCompanyByIdQuery(companyId ?? undefined)
- 
+
   const navMain = React.useMemo(() => {
     return allNavItems
       .filter((item) => {
@@ -30,12 +30,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (item.requiresGlobalAdmin === true) {
           return isGlobalAdmin;
         }
-        
+
         // Se requiresGlobalAdmin é false, só mostrar para usuários normais (não global admin)
         if (item.requiresGlobalAdmin === false) {
           return !isGlobalAdmin;
         }
-        
+
         // Se requiresGlobalAdmin é undefined, mostrar para todos os usuários autenticados
         return true;
       })
@@ -64,13 +64,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const company = companyQuery.data ?? null
     const user = {
       name: "Provision",
-      avatarIcon: Building2,
+      avatarIcon: Buildings,
     }
 
     const teams = [
       {
         name: company?.businessName ?? company?.taxName ?? "Provision",
-        logoIcon: Building2,
+        logoIcon: Buildings,
       },
     ]
 
@@ -85,14 +85,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" variant="sidebar" {...props} >
       <SidebarHeader className="md:pt-8">
         <Link href="/dashboard" prefetch>
-        <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto"/>
+          <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto" />
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={sidebarData.navMain} />
       </SidebarContent>
       <SidebarFooter>
-      V2
+        V2
       </SidebarFooter>
     </Sidebar>
   )

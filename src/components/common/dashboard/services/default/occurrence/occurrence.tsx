@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { OccurrenceTable } from "./occurrence-table"
 import { useOccurrences } from "@/infrastructure/hooks/useOccurrences"
+import { OccurrenceTable } from "./occurrence-table"
 
 export default function Occurrence() {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {  Edit, Trash2 } from "lucide-react";
+import { PencilSimple, Trash } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
 import { TypeEquipment } from "@/infrastructure/types/domain";
@@ -57,7 +57,7 @@ export function TypeEquipmentTable() {
   const [selectedTypeEquipment, setSelectedTypeEquipment] = useState<SelectedTypeEquipment | undefined>();
   const deleteTypeEquipment = useDeleteTypeEquipment();
 
-  const data =  typeEquipment;
+  const data = typeEquipment;
 
   const normalizedTerm = (searchTerm ?? "").trim().toLowerCase();
   const filteredData = data.filter((item) => {
@@ -120,15 +120,15 @@ export function TypeEquipmentTable() {
         includeSelection={true}
         dateKey="createdAt"
         rowActions={[
-        
+
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (typeEquipment) => handleEdit(typeEquipment),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (typeEquipment) => handleDelete(typeEquipment),
           },
         ]}

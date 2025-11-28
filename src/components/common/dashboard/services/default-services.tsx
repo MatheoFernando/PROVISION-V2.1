@@ -1,77 +1,104 @@
+"use client";
+
+"use client";
+
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
+import Supervision from "./default/supervision/supervision";
+import Occurrence from "./default/occurrence/occurrence";
+import { Rsu } from "./default/rsu/rsu";
+
+type ServiceType = "supervision" | "occurrence" | "rsu" | null;
+
 
 export function DefaultServices() {
+  const [selectedService, setSelectedService] = useState<ServiceType>(null);
 
   const defaultServices = [
     {
+      id: "supervision" as const,
       name: "Supervisão",
       description: "Serviço de supervisão e monitoramento",
-      url: "/dashboard/service/supervision",
       status: true,
       imageSrc: "/supervisionado.png",
     },
     {
+      id: "occurrence" as const,
       name: "Ocorrência",
       description: "Gestão de ocorrências e incidentes",
-      url: "/dashboard/service/occurrence",
       status: true,
       imageSrc: "/incidente.png",
     },
     {
+      id: "rsu" as const,
       name: "RSU",
       description: "Recolha Seletiva de Resíduos",
-      url: "/dashboard/service/rsu",
       status: true,
       imageSrc: "/reciclar.png",
     },
   ] as const;
+
+  const handleServiceClick = (serviceId: ServiceType) => {
+    setSelectedService(selectedService === serviceId ? null : serviceId);
+  };
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         {defaultServices.map((service, index) => {
           const disabled = !service.status;
+          const isSelected = selectedService === service.id;
           return (
             <div
               key={index}
-              className={`border rounded-lg p-4 hover:bg-accent ${
-                disabled ? "opacity-60" : ""
-              }`}
+              onClick={() => !disabled && handleServiceClick(service.id)}
+              className={`border rounded-lg p-4 transition-all cursor-pointer ${disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-accent"
+                } ${isSelected ? "ring-2 ring-blue-400 bg-accent" : ""}`}
             >
-              <Link
-                href={service.url}
-                className={disabled ? "pointer-events-none" : ""}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg p-2 bg-accent/10">
-                      <Image
-                        src={service.imageSrc}
-                        alt={service.name}
-                        width={32}
-                        height={32}
-                        className="h-8 w-8 object-contain"
-                      />
-                    </div>
-                    <h3 className="font-semibold">{service.name}</h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg p-2 bg-accent/10">
+                    <Image
+                      src={service.imageSrc}
+                      alt={service.name}
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 object-contain"
+                    />
                   </div>
-                  <Badge
-                    variant={disabled ? "secondary" : "default"}
-                    className={disabled ? "" : "bg-green-500"}
-                  >
-                    {disabled ? "Desabilitado" : "Ativo"}
-                  </Badge>
+                  <h3 className="font-semibold">{service.name}</h3>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {service.description}
-                </p>
-              </Link>
+                <Badge
+                  variant={disabled ? "secondary" : "default"}
+                  className={disabled ? "" : "bg-green-500"}
+                >
+                  {disabled ? "Desabilitado" : "Ativo"}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {service.description}
+              </p>
             </div>
           );
         })}
       </div>
+
+      {selectedService === "supervision" && (
+        <div className="mt-6">
+          <Supervision />
+        </div>
+      )}
+      {selectedService === "occurrence" && (
+        <div className="mt-6">
+          <Occurrence />
+        </div>
+      )}
+      {selectedService === "rsu" && (
+        <div className="mt-6">
+          <Rsu />
+        </div>
+      )}
     </div>
   );
 }

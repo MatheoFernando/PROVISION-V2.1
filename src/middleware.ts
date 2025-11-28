@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { adminOnlyPaths } from '@/components/common/base-ui/nav-items';
+import { adminOnlyPaths } from '@/config/nav-data';
 
 function isProtectedAdminPath(pathname: string): boolean {
   return adminOnlyPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));

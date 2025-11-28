@@ -50,7 +50,7 @@ export function PhoneField({
         value={resolvedValue}
         placeholder="Digite seu telefone"
         onChange={(nextValue) => onChange?.(nextValue ?? "")}
-        className=" flex w-full items-center gap-3 placeholder:text-slate-400"
+        className=" flex w-full items-center gap-3 placeholder:text-xs placeholder:text-slate-400"
         countryCallingCodeEditable={countryCallingCodeEditable ?? false}
         maxLength={11}
         numberInputProps={{

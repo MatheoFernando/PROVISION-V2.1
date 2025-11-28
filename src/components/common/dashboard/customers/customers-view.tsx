@@ -45,18 +45,15 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right" modal={true}>
       <DrawerContent className="h-auto max-w-md flex flex-col max-h-screen bg-white">
-        <DrawerHeader className="px-6 py-6 flex-shrink-0">
-          <DrawerTitle className="text-2xl font-bold flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
-              <User className="w-5 h-5" />
-            </div>
-            Detalhes do Cliente
+        <DrawerHeader className="px-6 py-4 border-b border-gray-100">
+          <DrawerTitle className="text-xl font-semibold text-gray-900">
+            Detalhes da Empresa
           </DrawerTitle>
           <DrawerClose asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 top-4 h-8 w-8 rounded-full hover:bg-white/20 transition-colors "
+              className="absolute right-4 top-4 h-8 w-8 hover:bg-gray-100"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -65,173 +62,151 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
 
         <div className="flex-1 overflow-hidden p-0">
           <Tabs defaultValue={defaultTab} className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-14 sticky top-0 bg-white border-b border-slate-200 rounded-none gap-0">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-12 sticky top-0 bg-white border-b border-gray-100 rounded-none gap-0 p-0">
               <TabsTrigger 
                 value="basic" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-slate-400 data-[state=active]:shadow-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-600 text-slate-600 font-medium transition-all"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:shadow-none data-[state=active]:bg-transparent data-[state=active]:text-gray-900 text-gray-600 font-medium transition-colors"
               >
-                <Info className="w-4 h-4 mr-1" />
-                Básico
+                <Info className="w-4 h-4 mr-1.5" />
+                <span className="hidden sm:inline">Básico</span>
               </TabsTrigger>
               {hasCompany && (
                 <TabsTrigger 
                   value="company" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:bg-transparent data-[state=active]:text-cyan-600 text-slate-600 font-medium transition-all cursor-pointer"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent data-[state=active]:text-gray-900 text-gray-600 font-medium transition-colors"
                 >
-                  <Building className="w-4 h-4 mr-1" />
-                  Empresa
+                  <Building className="w-4 h-4 mr-1.5" />
+                  <span className="hidden sm:inline">Empresa</span>
                 </TabsTrigger>
               )}
               {hasAddress && (
                 <TabsTrigger 
                   value="address" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-slate-400 data-[state=active]:shadow-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-600 text-slate-600 font-medium transition-all cursor-pointer"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent data-[state=active]:text-gray-900 text-gray-600 font-medium transition-colors"
                 >
-                  <MapPin className="w-4 h-4 mr-1" />
-                  Endereço
+                  <MapPin className="w-4 h-4 mr-1.5" />
+                  <span className="hidden sm:inline">Endereço</span>
                 </TabsTrigger>
               )}
               {hasContact && (
                 <TabsTrigger 
                   value="contact" 
-                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-slate-400 data-[state=active]:shadow-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-600 text-slate-600 font-medium transition-all cursor-pointer"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent data-[state=active]:text-gray-900 text-gray-600 font-medium transition-colors"
                 >
-                  <Phone className="w-4 h-4 mr-1" />
-                  Contato
+                  <Phone className="w-4 h-4 mr-1.5" />
+                  <span className="hidden sm:inline">Contato</span>
                 </TabsTrigger>
               )}
               {hasSites && (
                 <TabsTrigger 
                   value="sites" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:bg-transparent data-[state=active]:text-cyan-600 text-slate-600 font-medium transition-all"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent data-[state=active]:text-gray-900 text-gray-600 font-medium transition-colors"
                 >
-                  <Building2 className="w-4 h-4 mr-1" />
-                  Sites ({sites.length})
+                  <Building2 className="w-4 h-4 mr-1.5" />
+                  <span className="hidden sm:inline">Sites</span>
                 </TabsTrigger>
               )}
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 ">
-              <TabsContent value="basic" className="mt-0 p-0">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <TabsContent value="basic" className="mt-0 p-0 space-y-3">
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Código</span>
-                      <p className="text-lg font-bold text-slate-900 mt-2">{customer.cod}</p>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome</span>
-                      <p className="text-lg font-bold text-slate-900 mt-2">{customer.name}</p>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome Fiscal</span>
-                      <p className="text-sm font-semibold text-slate-900 mt-2">{customer.taxName}</p>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">NIF</span>
-                      <p className="text-sm font-mono font-semibold text-slate-900 mt-2">{customer.nif}</p>
-                    </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</label>
+                    <p className="text-base font-semibold text-gray-900 mt-1">{customer.cod}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nome</label>
+                    <p className="text-base font-semibold text-gray-900 mt-1">{customer.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nome Fiscal</label>
+                    <p className="text-sm text-gray-900 mt-1">{customer.taxName}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">NIF</label>
+                    <p className="text-sm font-mono text-gray-900 mt-1">{customer.nif}</p>
                   </div>
                 </div>
               </TabsContent>
 
               {hasCompany && (
-                <TabsContent value="company" className="mt-0 p-0">
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Código</span>
-                        <p className="text-lg font-bold text-slate-900 mt-2">{company.cod}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome Comercial</span>
-                        <p className="text-sm font-semibold text-slate-900 mt-2">{company.businessName}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome Fiscal</span>
-                        <p className="text-sm font-semibold text-slate-900 mt-2">{company.taxName}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">NIF</span>
-                        <p className="text-sm font-mono font-semibold text-slate-900 mt-2">{company.nif}</p>
-                      </div>
-                    </div>
+                <TabsContent value="company" className="mt-0 p-0 space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</label>
+                    <p className="text-base font-semibold text-gray-900 mt-1">{company.cod}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nome Comercial</label>
+                    <p className="text-sm text-gray-900 mt-1">{company.businessName}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nome Fiscal</label>
+                    <p className="text-sm text-gray-900 mt-1">{company.taxName}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">NIF</label>
+                    <p className="text-sm font-mono text-gray-900 mt-1">{company.nif}</p>
                   </div>
                 </TabsContent>
               )}
 
               {hasAddress && (
-                <TabsContent value="address" className="mt-0 p-0">
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Domicílio</span>
-                        <p className="text-sm font-medium text-slate-900 mt-2">{address.houseHold}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Comuna</span>
-                        <p className="text-sm font-medium text-slate-900 mt-2">{address.commune}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Município</span>
-                        <p className="text-sm font-medium text-slate-900 mt-2">{address.municipality}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Província</span>
-                        <p className="text-sm font-medium text-slate-900 mt-2">{address.province}</p>
-                      </div>
-                      {address.country && (
-                        <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">País</span>
-                          <p className="text-sm font-medium text-slate-900 mt-2">{address.country}</p>
-                        </div>
-                      )}
-                    </div>
+                <TabsContent value="address" className="mt-0 p-0 space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Domicílio</label>
+                    <p className="text-sm text-gray-900 mt-1">{address.houseHold}</p>
                   </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comuna</label>
+                    <p className="text-sm text-gray-900 mt-1">{address.commune}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Município</label>
+                    <p className="text-sm text-gray-900 mt-1">{address.municipality}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Província</label>
+                    <p className="text-sm text-gray-900 mt-1">{address.province}</p>
+                  </div>
+                  {address.country && (
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">País</label>
+                      <p className="text-sm text-gray-900 mt-1">{address.country}</p>
+                    </div>
+                  )}
                 </TabsContent>
               )}
 
               {hasContact && (
-                <TabsContent value="contact" className="mt-0 p-0">
-                  <div className="space-y-2">
-                    {phoneNumbers.map((p) => (
-                      <div key={p.phone} className="flex items-center gap-3 p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-300 transition-all">
-                        <div className="flex-shrink-0 w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
-                          <Phone className="w-5 h-5 text-cyan-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-slate-900 font-semibold text-sm">{p.phone}</p>
-                        </div>
-                      </div>
-                    ))}
-                    {contact.email && (
-                      <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-300 transition-all">
-                        <div className="flex-shrink-0 w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-cyan-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-slate-900 font-semibold text-sm truncate">{contact.email}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                <TabsContent value="contact" className="mt-0 p-0 space-y-2">
+                  {phoneNumbers.map((p) => (
+                    <div key={p.phone} className="flex items-center gap-3 p-3 border border-gray-200 hover:border-gray-300 transition-colors">
+                      <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <p className="text-sm text-gray-900">{p.phone}</p>
+                    </div>
+                  ))}
+                  {contact.email && (
+                    <div className="flex items-center gap-3 p-3 border border-gray-200 hover:border-gray-300 transition-colors">
+                      <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <p className="text-sm text-gray-900 truncate">{contact.email}</p>
+                    </div>
+                  )}
                 </TabsContent>
               )}
 
               {hasSites && (
                 <TabsContent value="sites" className="mt-0 p-0">
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                  <div className="space-y-2">
                     {sites.map((site) => (
-                      <div key={site.id} className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-300 transition-all">
-                        <div className="flex items-start justify-between mb-3">
-                          <h3 className="font-bold text-slate-900">{site.name}</h3>
-                          <span className="text-xs font-semibold text-cyan-600 bg-cyan-50 px-2.5 py-1 rounded-full">
-                            Cód: {site.cod}
-                          </span>
+                      <div key={site.id} className="p-3 border border-gray-200 hover:border-gray-300 transition-colors">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-medium text-gray-900 text-sm">{site.name}</h3>
+                          <span className="text-xs text-gray-500 flex-shrink-0">{site.cod}</span>
                         </div>
-                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-xs font-medium text-slate-500">Nº Trabalhadores</span>
-                          <span className="font-bold text-slate-900">{site.numberWorkersContract}</span>
+                        <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Trabalhadores</span>
+                          <span className="text-sm font-medium text-gray-900">{site.numberWorkersContract}</span>
                         </div>
                       </div>
                     ))}

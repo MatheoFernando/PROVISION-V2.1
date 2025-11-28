@@ -64,9 +64,9 @@ export function EmployeesView({ employee, isOpen, onClose }: EmployeesViewProps)
                     <h3 className="text-2xl font-bold">{employee.fullName}</h3>
                   </div>
                 </div>
-                <Badge variant={employee.status ? "default" : "secondary"}>
-                  {employee.status ? "Ativo" : "Inativo"}
-                </Badge>
+                  <Badge variant={employee.status ? "default" : "secondary"}>
+                    {employee.status ? "Ativo" : "Inativo"}
+                  </Badge>
               </div>
 
             

@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  Building2,
-  LogOut,
-  Settings,
-  ChevronDown,
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+  Buildings,
+  SignOut,
+  Gear,
+  CaretDown,
+  type Icon,
+} from "phosphor-react"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { useState } from "react"
 
@@ -45,7 +45,7 @@ interface UserData {
   name: string
   email: string
   avatar?: string
-  avatarIcon?: LucideIcon
+  avatarIcon?: Icon
 }
 
 export function NavUser({
@@ -55,7 +55,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const [isLogoutOpen, setIsLogoutOpen] = useState(false)
-  const AvatarIcon = user.avatarIcon || Building2
+  const AvatarIcon = user.avatarIcon || Buildings
   const logout = useAuthStore((state) => state.logout)
   const router = useRouter()
 
@@ -76,10 +76,10 @@ export function NavUser({
                 <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg ">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className=" dark:text-gray-400 bg-white font-medium uppercase border-l pl-2 border-gray-900 rounded-none">
-                    <Building2 className="size-5" />
+                    <Buildings className="size-6" />
                   </AvatarFallback>
                 </Avatar>
-                <ChevronDown className="text-gray-500" />
+                <CaretDown className="text-gray-500" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -111,7 +111,7 @@ export function NavUser({
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500" onClick={() => router.push('/dashboard/profile')}>
-                  <Settings className="hover:bg-blue-100 hover:text-blue-500" />
+                  <Gear className="hover:bg-blue-100 hover:text-blue-500" />
                   Configurações
                 </DropdownMenuItem>
               </DropdownMenuGroup>
@@ -120,7 +120,7 @@ export function NavUser({
                 className="cursor-pointer text-red-400 hover:bg-red-100 hover:text-red-500"
                 onClick={() => setIsLogoutOpen(true)}
               >
-                <LogOut  />
+                <SignOut />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>

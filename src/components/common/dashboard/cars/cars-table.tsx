@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Edit, Trash2, X } from "lucide-react";
+import { PencilSimple, Trash, X } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useCars, useCreateGrossCar, useDeleteCar } from "@/infrastructure/hooks/useCars";
 import { Car } from "@/infrastructure/types/domain";
@@ -50,7 +50,7 @@ const columns: ColumnDef<Car>[] = [
       return `${capacity}L`;
     },
   },
- 
+
 ];
 
 function parseCapacity(value: string | number | undefined) {
@@ -128,21 +128,21 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
         enableRowSelection={true}
         includeSelection={true}
         rowActions={[
-     
+
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (car) => handleEdit(car),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (car) => handleDelete(car),
           },
         ]}
       />
 
-   
+
 
       <Drawer
         open={isCreateOpen}

@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { Bell, Filter, SortDesc, Check, AlertTriangle } from "lucide-react";
+import { Bell, Funnel, SortDescending, Check, Warning } from "phosphor-react";
 import {
   Drawer,
   DrawerContent,
@@ -116,7 +116,7 @@ export function NotificationBell() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Filter className="h-4 w-4" />
+                    <Funnel className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -129,7 +129,7 @@ export function NotificationBell() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button variant="ghost" size="icon" className="h-8 w-8">
-                <SortDesc className="h-4 w-4" />
+                <SortDescending className="h-4 w-4" />
               </Button>
               <Button
                 variant="secondary"
@@ -160,7 +160,7 @@ export function NotificationBell() {
                       <div key={n.id} className="rounded-lg border bg-card p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-2">
-                            <AlertTriangle className="h-4 w-4 text-red-600 mt-1" />
+                            <Warning className="h-4 w-4 text-red-600 mt-1" />
                             <div>
                               <div className="flex items-center gap-2">
                                 <SeverityBadge severity={n.severity} />
@@ -206,7 +206,7 @@ export function NotificationBell() {
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-2">
-                            <AlertTriangle className="h-4 w-4 text-muted-foreground mt-1" />
+                            <Warning className="h-4 w-4 text-muted-foreground mt-1" />
                             <div>
                               <div className="flex items-center gap-2">
                                 <SeverityBadge severity={n.severity} />

@@ -13,15 +13,4 @@ const baseUserSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
-export const userSchema = baseUserSchema.superRefine((data, ctx) => {
-  const isCreate = !data.id;
-  const hasPassword = Boolean(data.password && data.password.trim().length >= 6);
-
-  if (isCreate && !hasPassword) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["password"],
-      message: "Senha é obrigatória para criar utilizador",
-    });
-  }
-});
+export const userSchema = baseUserSchema;

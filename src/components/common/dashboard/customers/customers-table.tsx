@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2, X } from "lucide-react";
+import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -216,12 +216,12 @@ export function CustomersTable({
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (customer) => handleEdit(customer),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (customer) => handleDelete(customer),
           },
         ]}
@@ -238,7 +238,7 @@ export function CustomersTable({
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedCustomer ? "Editar Cliente" : "Novo Cliente"}
+                    {selectedCustomer ? "Editar Empresa" : "Novo Empresa"}
                   </DrawerTitle>
                 </div>
                 <DrawerClose asChild>
@@ -279,7 +279,7 @@ export function CustomersTable({
           setSelectedCustomer(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Cliente"
+        title="Excluir Empresa"
         message="Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita."
         isLoading={deleteCustomer.isPending}
       />

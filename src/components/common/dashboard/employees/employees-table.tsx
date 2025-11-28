@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Edit, Trash2, X } from "lucide-react";
+import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
   useCreateGrossEmployee,
@@ -228,12 +228,12 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
           },
           {
             label: "Editar",
-            icon: <Edit className="mr-2 h-3 w-3 text-gray-600" />,
+            icon: <PencilSimple className="mr-2 h-3 w-3 text-gray-600" />,
             onClick: (employee) => handleEdit(employee),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="mr-2 h-3 w-3 text-gray-600" />,
+            icon: <Trash className="h-4 w-4 mr-2 text-gray-600" />,
             onClick: (employee) => handleDelete(employee),
           },
         ]}

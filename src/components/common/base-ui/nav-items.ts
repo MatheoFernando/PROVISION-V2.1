@@ -1,57 +1,37 @@
 import {
-  type LucideIcon,
-  LayoutDashboard ,
+  type Icon,
+  SquaresFour,
   Users,
-  Building2,
-  Settings,
-  Briefcase,
-  UserCheck,
-  ChartNoAxesCombined 
-} from "lucide-react";
+  Buildings,
+  Gear,
+  Package,
+  ChartPie,
+} from "phosphor-react";
+import { navData, type NavItemData } from "@/config/nav-data";
 
-export interface BaseNavItem {
-  title: string;
-  url?: string;
-  requiresGlobalAdmin?: boolean;
-  icon?: LucideIcon;
+export interface BaseNavItem extends Omit<NavItemData, "items" | "iconKey"> {
+  icon?: Icon;
   items?: BaseNavItem[];
 }
 
-export const allNavItems: BaseNavItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard  },
-  { title: "Modulo", url: "/dashboard/service", icon: Briefcase },
-  {
-    title: "Clientes",
-    url: "/dashboard/customers",
-    icon: UserCheck,
+const iconMap: Record<string, Icon> = {
+  SquaresFour,
+  Users,
+  Buildings,
+  Gear,
+  Package,
+  ChartPie,
+};
 
-  },
+function mapNavItem(item: NavItemData): BaseNavItem {
+  const { iconKey, items, ...rest } = item;
+  return {
+    ...rest,
+    icon: iconKey ? iconMap[iconKey] : undefined,
+    items: items?.map(mapNavItem),
+  };
+}
 
-  {
-    title: "Configurações",
-    url: "/dashboard/settings",
-    icon: Settings,
-    items: [
-      {
-        title: "Utilizadores",
-        url: "/dashboard/users",
-        icon: Users,
-      },
-      {
-        title: "Empresas",
-        url: "/dashboard/companies",
-        icon: Building2,
-      },
-    ],
-  },
+export const allNavItems: BaseNavItem[] = navData.map(mapNavItem);
 
-   {
-    title: "Analitycs",
-    url: "/dashboard/analytics",
-    icon: ChartNoAxesCombined ,
-  },
-];
-
-export const adminOnlyPaths: string[] = allNavItems
-  .filter((item) => Boolean(item.requiresGlobalAdmin) && item.url)
-  .map((item) => item.url as string);
+export { adminOnlyPaths } from "@/config/nav-data";

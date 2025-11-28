@@ -3,6 +3,7 @@ import { usePathname } from "next/navigation";
 
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -15,7 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "phosphor-react";
 import { allNavItems } from "./nav-items";
 import Link from "next/link";
 
@@ -46,6 +47,9 @@ export function NavMain({
   };
   return (
     <SidebarGroup>
+      <SidebarGroupLabel className="mb-2 text-xs font-medium text-gray-500 tracking-wider">
+        Menu
+      </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           if (item.items?.length) {
@@ -62,7 +66,7 @@ export function NavMain({
                     <SidebarMenuButton tooltip={item.title} >
                       {item.icon && <item.icon className="size-4 " />}
                       <span>{item.title}</span>
-                      <ChevronRight className="ml-auto  transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      <CaretRight className="ml-auto  transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>

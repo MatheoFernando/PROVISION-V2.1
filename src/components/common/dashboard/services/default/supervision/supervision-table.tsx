@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Eye, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { Eye, PencilSimple, Trash, DotsThree } from "phosphor-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +25,7 @@ import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
 import { SupervisionDrawer } from "./supervision-view"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
-import { X } from "lucide-react"
+import { X } from "phosphor-react"
 interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
@@ -51,7 +51,7 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
             className="data-[state=open]:bg-muted text-muted-foreground flex size-8 cursor-pointer"
             size="icon"
           >
-            <MoreHorizontal className="size-4" />
+            <DotsThree className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
@@ -63,17 +63,17 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
             onClick={() => onEdit?.(supervision)}
             className="cursor-pointer"
           >
-            <Edit className="size-4 mr-2" />
+            <PencilSimple className="size-4 mr-2" />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
-            variant="destructive" 
+            variant="destructive"
             onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
-            <Trash2 className="size-4 mr-2" />
+            <Trash className="size-4 mr-2" />
             Excluir
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -86,7 +86,7 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
       />
 
 
-      
+
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -108,8 +108,8 @@ const formatHour = (value?: string) => {
     return fallback.slice(0, 5)
   }
   const date = value.includes("T")
-  ? new Date(value)
-  : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`)
+    ? new Date(value)
+    : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`)
   if (Number.isNaN(date.getTime())) {
     const fallback = value.includes(":") ? value : `${value}:00`
     return fallback.slice(0, 5)
@@ -128,102 +128,102 @@ const createSupervisionColumns = (
     onEdit?: (supervision: Supervision) => void
   }
 ): ColumnDef<Supervision>[] => [
-  {
-    accessorKey: "cod",
-    header: "Código",
-    size: 50,
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.cod}</div>
-    ),
-  },
-  {
-    accessorKey: "desiredNumberWorkers",
-    header: "Desejado",
-    size: 20,
-    cell: ({ row }) => (
-      <div >{row.original.desiredNumberWorkers}</div>
-    ),
-  },
-  {
-    accessorKey: "numberWorkerPresent",
-    header: "Presente",
-    size: 20,
-    cell: ({ row }) => (
-      <div >{row.original.numberWorkerPresent}</div>
-    ),
-  },
-  {
-    accessorFn: (row) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
-    id: "equipment",
-    header: `Equipamentos`,
-    cell: ({ row }) => {
-      const equipment = maps.equipmentById[row.original.equipmentId || ""] || ""
-      return <div>{equipment || 'N/A'}</div>
+    {
+      accessorKey: "cod",
+      header: "Código",
+      size: 50,
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.cod}</div>
+      ),
     },
-  },
-  {
-    accessorFn: (row) => maps.employeeById[row.employeeId || ""] || 'N/A',
-    id: "employee",
-    header: "Funcionário",
-    cell: ({ row }) => {
-      const name = maps.employeeById[row.original.employeeId || ""]
-      return <div>{name || 'N/A'}</div>
+    {
+      accessorKey: "desiredNumberWorkers",
+      header: "Desejado",
+      size: 20,
+      cell: ({ row }) => (
+        <div >{row.original.desiredNumberWorkers}</div>
+      ),
     },
-  },
-  {
-    accessorFn: (row) => maps.siteById[row.siteId || ""] || 'N/A',
-    id: "site",
-    header: "Site",
-    cell: ({ row }) => {
-      const name = maps.siteById[row.original.siteId || ""]
-      return <div>{name || 'N/A'}</div>
+    {
+      accessorKey: "numberWorkerPresent",
+      header: "Presente",
+      size: 20,
+      cell: ({ row }) => (
+        <div >{row.original.numberWorkerPresent}</div>
+      ),
     },
-  },
-  {
-    accessorFn: (row) => formatHour(row.time),
-    id: "time",
-    header: "Horário",
-    size: 20,
-    cell: ({ row }) => {
-      const hhmm = formatHour(row.original.time)
-      return <div>{hhmm}</div>
+    {
+      accessorFn: (row) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
+      id: "equipment",
+      header: `Equipamentos`,
+      cell: ({ row }) => {
+        const equipment = maps.equipmentById[row.original.equipmentId || ""] || ""
+        return <div>{equipment || 'N/A'}</div>
+      },
     },
-  },
-  {
-    accessorFn: (row) => maps.departmentById[row.departmentId || ""] || 'N/A',
-    id: "department",
-    header: "Departamento",
-    cell: ({ row }) => {
-      const name = maps.departmentById[row.original.departmentId || ""]
-      return <div>{name || 'N/A'}</div>
+    {
+      accessorFn: (row) => maps.employeeById[row.employeeId || ""] || 'N/A',
+      id: "employee",
+      header: "Funcionário",
+      cell: ({ row }) => {
+        const name = maps.employeeById[row.original.employeeId || ""]
+        return <div>{name || 'N/A'}</div>
+      },
     },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const isActive = row.original.status === 'Finalizado'
-      return (
-        <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {row.original.status}
-        </Badge>
-      )
+    {
+      accessorFn: (row) => maps.siteById[row.siteId || ""] || 'N/A',
+      id: "site",
+      header: "Site",
+      cell: ({ row }) => {
+        const name = maps.siteById[row.original.siteId || ""]
+        return <div>{name || 'N/A'}</div>
+      },
     },
-  },
+    {
+      accessorFn: (row) => formatHour(row.time),
+      id: "time",
+      header: "Horário",
+      size: 20,
+      cell: ({ row }) => {
+        const hhmm = formatHour(row.original.time)
+        return <div>{hhmm}</div>
+      },
+    },
+    {
+      accessorFn: (row) => maps.departmentById[row.departmentId || ""] || 'N/A',
+      id: "department",
+      header: "Departamento",
+      cell: ({ row }) => {
+        const name = maps.departmentById[row.original.departmentId || ""]
+        return <div>{name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const isActive = row.original.status === 'Finalizado'
+        return (
+          <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
+            {row.original.status}
+          </Badge>
+        )
+      },
+    },
 
-  {
-    id: "actions",
-    header: "Ações",
-    size: 50,
-    cell: ({ row }) => (
-      <ActionsButtons
-        supervision={row.original}
-        equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
-        onEdit={maps.onEdit}
-      />
-    ),
-  },
-]
+    {
+      id: "actions",
+      header: "Ações",
+      size: 50,
+      cell: ({ row }) => (
+        <ActionsButtons
+          supervision={row.original}
+          equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
+          onEdit={maps.onEdit}
+        />
+      ),
+    },
+  ]
 
 interface SupervisionTableProps {
   data: Supervision[]
@@ -244,33 +244,33 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
 
   const employeeById = React.useMemo(() => {
     const map: Record<string, string> = {}
-    ;(employees as any[]).forEach((e: any) => {
-      if (e?.id) map[e.id] = e.fullName || e.name || ""
-    })
+      ; (employees as any[]).forEach((e: any) => {
+        if (e?.id) map[e.id] = e.fullName || e.name || ""
+      })
     return map
   }, [employees])
 
   const equipmentById = React.useMemo(() => {
     const map: Record<string, string> = {}
-    ;(equipments as any[]).forEach((e: any) => {
-      if (e?.id) map[e.id] = e.cod || e.model || e.mark || ""
-    })
+      ; (equipments as any[]).forEach((e: any) => {
+        if (e?.id) map[e.id] = e.cod || e.model || e.mark || ""
+      })
     return map
   }, [equipments])
 
   const siteById = React.useMemo(() => {
     const map: Record<string, string> = {}
-    ;(sites as any[]).forEach((s: any) => {
-      if (s?.id) map[s.id] = s.name || ""
-    })
+      ; (sites as any[]).forEach((s: any) => {
+        if (s?.id) map[s.id] = s.name || ""
+      })
     return map
   }, [sites])
 
   const departmentById = React.useMemo(() => {
     const map: Record<string, string> = {}
-    ;(departments as any[]).forEach((d: any) => {
-      if (d?.id) map[d.id] = d.name || ""
-    })
+      ; (departments as any[]).forEach((d: any) => {
+        if (d?.id) map[d.id] = d.name || ""
+      })
     return map
   }, [departments])
 

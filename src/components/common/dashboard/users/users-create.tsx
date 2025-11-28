@@ -71,6 +71,8 @@ function CreateUserDialog({
   const isControlled =
     controlledOpen !== undefined && onOpenChange !== undefined;
   const open = controlledOpen ?? internalOpen;
+  const isEditMode = Boolean(isEdit && user?.id);
+  const isPasswordDisabled = isEditMode;
 
   const handleOpenChange = (next: boolean) => {
     if (onOpenChange) onOpenChange(next);
@@ -82,44 +84,42 @@ function CreateUserDialog({
 
   type UserFormSchema = z.infer<typeof userSchema>;
 
+  const defaultValues = React.useMemo(
+    () => ({
+      id: user?.id,
+      phone: user?.phone ?? "",
+      password: "",
+      isGlobalAdmin: user?.isGlobalAdmin ?? false,
+      status: user?.status ?? true,
+      companyId: user?.companyId ?? authCompanyId ?? "",
+      departmentId:
+        user?.departmentId ?? user?.employee?.departmentId ?? undefined,
+      roleId: user?.roleId ?? "",
+    }),
+    [user, authCompanyId]
+  );
+
   const form = useForm<UserFormSchema>({
     resolver: zodResolver(userSchema),
-    defaultValues: {
-      id: user?.id,
-      phone: user?.phone || "",
-      password: "",
-      isGlobalAdmin: user?.isGlobalAdmin || false,
-      status: user?.status ?? true,
-      companyId: user?.companyId || authCompanyId || "",
-      departmentId: user?.employee?.departmentId || undefined,
-      roleId: user?.roleId || "",
-    },
+    defaultValues,
   });
 
   React.useEffect(() => {
-    if (user && isEdit) {
-      form.reset({
-        id: user.id,
-        phone: user.phone,
-        password: "",
-        isGlobalAdmin: user.isGlobalAdmin,
-        status: user.status,
-        companyId: user.companyId || authCompanyId || "",
-        departmentId: user.departmentId || user?.employee?.departmentId || undefined,
-        roleId: user?.roleId || "",
-      });
-    }
-  }, [user, isEdit, form, authCompanyId]);
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   const onSubmit = async (data: UserFormSchema) => {
-    try {
-      const company = data.companyId || authCompanyId || undefined;
-      const department = data.departmentId || undefined;
-      const role = data.roleId || undefined;
+    const normalize = (value?: string | null) =>
+      value && value.trim().length > 0 ? value.trim() : undefined;
+    const company = normalize(data.companyId) ?? authCompanyId ?? undefined;
+    const department = normalize(data.departmentId);
+    const role = normalize(data.roleId);
+    const password = normalize(data.password);
 
-      if (isEdit && user) {
+    try {
+      if (isEditMode && user?.id) {
         const updatePayload: UpdateUserPayload = {
-          id: user.id!,
+          id: user.id,
           phone: data.phone,
           isGlobalAdmin: data.isGlobalAdmin,
           status: data.status,
@@ -129,23 +129,24 @@ function CreateUserDialog({
         if (department) updatePayload.departmentId = department;
         if (role) updatePayload.roleId = role;
 
-        if (
-          form.formState.dirtyFields.password &&
-          data.password &&
-          data.password.trim().length >= 6
-        ) {
-          updatePayload.password = data.password;
+        const shouldUpdatePassword = !isPasswordDisabled && password;
+        if (shouldUpdatePassword) {
+          updatePayload.password = password!;
         }
 
         await updateUser(updatePayload);
       } else {
-        if (!data.password) {
-          throw new Error("Senha obrigatória");
+        if (!password) {
+          form.setError("password", {
+            type: "manual",
+            message: "Senha é obrigatória para criar utilizador",
+          });
+          return;
         }
 
         const createPayload: CreateUserPayload = {
           phone: data.phone,
-          password: data.password,
+          password,
           isGlobalAdmin: data.isGlobalAdmin,
           status: data.status,
         };
@@ -163,8 +164,7 @@ function CreateUserDialog({
   };
 
   const isLoading = isCreating || isUpdating;
-  const selectedCompanyId =
-    form.watch("companyId") || authCompanyId || "";
+  const selectedCompanyId = form.watch("companyId") || authCompanyId || "";
   const closeDrawer = () => handleOpenChange(false);
 
   return (
@@ -232,24 +232,24 @@ function CreateUserDialog({
                   <FormField
                     control={form.control}
                     name="password"
-                    disabled={isEdit}
+                    disabled={isPasswordDisabled}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium text-foreground flex items-center gap-2">
                           <Lock className="h-3.5 w-3.5" />
                           Senha
-                          {!isEdit && <span className="text-red-500">*</span>}
+                          {!isPasswordDisabled && <span className="text-red-500">*</span>}
                         </FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               type={showPassword ? "text" : "password"}
                               placeholder={
-                                isEdit
+                                isPasswordDisabled
                                   ? "Deixe vazio para manter"
                                   : "Mínimo 6 caracteres"
                               }
-                              disabled={isEdit}
+                              disabled={isPasswordDisabled}
                               className="h-11 pl-4 pr-11 transition-all focus:ring-2 focus:ring-blue-500/20"
                               {...field}
                             />

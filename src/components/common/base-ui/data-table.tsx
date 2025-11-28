@@ -15,12 +15,14 @@ import {
   type Table as ReactTable,
 } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { type DateRange } from "react-day-picker";
 import { Toolbar } from "./data-table/toolbar";
 import { TableView } from "./data-table/table-view";
-import { DeleteModal } from "@/components/ui/delete-modal";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ActionButton<TData> {
   label: string;
@@ -40,7 +42,6 @@ interface DataTableProps<TData extends RowData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   searchKey?: keyof TData & string;
   placeholder?: string;
-  enableRowSelection?: boolean;
   actionButton?: {
     label: string;
     onClick?: () => void;
@@ -52,11 +53,9 @@ interface DataTableProps<TData extends RowData, TValue> {
   };
   rowActions?: ActionButton<TData>[];
   toolbar?: (table: ReactTable<TData>) => React.ReactNode;
-  includeSelection?: boolean;
   isLoading?: boolean;
   dateKey?: keyof TData & string;
   onDateRangeChange?: (range?: DateRange) => void;
-  onBulkDelete?: (selected: TData[]) => void;
 }
 
 export function DataTableGeneric<TData extends RowData, TValue>({
@@ -64,19 +63,14 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   columns,
   searchKey,
   placeholder = "Pesquisar...",
-  enableRowSelection = false,
   actionButton,
   bulkImportButton,
   rowActions,
   toolbar,
-  includeSelection = false,
   isLoading = false,
   dateKey,
   onDateRangeChange,
-  onBulkDelete,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = React.useState({});
-
   const hasDateColumn = React.useMemo(() => {
     if (!dateKey) return false;
     return (columns as any[]).some((col: any) => {
@@ -109,7 +103,6 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   const [tempSelectedRange, setTempSelectedRange] = React.useState<
     DateRange | undefined
   >(undefined);
-  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = React.useState(false);
 
   const dataWithDateFilter = React.useMemo(() => {
     if (!selectedRange || !selectedRange.from || !selectedRange.to || !dateKey)
@@ -128,7 +121,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
     });
   }, [data, selectedRange, dateKey]);
 
-  const columnsWithSelection = React.useMemo<ColumnDef<TData, any>[]>(() => {
+  const tableColumns = React.useMemo<ColumnDef<TData, any>[]>(() => {
     let finalColumns = columns.map((col: any) => {
       const accessorId = (col.id ?? col.accessorKey) as string | undefined;
       if (dateKey && accessorId === (dateKey as unknown as string)) {
@@ -153,30 +146,23 @@ export function DataTableGeneric<TData extends RowData, TValue>({
       ];
     }
 
-    if (includeSelection) {
-      finalColumns = [createSelectionColumn<TData>(), ...finalColumns];
-    }
-
     if (rowActions && rowActions.length > 0) {
       finalColumns = [...finalColumns, createActionsColumn<TData>(rowActions)];
     }
 
     return finalColumns;
-  }, [columns, includeSelection, rowActions, dateKey, hasDateColumn, searchKey]);
+  }, [columns, rowActions, dateKey, hasDateColumn, searchKey]);
 
   const table = useReactTable<TData>({
     data: dataWithDateFilter,
-    columns: columnsWithSelection,
+    columns: tableColumns,
     state: {
       sorting,
       columnVisibility,
-      rowSelection,
       columnFilters,
       globalFilter,
       pagination,
     },
-    enableRowSelection: includeSelection || enableRowSelection,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -189,24 +175,27 @@ export function DataTableGeneric<TData extends RowData, TValue>({
     globalFilterFn: (row, _columnId, filter) => {
       const needle = String(filter).trim().toLowerCase();
       if (!needle) return true;
-      const cells = (row.getAllCells?.() ?? row.getVisibleCells?.() ?? []) as any[];
+      const cells = (row.getAllCells?.() ??
+        row.getVisibleCells?.() ??
+        []) as any[];
       if (cells.length > 0) {
         return cells.some((cell: any) => {
           const colId = String(cell.column?.id ?? "");
           if (colId === "select" || colId === "actions") return false;
           const raw = row.getValue?.(colId as any);
-          return String(raw ?? "").toLowerCase().includes(needle);
+          return String(raw ?? "")
+            .toLowerCase()
+            .includes(needle);
         });
       }
       const values = Object.values(row.original as Record<string, unknown>);
-      return values.some((v) => String(v ?? "").toLowerCase().includes(needle));
+      return values.some((v) =>
+        String(v ?? "")
+          .toLowerCase()
+          .includes(needle)
+      );
     },
   });
-
-  const selectedRows = table.getSelectedRowModel().rows ?? [];
-  const totalRows = table.getRowModel().rows.length;
-  const selectedCount = selectedRows.length;
-  const isAllSelected = selectedCount > 0 && selectedCount === totalRows;
 
   return (
     <div className="w-full max-w-full space-y-4 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
@@ -216,7 +205,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
         actionButton={actionButton}
-      bulkImportButton={bulkImportButton}
+        bulkImportButton={bulkImportButton}
         toolbar={toolbar}
         view={viewAsCard ? "cards" : "table"}
         onChangeView={(v) => setViewAsCard(v === "cards")}
@@ -236,39 +225,13 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         }}
         searchKey={searchKey}
         dateKey={dateKey}
-        selectedCount={selectedCount}
-        isAllSelected={isAllSelected}
-        onClickDeleteSelected={() => {
-          if (selectedCount === 0) return;
-          setIsBulkDeleteOpen(true);
-        }}
       />
 
       <TableView
         table={table}
         isLoading={isLoading}
-        colSpan={columnsWithSelection.length}
+        colSpan={tableColumns.length}
       />
-
-    
-      {onBulkDelete && (
-        <DeleteModal
-          isOpen={isBulkDeleteOpen}
-          onClose={() => setIsBulkDeleteOpen(false)}
-          onConfirm={() => {
-            const originals = selectedRows.map((r: any) => r.original as TData);
-            onBulkDelete?.(originals);
-            setIsBulkDeleteOpen(false);
-          }}
-          title={isAllSelected ? "Excluir todos" : "Excluir selecionados"}
-          message={
-            isAllSelected
-              ? "Tem certeza que deseja excluir todos os itens selecionados? Esta ação não pode ser desfeita."
-              : `Tem certeza que deseja excluir ${selectedCount} item(ns) selecionado(s)? Esta ação não pode ser desfeita.`
-          }
-          isLoading={false}
-        />
-      )}
 
       <div className="flex items-center justify-end px-4 pt-4 border-t border-border">
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
@@ -304,44 +267,12 @@ export function DataTableGeneric<TData extends RowData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Próximo 
+            Próximo
           </Button>
         </div>
       </div>
     </div>
   );
-}
-
-export function createSelectionColumn<
-  TData extends RowData
->(): ColumnDef<TData> {
-  return {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Selecionar todos"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Selecionar linha"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 44,
-  };
 }
 
 export function createActionsColumn<TData extends RowData>(
@@ -382,4 +313,3 @@ export function createActionsColumn<TData extends RowData>(
     size: Math.max(48, actions.length * 32),
   };
 }
-

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as React from "react";
-import { Eye, Edit, Trash2, X } from "lucide-react";
+import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
   useCreateEquipment,
@@ -130,7 +130,7 @@ export function EquipmentTable({
     isLoading,
     refetch: refetchEquipment,
   } = useEquipment(customerId, { enabled: shouldFetch });
-  
+
   const equipment = React.useMemo(() => {
     if (data) return data;
     if (!customerId) return allEquipment;
@@ -233,12 +233,12 @@ export function EquipmentTable({
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (equipment) => handleEdit(equipment),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2 text-red-600" />,
+            icon: <Trash className="h-4 w-4 mr-2 text-red-600" />,
             onClick: (equipment) => handleDelete(equipment),
           },
         ]}

@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Building2 } from "lucide-react"
+import { Buildings, type Icon } from "phosphor-react"
 import Image from "next/image"
-import type { LucideIcon } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -20,7 +19,7 @@ import {
 interface Team {
   name: string
   logo?: string
-  logoIcon?: LucideIcon
+  logoIcon?: Icon
   plan: string
 }
 
@@ -36,14 +35,14 @@ export function TeamSwitcher({
     return null
   }
 
-  const LogoIcon = activeTeam.logoIcon || Building2
+  const LogoIcon = activeTeam.logoIcon || Buildings
 
   return (
     <SidebarMenu className="mt-4 md:mt-20 ">
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild >
-        <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="text-white flex aspect-square size-12 items-center justify-center rounded-lg overflow-hidden shrink-0 group-has-[:where([data-collapsible=icon])]/sidebar-wrapper:size-8">
                 {activeTeam.logo ? (
                   <Image
@@ -63,10 +62,10 @@ export function TeamSwitcher({
                 <span className="truncate text-base text-white">{activeTeam.name}</span>
                 <span className="truncate text-xs text-white/70">{activeTeam.plan}</span>
               </div>
-            
+
             </div>
           </DropdownMenuTrigger>
-      
+
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>

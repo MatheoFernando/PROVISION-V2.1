@@ -27,8 +27,7 @@ const grossCustomerDetailsSchema = z.object({
   cod: z.string().min(1, "Código é obrigatório"),
   name: z.string().min(1, "Nome é obrigatório"),
   taxName: z.string().min(1, "Nome fiscal é obrigatório"),
-  nif: z.string().min(14, "NIF deve ter pelo menos 14 caracteres"),
-  photo: z.string().optional().default(""),
+  nif: z.string().min(9, "NIF deve ter pelo menos 9 caracteres"),
   companyId: z.string().min(1, "Empresa é obrigatória"),
 });
 
@@ -36,8 +35,7 @@ export const createCustomerSchema = z.object({
   cod: z.string().min(1, "Código é obrigatório"),
   name: z.string().min(1, "Nome é obrigatório"),
   taxName: z.string().min(1, "Nome fiscal é obrigatório"),
-  nif: z.string().min(14, "NIF deve ter pelo menos 14 caracteres"),
-  photo: z.string().optional().default(""),
+  nif: z.string().min(9, "NIF deve ter pelo menos 9 caracteres"),
   contactId: z.string().optional(),
   addressId: z.string().optional(),
   companyId: z.string().min(1, "Empresa é obrigatória"),

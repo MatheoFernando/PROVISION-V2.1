@@ -202,7 +202,15 @@ function CompanyFormPage() {
         });
         toast.success("Empresa criada com sucesso");
       }
-      router.back();
+
+      // Check if we should return to user creation
+      const shouldReturnToUserCreate = sessionStorage.getItem('returnToUserCreate');
+      if (shouldReturnToUserCreate === 'true') {
+        sessionStorage.removeItem('returnToUserCreate');
+        router.push('/dashboard/users');
+      } else {
+        router.back();
+      }
     } catch (error) {
       toast.error("Ocorreu um erro. Tente novamente.");
     }

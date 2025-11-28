@@ -6,11 +6,25 @@ import { type User, type Company } from '@/infrastructure/types/domain'
 import { Badge } from '@/components/ui/badge'
 import { DataTableGeneric } from '../../base-ui/data-table'
 import CreateUserDialog from './users-create'
-import { Edit, Trash2 } from 'lucide-react'
+import {  Bell, ChartLine, PencilSimple, ShieldCheck, Trash,  } from "phosphor-react";
 import { DeleteModal } from '@/components/ui/delete-modal'
 import { useUsers } from '../../../../infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
 import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
+import { SendNotificationDrawer } from './send-notification-drawer'
+import { ChangePermissionsDrawer } from './permissions-drawer'
+import { ViewActivityDrawer } from './view-activity-drawer'
+import { Send } from 'lucide-react'
+
+const resolveName = (value: unknown) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'object' && value !== null && 'name' in value) {
+    const name = (value as { name?: unknown }).name
+    if (typeof name === 'string') return name
+  }
+  return ''
+}
 
 function buildColumns(companyById: Record<string, Company | undefined>): ColumnDef<User, unknown>[] {
   return [
@@ -22,15 +36,29 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
       }
     },
     {
-      accessorKey: 'isGlobalAdmin',
+      accessorKey: 'role',
       header: 'Função',
-      cell: ({ getValue }) => {
-        const isGlobalAdmin = getValue<boolean>()
-        return (
-          <Badge variant={isGlobalAdmin ? 'default' : 'secondary'} className={isGlobalAdmin ? 'bg-blue-500' : 'bg-gray-200 text-gray-700'}>
-            {isGlobalAdmin ? 'Super Admin' : 'Admin'}
-          </Badge>
-        )
+      cell: ({ row }) => {
+        const roleValue = row.getValue('role')
+        const roleLabel = resolveName(roleValue)
+        return <div>{roleLabel || 'N/A'}</div>
+      }
+    },
+    {
+      accessorKey: 'department',
+      header: 'Departamento',
+      cell: ({ row }) => {
+        const departmentValue = row.getValue('department')
+        const departmentLabel = resolveName(departmentValue)
+        return <div>{departmentLabel || 'N/A'}</div>
+      }
+    },
+    {
+      accessorKey: 'company',
+      header: 'Empresa',
+      cell: ({ row }) => {
+        const company = row.getValue('company') as Company
+        return <div>{company?.name || 'N/A'}</div>
       }
     },
     {
@@ -53,7 +81,12 @@ function ListUsers() {
   const [usersToDelete, setUsersToDelete] = React.useState<User[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = React.useState(false)
+  const [isPermissionsDrawerOpen, setIsPermissionsDrawerOpen] = React.useState(false)
+  const [isActivityDrawerOpen, setIsActivityDrawerOpen] = React.useState(false)
+
   const companyId = useAuthStore((state) => state.companyId) || ""
+  const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin)
   const { users, isLoading, deleteUser, isDeleting } = useUsers(companyId)
   const companiesQuery = useCompaniesQuery()
 
@@ -98,6 +131,75 @@ function ListUsers() {
     setIsDeleteDialogOpen(true)
   }
 
+  const handleSendNotification = (user: User) => {
+    setSelectedUser(user)
+    setIsNotificationDrawerOpen(true)
+  }
+
+  const handleChangePermissions = (user: User) => {
+    setSelectedUser(user)
+    setIsPermissionsDrawerOpen(true)
+  }
+
+  const handleViewActivity = (user: User) => {
+    setSelectedUser(user)
+    setIsActivityDrawerOpen(true)
+  }
+
+
+  const rowActions = React.useMemo(() => {
+    const actions = [
+      {
+        label: 'Editar',
+        icon: <PencilSimple className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+        onClick: handleEdit,
+        variant: 'ghost' as const
+      },
+      {
+        label: 'Excluir',
+        icon: <Trash className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+        onClick: handleDeleteClick,
+        variant: 'ghost' as const
+      }
+    ]
+
+    if (isGlobalAdmin) {
+      actions.push(
+        {
+          label: 'Alterar permissões',
+          icon: <ShieldCheck className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+          onClick: handleChangePermissions,
+          variant: 'ghost' as const
+        },
+        {
+          label: 'Enviar notificação',
+          icon: <Send className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+          onClick: handleSendNotification,
+          variant: 'ghost' as const
+        }
+  
+      )
+    } else {
+     
+      actions.push(
+        {
+          label: 'Enviar notificação ',
+          icon: <Send className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+          onClick: handleSendNotification,
+          variant: 'ghost' as const
+        },
+        {
+          label: 'Ver atividade dos seus utilizadores',
+          icon: <ChartLine className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+          onClick: handleViewActivity,
+          variant: 'ghost' as const
+        }
+      )
+    }
+
+    return actions
+  }, [isGlobalAdmin])
+
   const handleConfirmDelete = async () => {
     if (usersToDelete.length === 0) {
       resetDeletionState()
@@ -141,20 +243,7 @@ function ListUsers() {
           label: 'Novo Utilizador',
           component: <CreateUserDialog />
         }}
-        rowActions={[
-          {
-            label: 'Editar',
-            icon: <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-            onClick: handleEdit,
-            variant: 'ghost'
-          },
-          {
-            label: 'Excluir',
-            icon: <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-            onClick: handleDeleteClick,
-            variant: 'ghost'
-          }
-        ]}
+        rowActions={rowActions}
       />
 
       <CreateUserDialog
@@ -172,6 +261,23 @@ function ListUsers() {
         message={deleteMessage}
         isLoading={isDeleting}
       />
+
+      <SendNotificationDrawer
+        user={selectedUser}
+        open={isNotificationDrawerOpen}
+        onOpenChange={setIsNotificationDrawerOpen}
+      />
+      <ChangePermissionsDrawer
+        user={selectedUser}
+        open={isPermissionsDrawerOpen}
+        onOpenChange={setIsPermissionsDrawerOpen}
+      />
+      <ViewActivityDrawer
+        user={selectedUser}
+        open={isActivityDrawerOpen}
+        onOpenChange={setIsActivityDrawerOpen}
+      />
+  
     </div>
   )
 }

@@ -26,9 +26,9 @@ function Header() {
   }
 
   return (
-        <header className="sticky top-0 flex h-16 shrink-0 py-2  bg-white dark:bg-[#0f172a] px-3 md:px-6 justify-between items-center gap-2 md:gap-4 w-full border-b border-slate-200 dark:border-border/50 z-20 backdrop-blur-md ">
+    <header className="sticky top-0 flex h-16 shrink-0 py-2  bg-white dark:bg-[#0f172a] px-3 md:px-6 justify-between items-center gap-2 md:gap-4 w-full border-b border-slate-200 dark:border-border/50 z-20 backdrop-blur-md ">
       <div className="flex items-baseline gap-2 flex-1 ">
-        <SidebarTrigger className='md:hidden block' />
+        <SidebarTrigger className='block ' variant="outline" />
         <BreadcrumbClient />
       </div>
       <div className="flex items-center justify-end  gap-4">

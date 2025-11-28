@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FunnelPlus, Plus, X, ChevronDown, Trash2, UploadCloud } from "lucide-react";
+import { FunnelPlus, Plus, X, ChevronDown, UploadCloud } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -48,9 +48,6 @@ export interface ToolbarProps<TData extends RowData> {
   onClearRange: () => void;
   searchKey?: string;
   dateKey?: string;
-  selectedCount?: number;
-  isAllSelected?: boolean;
-  onClickDeleteSelected?: () => void;
 }
 
 export function Toolbar<TData extends RowData>({
@@ -67,9 +64,6 @@ export function Toolbar<TData extends RowData>({
   onClearRange,
   searchKey,
   dateKey,
-  selectedCount = 0,
-  isAllSelected = false,
-  onClickDeleteSelected,
 }: ToolbarProps<TData>) {
   const [showDatePicker, setShowDatePicker] = React.useState(false);
   const [sortLabel, setSortLabel] = React.useState("Mais recente");
@@ -153,20 +147,6 @@ export function Toolbar<TData extends RowData>({
       </div>
 
       <div className="flex items-center gap-2  w-full justify-end">
-
-        {selectedCount > 0 && (
-          <Button
-            variant="destructive"
-            className="h-11 cursor-pointer"
-            onClick={onClickDeleteSelected}
-          >
-            <Trash2 className="mr-2 size-4" />
-            {isAllSelected
-              ? "Excluir todos"
-              : `Excluir ${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}`}
-          </Button>
-        )}
-
         <Drawer
           open={isFilterOpen}
           onOpenChange={setIsFilterOpen}

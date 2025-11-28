@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import {ChevronRight, ChevronLeft  } from "lucide-react"
+import { TextOutdent , TextIndent  } from "phosphor-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -260,12 +260,10 @@ function SidebarTrigger({
   const { toggleSidebar, open } = useSidebar()
 
   return (
-    <Button
+    <button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="ghost"
-      size="sm"
-      className={cn("size-5 cursor-pointer  text-white hover:text-white", className)}
+      className={cn(" cursor-pointer text-white hover:text-white", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -273,12 +271,12 @@ function SidebarTrigger({
       {...props}
     >
       {open ? (
-        <ChevronLeft   className="text-slate-700 size-5 " />
+        <TextIndent  className="text-slate-700 size-6 " />
       ) : (
-        <ChevronRight   className="text-slate-700 size-5 " />
+        <TextOutdent  className="text-slate-700 size-6 " />
       )}
       <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    </button>
   )
 }
 
@@ -478,7 +476,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-4 overflow-hidden rounded p-3 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 font-medium data-[active=true]:bg-[#d1d1d2] data-[active=true]:font-medium data-[active=true]:text-gray-700 data-[active=true]:[&>svg]:text-gray-600 data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  "peer/menu-button flex w-full items-center gap-4 overflow-hidden rounded p-3 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-[#eff4fb] hover:text-[#3C50E0] disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 font-medium data-[active=true]:bg-[#eff4fb] data-[active=true]:font-medium data-[active=true]:text-[#3C50E0] data-[active=true]:[&>svg]:text-[#3C50E0] data-[state=open]:hover:bg-[#eff4fb] data-[state=open]:hover:text-[#3C50E0] group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -573,7 +571,7 @@ function SidebarMenuAction({
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
         className
       )}
       {...props}
@@ -690,8 +688,8 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-3 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-        "data-[active=true]:bg-[#d1d1d2] data-[active=true]:font-bold data-[active=true]:text-gray-700 data-[active=true]:[&>svg]:text-gray-900",
+        "text-sidebar-foreground ring-sidebar-ring hover:bg-[#eff4fb] hover:text-[#3C50E0] active:bg-[#eff4fb] active:text-[#3C50E0] [&>svg]:text-sidebar-foreground hover:[&>svg]:text-[#3C50E0] flex h-7 min-w-0 -translate-x-px items-center gap-3 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+        "data-[active=true]:bg-[#eff4fb] data-[active=true]:font-bold data-[active=true]:text-[#3C50E0] data-[active=true]:[&>svg]:text-[#3C50E0]",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",
         "group-data-[collapsible=icon]:hidden",

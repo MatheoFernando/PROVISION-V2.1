@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as React from "react";
-import { Eye, Edit, Trash2, X } from "lucide-react";
+import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
   useSites,
@@ -119,7 +119,7 @@ const columns: ColumnDef<Site>[] = [
     },
   },
 
-  
+
 ];
 
 interface SitesTableProps {
@@ -255,12 +255,12 @@ export function SitesTable({
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (site) => handleEdit(site),
           },
           {
             label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (site) => handleDelete(site),
           },
         ]}
@@ -344,7 +344,7 @@ export function SitesTable({
           { key: "addressMunicipality", label: "Município", required: true },
           { key: "addressProvince", label: "Província", required: true },
           { key: "addressCountry", label: "País", required: true },
-          
+
         ]}
         templateFilename="modelo-sites.csv"
         schema={createGrossSiteSchema}
