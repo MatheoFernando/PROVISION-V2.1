@@ -15,6 +15,7 @@ import { SendNotificationDrawer } from './send-notification-drawer'
 import { ChangePermissionsDrawer } from './permissions-drawer'
 import { ViewActivityDrawer } from './view-activity-drawer'
 import { Send } from 'lucide-react'
+import { MakeEmployeeUserDrawer } from '@/components/common/dashboard/employees/make-employee-user-drawer'
 
 const resolveName = (value: unknown) => {
   if (!value) return ''
@@ -58,7 +59,7 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
       header: 'Empresa',
       cell: ({ row }) => {
         const company = row.getValue('company') as Company
-        return <div>{company?.name || 'N/A'}</div>
+        return <div>{company?.businessName || 'N/A'}</div>
       }
     },
     {
@@ -234,14 +235,16 @@ function ListUsers() {
         columns={columns}
         searchKey="phone"
         placeholder="Pesquisar por telefone..."
-        enableRowSelection
-        includeSelection
         dateKey="createdAt"
-        onBulkDelete={handleBulkDelete}
         isLoading={isLoading || companiesQuery.isLoading}
         actionButton={{
-          label: 'Novo Utilizador',
-          component: <CreateUserDialog />
+          label: 'Ações',
+          component: (
+            <div className="flex flex-wrap gap-2">
+              <MakeEmployeeUserDrawer />
+              <CreateUserDialog />
+            </div>
+          ),
         }}
         rowActions={rowActions}
       />

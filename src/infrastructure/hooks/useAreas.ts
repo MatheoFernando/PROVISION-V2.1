@@ -13,6 +13,18 @@ export function useAreas() {
   });
 }
 
+export function useAreaById(id?: string) {
+  return useQuery({
+    queryKey: ["area", id],
+    queryFn: async (): Promise<Area | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/area/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateArea() {
   const queryClient = useQueryClient();
   return useMutation({

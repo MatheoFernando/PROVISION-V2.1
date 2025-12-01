@@ -19,12 +19,14 @@ interface TableViewProps<TData extends RowData> {
   table: ReactTable<TData>;
   isLoading?: boolean;
   colSpan: number;
+  onRefetch?: () => void;
 }
 
 export function TableView<TData extends RowData>({
   table,
   isLoading = false,
   colSpan,
+  onRefetch,
 }: TableViewProps<TData>) {
   return (
     <div className="w-full overflow-x-auto pb-0 mb-0">
@@ -69,6 +71,7 @@ export function TableView<TData extends RowData>({
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
                 className="border-b border-border hover:bg-muted/50 dark:hover:bg-muted/30 data-[state=selected]:bg-muted"
+                onClick={() => onRefetch?.()}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell

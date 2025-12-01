@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   useAddresses,
+  useAddressById,
   useCreateAddress,
 } from "@/infrastructure/hooks/useAddresses";
 import {
@@ -36,15 +37,29 @@ interface AddressSelectProps {
 }
 
 export function AddressSelect({
-  value,
+  value: valueProp,
   onChange,
   companyId,
 }: AddressSelectProps) {
+  const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [createdAddresses, setCreatedAddresses] = useState<Array<Address & { createdAt?: string }>>([]);
+
   const authCompanyId = useAuthStore((s) => s.companyId);
   const effectiveCompanyId = companyId ?? authCompanyId ?? undefined;
-  const { data: addresses = [], isLoading } = useAddresses(effectiveCompanyId);
+
+  const {
+    data: addresses = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useAddresses(effectiveCompanyId);
+
+  // Carrega o endereço pelo ID quando estamos a editar (getById)
+  const { data: addressById } = useAddressById(value);
 
   const createAddress = useCreateAddress();
   const form = useForm<AddressForm>({
@@ -85,42 +100,149 @@ export function AddressSelect({
 
   const communes = selectedMunicipality?.communes ?? [];
 
+  useEffect(() => {
+    if (value) {
+      setSelectedAddressId(value);
+    } else {
+      setSelectedAddressId(null);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    form.reset({
+      houseHold: "",
+      commune: "",
+      municipality: "",
+      province: "",
+      country: "Angola",
+      companyId: effectiveCompanyId || undefined,
+    });
+  }, [effectiveCompanyId, form, open]);
+
   function handleSubmit(data: AddressForm) {
     createAddress.mutate(data, {
       onSuccess: (created: Address) => {
         setOpen(false);
-        onChange(created.id!);
+        if (created?.id) {
+          const addressWithMeta = created as Address & { createdAt?: string };
+          const normalizedAddress: Address & { createdAt?: string } = {
+            ...addressWithMeta,
+            id: created.id,
+            houseHold: created?.houseHold ?? "",
+            commune: created?.commune ?? "",
+            municipality: created?.municipality ?? "",
+            province: created?.province ?? "",
+            country: created?.country ?? "",
+            companyId: created?.companyId ?? effectiveCompanyId,
+            createdAt: addressWithMeta.createdAt ?? new Date().toISOString(),
+          };
+
+          setCreatedAddresses((prev) => {
+            if (prev.some((item) => item.id === created.id)) return prev;
+            return [normalizedAddress, ...prev];
+          });
+
+          setTimeout(() => {
+            setSelectedAddressId(created.id!);
+            onChange(created.id!);
+          }, 0);
+        }
         form.reset();
+        void refetch();
       },
     });
   }
 
-  const filtered = (Array.isArray(addresses) ? addresses : []).filter(
-    (a: Address) =>
-      [a.houseHold, a.commune, a.municipality, a.province, a.country]
-        .join(" ")
-        .toLowerCase()
-        .includes(query.toLowerCase())
+  const addressesList = useMemo(() => {
+    const baseList = Array.isArray(addresses) ? addresses : [];
+
+    const merged: Array<Address & { createdAt?: string }> = [
+      ...createdAddresses,
+      ...baseList,
+    ];
+
+    // Quando estamos a editar e o endereço não veio no getAll,
+    // garantimos que o resultado do getById também entra na lista.
+    if (addressById && addressById.id) {
+      merged.push({
+        ...(addressById as Address & { createdAt?: string }),
+        id: addressById.id,
+        houseHold: addressById.houseHold ?? "",
+        commune: addressById.commune ?? "",
+        municipality: addressById.municipality ?? "",
+        province: addressById.province ?? "",
+        country: addressById.country ?? "",
+      });
+    }
+    const map = new Map<string, Address & { createdAt?: string }>();
+    merged.forEach((address) => {
+      if (!address?.id) return;
+      map.set(address.id, {
+        ...address,
+        id: address.id,
+        houseHold: address.houseHold ?? "",
+        createdAt:
+          (address as Address & { createdAt?: string }).createdAt ??
+          new Date().toISOString(),
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [createdAddresses, addresses]);
+
+  const filtered = useMemo(
+    () =>
+      addressesList.filter((a: Address) =>
+        [a.houseHold, a.commune, a.municipality, a.province, a.country]
+          .join(" ")
+          .toLowerCase()
+          .includes(query.toLowerCase())
+      ),
+    [addressesList, query]
   );
+
+  useEffect(() => {
+    if (value && addressesList.length > 0) {
+      const addressExists = addressesList.some(addr => addr.id === value);
+      if (addressExists) {
+        setSelectedAddressId(value);
+      }
+    }
+  }, [value, addressesList]);
+
+  const isLoadingOptions = isLoading || isFetching;
+  const isSaving = createAddress.status === "pending";
+
+  const displayValue = useMemo(() => {
+    const normalizedValue = value && value.trim() !== '' ? value : undefined;
+
+    if (!normalizedValue) {
+      return undefined;
+    }
+
+    const exists = addressesList.some(addr => addr.id === normalizedValue);
+    return exists ? normalizedValue : undefined;
+  }, [value, addressesList]);
 
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
         <Select
-          value={value}
+          value={displayValue}
           onValueChange={(val) => {
-            const selected = (Array.isArray(addresses) ? addresses : []).find(
-              (a: Address) => a.id === val
-            );
-
+            setSelectedAddressId(val);
             onChange(val);
           }}
-          disabled={isLoading}
+          disabled={isLoadingOptions}
+          onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full ">
             <SelectValue placeholder="Selecione um endereço" />
           </SelectTrigger>
-          {isLoading && (
+          {isLoadingOptions && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -130,6 +252,7 @@ export function AddressSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar endereços..."
                 className="w-full placeholder:text-xs"
+                disabled={isLoadingOptions || addressesList.length === 0}
               />
             </div>
             {filtered.length === 0 && (
@@ -161,7 +284,6 @@ export function AddressSelect({
       <Popover
         open={open}
         onOpenChange={(next) => {
-          const isSaving = createAddress.status === "pending";
           if (isSaving) return;
           setOpen(next);
         }}
@@ -172,9 +294,13 @@ export function AddressSelect({
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-            disabled={createAddress.status === "pending"}
+            disabled={isSaving}
           >
-            <Plus className="w-4 h-4" />
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -182,10 +308,10 @@ export function AddressSelect({
           sideOffset={8}
           className="w-[26rem] p-4"
           onInteractOutside={(e) => {
-            if (createAddress.status === "pending") e.preventDefault();
+            if (isSaving) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
-            if (createAddress.status === "pending") e.preventDefault();
+            if (isSaving) e.preventDefault();
           }}
         >
           <div className="font-medium mb-4 text-lg">Criar Endereço</div>
@@ -204,6 +330,7 @@ export function AddressSelect({
                 id="houseHold"
                 {...form.register("houseHold")}
                 placeholder="domicílio"
+                disabled={isSaving}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.preventDefault();
                 }}
@@ -222,6 +349,7 @@ export function AddressSelect({
                 id="country"
                 {...form.register("country")}
                 placeholder="País"
+                disabled={isSaving}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.preventDefault();
                 }}
@@ -243,7 +371,7 @@ export function AddressSelect({
                   form.setValue("municipality", "", { shouldValidate: true });
                   form.setValue("commune", "", { shouldValidate: true });
                 }}
-                disabled={loadingProvinces}
+                disabled={loadingProvinces || isSaving}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
@@ -281,7 +409,7 @@ export function AddressSelect({
                   form.setValue("municipality", value, { shouldValidate: true });
                   form.setValue("commune", "", { shouldValidate: true });
                 }}
-                disabled={municipalities.length === 0}
+                disabled={municipalities.length === 0 || isSaving}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
@@ -320,7 +448,7 @@ export function AddressSelect({
                 onValueChange={(value) =>
                   form.setValue("commune", value, { shouldValidate: true })
                 }
-                disabled={communes.length === 0}
+                disabled={communes.length === 0 || isSaving}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
@@ -357,12 +485,11 @@ export function AddressSelect({
                 type="button"
                 variant="outline"
                 className="cursor-pointer"
-                disabled={createAddress.status === "pending"}
+                disabled={isSaving}
                 onClick={() => {
-                  if (createAddress.status !== "pending") {
-                    form.reset();
-                    setOpen(false);
-                  }
+                  if (isSaving) return;
+                  form.reset();
+                  setOpen(false);
                 }}
               >
                 Cancelar
@@ -370,10 +497,10 @@ export function AddressSelect({
               <Button
                 type="button"
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-                disabled={createAddress.status === "pending"}
+                disabled={isSaving}
                 onClick={() => form.handleSubmit(handleSubmit)()}
               >
-                {createAddress.status === "pending" ? (
+                {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Salvando...

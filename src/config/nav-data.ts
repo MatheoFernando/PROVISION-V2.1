@@ -1,39 +1,65 @@
 export interface NavItemData {
-    title: string;
-    url?: string;
-    requiresGlobalAdmin?: boolean;
-    iconKey?: string;
-    items?: NavItemData[];
+  title: string;
+  url?: string;
+  requiresGlobalAdmin?: boolean;
+  iconKey?: string;
+  items?: NavItemData[];
 }
 
-export const navData: NavItemData[] = [
-    { title: "Dashboard", url: "/dashboard", iconKey: "SquaresFour" },
-    { title: "Modulo", url: "/dashboard/service", iconKey: "Package" },
-    {
-        title: "Empresas",
-        url: "/dashboard/customers",
-        iconKey: "Buildings",
-    },
-    {
-        title: "Configurações",
-        url: "/dashboard/settings",
-        iconKey: "Gear",
-        items: [
+export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => [
+  { title: "Dashboard", url: "/dashboard", iconKey: "SquaresFour" },
+  { title: "Modulo", url: "/dashboard/service", iconKey: "Package" },
+  ...(isGlobalAdmin
+    ? []
+    : [
+        {
+          title: "Empresas",
+          url: "/dashboard/customers",
+          iconKey: "Buildings",
+          items: [
             {
-                title: "Utilizadores",
-                url: "/dashboard/users",
-                iconKey: "Users",
+              title: "Clientes",
+              url: "/dashboard/customers",
+              iconKey: "Users",
             },
-           
-        ],
-    },
-    {
-        title: "Analitycs",
-        url: "/dashboard/analytics",
-        iconKey: "ChartPie",
-    },
+            {
+              title: "Funcionários",
+              url: "/dashboard/employees",
+              iconKey: "Users",
+            },
+            {
+              title: "Veículos",
+              url: "/dashboard/car",
+              iconKey: "Car",
+            },
+          ],
+        },
+      ]),
+  {
+    title: "Configurações",
+    url: "/dashboard/settings",
+    iconKey: "Gear",
+    items: [
+      {
+        title: "Utilizadores",
+        url: "/dashboard/users",
+        iconKey: "Users",
+      },
+      {
+        title: "Empresas",
+        url: "/dashboard/companies",
+        iconKey: "Buildings",
+      },
+    ],
+  },
+  {
+    title: "Analitycs",
+    url: "/dashboard/analytics",
+    iconKey: "ChartPie",
+  },
 ];
 
-export const adminOnlyPaths: string[] = navData
-    .filter((item) => Boolean(item.requiresGlobalAdmin) && item.url)
-    .map((item) => item.url as string);
+
+export const navData: NavItemData[] = getNavData(false);
+
+export const adminOnlyPaths: string[] = [];

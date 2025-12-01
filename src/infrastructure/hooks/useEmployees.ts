@@ -7,7 +7,10 @@ import {
   type CreateGrossEmployeePayload,
 } from "../schema/schema-employees";
 import { toast } from "sonner";
-import { resolveApiErrorPayload, resolveApiResponse } from "../utils/api-response";
+import {
+  resolveApiErrorPayload,
+  resolveApiResponse,
+} from "../utils/api-response";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
@@ -17,7 +20,10 @@ interface EmployeesQueryOptions {
   enabled?: boolean;
 }
 
-export function useEmployees(companyId?: string, options?: EmployeesQueryOptions) {
+export function useEmployees(
+  companyId?: string,
+  options?: EmployeesQueryOptions
+) {
   return useQuery({
     queryKey: employeesKey(companyId),
     enabled: (options?.enabled ?? true) && Boolean(companyId),
@@ -51,7 +57,9 @@ export function useCreateEmployee() {
     onSuccess: (created, variables) => {
       const key = employeesKey(variables.companyId);
       queryClient.setQueryData<Employee[]>(key, (current = []) => {
-        const alreadyExists = current.some((employee) => employee.id === created.id);
+        const alreadyExists = current.some(
+          (employee) => employee.id === created.id
+        );
         if (alreadyExists) {
           return current.map((employee) =>
             employee.id === created.id ? created : employee
@@ -60,7 +68,7 @@ export function useCreateEmployee() {
         return [created, ...current];
       });
       queryClient.invalidateQueries({ queryKey: key });
-      toast.success('Funcionário criado com sucesso!');
+      toast.success("Funcionário criado com sucesso!");
     },
   });
 }
@@ -69,7 +77,7 @@ export function useCreateGrossEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation<Employee, unknown, CreateGrossEmployeePayload>({
-    mutationFn: async data => {
+    mutationFn: async (data) => {
       const response = await api.post("/employee/AddGrossEmployee", data);
       const result = resolveApiResponse<Employee>(response);
       const isSuccess = result.statusCode === 200 || result.statusCode === 201;
@@ -80,7 +88,8 @@ export function useCreateGrossEmployee() {
 
       const fallbackData =
         typeof result.payload === "string" ? result.payload : undefined;
-      const errorMessage = result.message || fallbackData || "Erro ao importar funcionário";
+      const errorMessage =
+        result.message || fallbackData || "Erro ao importar funcionário";
 
       const error = new Error(errorMessage);
       (error as { response?: unknown }).response = {
@@ -94,7 +103,7 @@ export function useCreateGrossEmployee() {
       queryClient.invalidateQueries({ queryKey: key });
       toast.success("Funcionário importado com sucesso!");
     },
-    onError: error => {
+    onError: (error) => {
       const resolved = resolveApiErrorPayload<Employee>(error);
       const message =
         resolved.message ||
@@ -109,17 +118,23 @@ export function useUpdateEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Employee> => {
-      const response = await api.put(`/employee/${id}`, data);
+    mutationFn: async (
+      payload: Partial<Omit<Employee, "createdAt" | "updatedAt">> & {
+        id: string;
+      }
+    ): Promise<Employee> => {
+      const response = await api.put("/employee", payload);
       return response.data;
     },
     onSuccess: (updated) => {
       const key = employeesKey(updated.companyId);
       queryClient.setQueryData<Employee[]>(key, (current = []) =>
-        current.map((employee) => (employee.id === updated.id ? { ...employee, ...updated } : employee))
+        current.map((employee) =>
+          employee.id === updated.id ? { ...employee, ...updated } : employee
+        )
       );
       queryClient.invalidateQueries({ queryKey: key });
-      toast.success('Funcionário atualizado com sucesso!');
+      toast.success("Funcionário atualizado com sucesso!");
     },
   });
 }
@@ -128,7 +143,12 @@ export function useDeleteEmployee(defaultCompanyId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id }: { id: string; companyId?: string }): Promise<void> => {
+    mutationFn: async ({
+      id,
+    }: {
+      id: string;
+      companyId?: string;
+    }): Promise<void> => {
       await api.delete(`/employee/${id}`);
     },
     onSuccess: (_, variables) => {
@@ -137,8 +157,7 @@ export function useDeleteEmployee(defaultCompanyId?: string) {
         current.filter((employee) => employee.id !== variables.id)
       );
       queryClient.invalidateQueries({ queryKey: key });
-      toast.success('Funcionário excluído com sucesso!');
+      toast.success("Funcionário excluído com sucesso!");
     },
   });
 }
-

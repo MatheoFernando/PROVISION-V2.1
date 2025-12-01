@@ -3,13 +3,30 @@ import { api } from "../utils/api";
 import { toast } from "sonner";
 import { Address } from "../types/domain";
 
+interface ApiListResponse<T> {
+  data?: T;
+  success?: boolean;
+}
+
+interface ApiItemResponse<T> {
+  data?: T;
+  success?: boolean;
+}
+
 export function useAddresses(companyId?: string) {
   return useQuery({
     queryKey: ["addresses", companyId],
     queryFn: async (): Promise<Address[]> => {
       if (!companyId) return [];
-      const response = await api.get("/address/getAll");
-      return response.data || [];
+
+      const response = await api.get<ApiListResponse<Address[]>>(
+        "/address/getAll"
+      );
+
+      const payload = response.data;
+      if (Array.isArray(payload)) return payload as Address[];
+
+      return (payload?.data ?? []) as Address[];
     },
     enabled: !!companyId,
   });
@@ -19,10 +36,35 @@ export function useAddressesByHouseHold(houseHold: string) {
   return useQuery({
     queryKey: ["addresses", "houseHold", houseHold],
     queryFn: async (): Promise<Address[]> => {
-      const { data } = await api.get(`/address/getByHouseHold`, { params: { houseHold } });
+      const { data } = await api.get<ApiListResponse<Address[]>>(
+        `/address/getByHouseHold`,
+        { params: { houseHold } }
+      );
+
+      if (Array.isArray(data)) return data as Address[];
       return (data?.data ?? []) as Address[];
     },
     enabled: !!houseHold,
+  });
+}
+
+export function useAddressById(id?: string) {
+  return useQuery({
+    queryKey: ["address", id],
+    queryFn: async (): Promise<Address | null> => {
+      if (!id) return null;
+
+      const { data } = await api.get<ApiItemResponse<Address> | Address>(
+        `/address/getById/${id}`
+      );
+
+      if (data && (data as ApiItemResponse<Address>).data) {
+        return (data as ApiItemResponse<Address>).data ?? null;
+      }
+
+      return (data as Address) ?? null;
+    },
+    enabled: !!id,
   });
 }
 
@@ -30,9 +72,20 @@ export function useCreateAddress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: Omit<Address, 'id' | 'createdAt' | 'updatedAt'>): Promise<Address> => {
-      const response = await api.post("/address/create", payload);
-      return response.data;
+    mutationFn: async (
+      payload: Omit<Address, "id" | "createdAt" | "updatedAt">
+    ): Promise<Address> => {
+      const response = await api.post<ApiItemResponse<Address> | Address>(
+        "/address/create",
+        payload
+      );
+
+      const data = response.data;
+      if (data && (data as ApiItemResponse<Address>).data) {
+        return (data as ApiItemResponse<Address>).data as Address;
+      }
+
+      return data as Address;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
@@ -48,9 +101,22 @@ export function useUpdateAddress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Omit<Address, 'id' | 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Address> => {
-      const response = await api.put("/address", data);
-      return response.data;
+    mutationFn: async (
+      data: Partial<Omit<Address, "id" | "createdAt" | "updatedAt">> & {
+        id: string;
+      }
+    ): Promise<Address> => {
+      const response = await api.put<ApiItemResponse<Address> | Address>(
+        "/address",
+        data
+      );
+
+      const payload = response.data;
+      if (payload && (payload as ApiItemResponse<Address>).data) {
+        return (payload as ApiItemResponse<Address>).data as Address;
+      }
+
+      return payload as Address;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
@@ -78,6 +144,3 @@ export function useDeleteAddress() {
     },
   });
 }
-
-
-

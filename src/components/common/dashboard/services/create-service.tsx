@@ -61,7 +61,7 @@ export function CreateService() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="px-6 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white">
+        <Button className="px-6 py-5 text-white cursor-pointer">
           <Plus className="h-4 w-4 mr-2" />
           Criar Serviço
         </Button>
@@ -156,7 +156,7 @@ export function CreateService() {
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4 mr-2" />
+             
                     Criar Serviço
                   </>
                 )}

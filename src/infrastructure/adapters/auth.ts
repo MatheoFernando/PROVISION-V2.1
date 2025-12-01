@@ -23,6 +23,7 @@ export type LoginData = {
 export type LoginEnvelope = {
   data: LoginData;
   success: boolean;
+  statusCode?: number;
 };
 
 export async function login(request: LoginRequest): Promise<LoginEnvelope> {
@@ -39,7 +40,7 @@ export async function login(request: LoginRequest): Promise<LoginEnvelope> {
     Cookies.set('isGlobalAdmin', String(isGlobalAdmin));
     if (companyId) Cookies.set('companyId', companyId);
     Cookies.set('userId', id);
- 
+
     useAuthStore.getState().setSession({
       token: data.data.accessToken,
       userId: id,

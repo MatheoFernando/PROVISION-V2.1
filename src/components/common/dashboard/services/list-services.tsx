@@ -1,23 +1,24 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Edit, Trash2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { EditService } from "./edit-service";
 import { useUpdateModule, useDeleteModule } from "@/infrastructure/hooks/useModules";
 import { type ModuleSchema } from "@/infrastructure/schema/schema-module";
-import { CreateService } from "./create-service";
 import { DeleteModal } from "@/components/ui/delete-modal";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { Trash } from "phosphor-react";
+import { Edit } from "lucide-react";
 
 
 interface ListServicesProps {
   services: ModuleSchema[];
-  isGlobalAdmin: boolean;
 }
 
 export function ListServices({ services }: ListServicesProps) {
+  const { isGlobalAdmin } = useAuthStore();
   const [editingService, setEditingService] = useState<ModuleSchema | null>(null);
   const [associateService, setAssociateService] = useState<ModuleSchema | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ModuleSchema | null>(null);
@@ -36,7 +37,7 @@ export function ListServices({ services }: ListServicesProps) {
 
   function confirmDelete() {
     if (!deleteTarget) return;
-    setProcessing({ id: deleteTarget.id, action: 'delete' });
+    setProcessing({ id: deleteTarget.id, action: "delete" });
     deleteModuleMutation.mutate(deleteTarget.id!, {
       onSettled: () => {
         setProcessing(null);
@@ -47,6 +48,15 @@ export function ListServices({ services }: ListServicesProps) {
 
   const columns = useMemo<ColumnDef<ModuleSchema>[]>(
     () => [
+      {
+        accessorKey: "companyName",
+        header: "Empresa",
+        cell: ({ row }) => (
+          <div className="truncate">
+            {(row.getValue("companyName") as string | undefined) || "-"}
+          </div>
+        ),
+      },
       {
         accessorKey: "name",
         header: "Nome",
@@ -68,12 +78,13 @@ export function ListServices({ services }: ListServicesProps) {
         header: "Status",
         cell: ({ row }) => {
           const rawStatus = row.getValue("status") as unknown;
-          const isActive = typeof rawStatus === 'string'
-            ? rawStatus.toLowerCase() === 'true' || rawStatus === '1'
-            : Boolean(rawStatus);
+          const isActive =
+            typeof rawStatus === "string"
+              ? rawStatus.toLowerCase() === "true" || rawStatus === "1"
+              : Boolean(rawStatus);
           return (
             <Badge
-              className={`${isActive ? "bg-green-200 text-green-600" : "bg-orange-200 text-red-600"} `}
+              className={`${isActive ? "bg-transparent text-green-600" : "bg-orange-200 text-red-600"} `}
               variant={isActive ? "default" : "destructive"}
             >
               {isActive ? "Ativo" : "Inativo"}
@@ -88,16 +99,16 @@ export function ListServices({ services }: ListServicesProps) {
 
   const rowActions = [
     {
-      label: 'Editar',
+      label: "Editar",
       icon: <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
       onClick: handleEdit,
-      variant: 'ghost' as const,
+      variant: "ghost" as const,
     },
     {
-      label: 'Excluir',
-      icon: <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+      label: "Excluir",
+      icon: <Trash className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
       onClick: handleDeleteClick,
-      variant: 'ghost' as const,
+      variant: "ghost" as const,
     },
    
   ];
@@ -111,11 +122,8 @@ export function ListServices({ services }: ListServicesProps) {
           searchKey="name"
           placeholder="Pesquisar serviços..."
           rowActions={rowActions}
-          includeSelection={true}
-          actionButton={{
-            label: 'Novo Serviços',
-            component: <CreateService />
-          } as any}
+         
+        
         />
       </div>
       {editingService && (

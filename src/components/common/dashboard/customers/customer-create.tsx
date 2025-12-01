@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +74,8 @@ export function CustomersCreateForm({
   const isSaving = createCustomer.isPending || updateCustomer.isPending;
 
   useEffect(() => {
+    console.log("[CustomersCreateForm] customer prop recebida:", customer);
+
     if (!customer) {
       form.reset(buildDefaults());
       return;
@@ -90,13 +92,23 @@ export function CustomersCreateForm({
         companyId: customer.companyId ?? authCompanyId,
       })
     );
-    
-
   }, [customer, form, buildDefaults, authCompanyId]);
 
+  useEffect(() => {
+    const subscription = form.watch((values, info) => {
+      console.log("[CustomersCreateForm] alteração no formulário:", {
+        name: info.name,
+        type: info.type,
+        values,
+      });
+    });
 
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const handleSubmit = async (data: CustomerFormInput) => {
+    console.log("[CustomersCreateForm] submissão (raw):", data);
+
     const parsed: CustomerFormValues = createCustomerSchema.parse({
       ...data,
       companyId: data.companyId || authCompanyId,
@@ -107,15 +119,28 @@ export function CustomersCreateForm({
       companyId: parsed.companyId || authCompanyId,
     };
 
+    console.log("[CustomersCreateForm] payload enviado:", payload);
+
     try {
       let savedCustomer: Customer | undefined;
       if (customer?.id) {
         const { ...updateOnly } = payload;
+        console.log(
+          "[CustomersCreateForm] chamando updateCustomer.mutateAsync com:",
+          {
+            id: customer.id,
+            data: updateOnly,
+          }
+        );
         savedCustomer = await updateCustomer.mutateAsync({
           id: customer.id,
-          data: updateOnly
+          data: updateOnly,
         });
       } else {
+        console.log(
+          "[CustomersCreateForm] chamando createCustomer.mutateAsync com:",
+          payload
+        );
         savedCustomer = await createCustomer.mutateAsync(payload);
         form.reset(buildDefaults());
       }
@@ -123,7 +148,7 @@ export function CustomersCreateForm({
       if (onSuccess) onSuccess(savedCustomer);
       else router.back();
     } catch (error) {
-      console.error(error);
+      console.error("[CustomersCreateForm] erro ao salvar cliente:", error);
     }
   };
 
@@ -207,7 +232,6 @@ export function CustomersCreateForm({
           />
         </div>
 
-        {/* Seleções */}
         <div className="grid gap-6 md:grid-cols-2">
           <FormField
             control={form.control}

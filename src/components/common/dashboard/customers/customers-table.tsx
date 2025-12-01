@@ -12,12 +12,9 @@ import {
   useDeleteCustomer,
   useCustomersByCompanyId,
 } from "@/infrastructure/hooks/useCustomers";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { Customer, Company } from "@/infrastructure/types/domain";
-import {
-  type CreateGrossCustomerPayload,
-} from "@/infrastructure/schema/schema-customers";
+import { type CreateGrossCustomerPayload } from "@/infrastructure/schema/schema-customers";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import {
   Drawer,
@@ -30,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { CustomersCreateForm } from "./customer-create";
 import { CustomersView } from "./customers-view";
 
-// Colunas para clientes (isGlobalAdmin = false)
 const customerColumns: ColumnDef<Customer>[] = [
   {
     accessorKey: "cod",
@@ -65,34 +61,6 @@ interface CustomersTableProps {
 
 type TableData = Customer | Company;
 
-// Colunas para empresas (isGlobalAdmin = true)
-const companyColumns: ColumnDef<Company>[] = [
-  {
-    accessorKey: "businessName",
-    header: "Nome Comercial",
-    cell: ({ row }) => {
-      const businessName = row.getValue("businessName") as string;
-      return <div className="font-semibold ">{businessName}</div>;
-    },
-  },
-  {
-    accessorKey: "taxName",
-    header: "Nome Fiscal",
-    cell: ({ row }) => {
-      const taxName = row.getValue("taxName") as string;
-      return <div>{taxName}</div>;
-    },
-  },
-  {
-    accessorKey: "nif",
-    header: "NIF",
-    cell: ({ row }) => {
-      const nif = row.getValue("nif") as string;
-      return <div>{nif}</div>;
-    },
-  },
-];
-
 export function CustomersTable({
   openCreateOnLoad = false,
   shouldNavigateBack = false,
@@ -101,11 +69,11 @@ export function CustomersTable({
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin);
   const companyId = useAuthStore((state) => state.companyId) || "";
 
-  const { data: companies = [], isLoading: isLoadingCompanies } = useCompaniesQuery({
-    enabled: isGlobalAdmin,
-  });
-
-  const { data: customers = [], isLoading: isLoadingCustomers } = useCustomersByCompanyId(companyId, {
+  const {
+    data: customers = [],
+    isLoading: isLoadingCustomers,
+    refetch,
+  } = useCustomersByCompanyId(companyId, {
     enabled: !isGlobalAdmin && !!companyId,
   });
 
@@ -119,9 +87,9 @@ export function CustomersTable({
     Customer | Company | undefined
   >();
 
-  const data = isGlobalAdmin ? companies : customers;
-  const isLoading = isGlobalAdmin ? isLoadingCompanies : isLoadingCustomers;
-  const tableColumns = isGlobalAdmin ? companyColumns : customerColumns;
+  const data = customers;
+  const isLoading = isLoadingCustomers;
+  const tableColumns = customerColumns;
   const searchKey = "businessName";
 
   const resetCreateState = () => {
@@ -150,7 +118,6 @@ export function CustomersTable({
     }
     handleCreateCancel();
   };
-
 
   const handleView = (customer: Customer | Company) => {
     if (!customer?.id) return;
@@ -192,9 +159,14 @@ export function CustomersTable({
         columns={tableColumns as ColumnDef<TableData>[]}
         data={data as TableData[]}
         isLoading={isLoading}
+        onRefetch={refetch}
         actionButton={{
-          label: "Novo Cliente",
+          label:  "Novo Cliente",
           onClick: () => {
+            if (isGlobalAdmin) {
+              router.push("/dashboard/companies/create");
+              return;
+            }
             setSelectedCustomer(undefined);
             setIsCreateOpen(true);
           },
@@ -206,8 +178,6 @@ export function CustomersTable({
         searchKey={searchKey as any}
         placeholder="Pesquisar..."
         dateKey="createdAt"
-        enableRowSelection={true}
-        includeSelection={true}
         rowActions={[
           {
             label: "Visualizar",
@@ -238,7 +208,7 @@ export function CustomersTable({
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedCustomer ? "Editar Empresa" : "Novo Empresa"}
+                    {selectedCustomer ? "Editar Cliente" : "Novo Cliente"}
                   </DrawerTitle>
                 </div>
                 <DrawerClose asChild>

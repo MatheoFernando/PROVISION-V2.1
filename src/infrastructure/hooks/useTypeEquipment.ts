@@ -17,6 +17,18 @@ export function useTypeEquipment() {
   });
 }
 
+export function useTypeEquipmentById(id?: string) {
+  return useQuery({
+    queryKey: ["type-equipment", id],
+    queryFn: async (): Promise<TypeEquipment | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/typeEquipment/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateTypeEquipment() {
   const queryClient = useQueryClient();
 

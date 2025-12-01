@@ -6,8 +6,9 @@ import {
   Gear,
   Package,
   ChartPie,
+  Car,
 } from "phosphor-react";
-import { navData, type NavItemData } from "@/config/nav-data";
+import { getNavData, type NavItemData } from "@/config/nav-data";
 
 export interface BaseNavItem extends Omit<NavItemData, "items" | "iconKey"> {
   icon?: Icon;
@@ -21,6 +22,7 @@ const iconMap: Record<string, Icon> = {
   Gear,
   Package,
   ChartPie,
+  Car,
 };
 
 function mapNavItem(item: NavItemData): BaseNavItem {
@@ -32,6 +34,9 @@ function mapNavItem(item: NavItemData): BaseNavItem {
   };
 }
 
-export const allNavItems: BaseNavItem[] = navData.map(mapNavItem);
+export const getAllNavItems = (isGlobalAdmin: boolean): BaseNavItem[] =>
+  getNavData(isGlobalAdmin).map(mapNavItem);
+
+export const allNavItems: BaseNavItem[] = getAllNavItems(false);
 
 export { adminOnlyPaths } from "@/config/nav-data";

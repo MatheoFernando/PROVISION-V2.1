@@ -5,7 +5,6 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useLoginMutation } from "@/infrastructure/hooks/useLoginMutation"
 import { Button } from "@/components/ui/button"
@@ -14,7 +13,6 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "
 import { PhoneField } from "@/components/common/base-ui/inputs/phone-field"
 
 export default function LoginForm() {
-  const router = useRouter()
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -24,6 +22,12 @@ export default function LoginForm() {
     e.preventDefault()
     try {
       const result = await mutateAsync({ phone, password })
+
+      if (result?.statusCode === 401) {
+        toast.error("Credenciais inválidas")
+        return
+      }
+
       if (result?.success) {
         toast.success("Bem-vindo ao Provision")
         if (typeof window !== "undefined") window.location.href = "/dashboard"
@@ -42,7 +46,7 @@ export default function LoginForm() {
       <div className="flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-16">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-4 ">
-            <Image src="/logo.png" alt="Logo Provision" width={100} height={100}  />
+            <Image src="/logo.png" alt="Logo Provision" width={100} height={100} />
           </div>
           <h1 className="mb-2 text-4xl font-bold tracking-tight">Bem-vindo de volta!</h1>
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -97,7 +101,7 @@ export default function LoginForm() {
                 <Loader2 className="size-4 animate-spin" />
                 <span>Aguarde...</span>
               </div> : "Entrar"}
-            </Button> 
+            </Button>
 
           </form>
         </div>

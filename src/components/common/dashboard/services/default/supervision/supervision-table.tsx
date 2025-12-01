@@ -21,6 +21,7 @@ import { useEquipment } from "@/infrastructure/hooks/useEquipment"
 import { useSites } from "@/infrastructure/hooks/useSites"
 import { useDepartments } from "@/infrastructure/hooks/useDepartments"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
+import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies"
 import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
 import { SupervisionDrawer } from "./supervision-view"
@@ -125,10 +126,12 @@ const createSupervisionColumns = (
     equipmentById: Record<string, string>
     siteById: Record<string, string>
     departmentById: Record<string, string>
+    companyById?: Record<string, string>
+    isGlobalAdmin?: boolean
     onEdit?: (supervision: Supervision) => void
   }
 ): ColumnDef<Supervision>[] => [
-    {
+  {
       accessorKey: "cod",
       header: "Código",
       size: 50,
@@ -136,7 +139,7 @@ const createSupervisionColumns = (
         <div className="font-medium">{row.original.cod}</div>
       ),
     },
-    {
+  {
       accessorKey: "desiredNumberWorkers",
       header: "Desejado",
       size: 20,
@@ -144,7 +147,7 @@ const createSupervisionColumns = (
         <div >{row.original.desiredNumberWorkers}</div>
       ),
     },
-    {
+  {
       accessorKey: "numberWorkerPresent",
       header: "Presente",
       size: 20,
@@ -152,7 +155,7 @@ const createSupervisionColumns = (
         <div >{row.original.numberWorkerPresent}</div>
       ),
     },
-    {
+  {
       accessorFn: (row) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
       id: "equipment",
       header: `Equipamentos`,
@@ -161,7 +164,7 @@ const createSupervisionColumns = (
         return <div>{equipment || 'N/A'}</div>
       },
     },
-    {
+  {
       accessorFn: (row) => maps.employeeById[row.employeeId || ""] || 'N/A',
       id: "employee",
       header: "Funcionário",
@@ -170,7 +173,7 @@ const createSupervisionColumns = (
         return <div>{name || 'N/A'}</div>
       },
     },
-    {
+  {
       accessorFn: (row) => maps.siteById[row.siteId || ""] || 'N/A',
       id: "site",
       header: "Site",
@@ -179,7 +182,18 @@ const createSupervisionColumns = (
         return <div>{name || 'N/A'}</div>
       },
     },
-    {
+  maps.isGlobalAdmin && maps.companyById
+    ? {
+        accessorFn: (row) => maps.companyById?.[row.companyId || ""] || "N/A",
+        id: "company",
+        header: "Empresa",
+        cell: ({ row }) => {
+          const name = maps.companyById?.[row.original.companyId || ""]
+          return <div>{name || "N/A"}</div>
+        },
+      }
+    : null,
+  {
       accessorFn: (row) => formatHour(row.time),
       id: "time",
       header: "Horário",
@@ -189,7 +203,7 @@ const createSupervisionColumns = (
         return <div>{hhmm}</div>
       },
     },
-    {
+  {
       accessorFn: (row) => maps.departmentById[row.departmentId || ""] || 'N/A',
       id: "department",
       header: "Departamento",
@@ -198,7 +212,7 @@ const createSupervisionColumns = (
         return <div>{name || 'N/A'}</div>
       },
     },
-    {
+  {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
@@ -211,7 +225,7 @@ const createSupervisionColumns = (
       },
     },
 
-    {
+  {
       id: "actions",
       header: "Ações",
       size: 50,
@@ -223,7 +237,7 @@ const createSupervisionColumns = (
         />
       ),
     },
-  ]
+].filter(Boolean) as ColumnDef<Supervision>[]
 
 interface SupervisionTableProps {
   data: Supervision[]
@@ -235,10 +249,12 @@ interface SupervisionTableProps {
 
 export function SupervisionTable({ data, isLoading, onDateRangeChange }: SupervisionTableProps) {
   const companyId = useAuthStore((s) => s.companyId || undefined)
+  const isGlobalAdmin = useAuthStore((s) => s.isGlobalAdmin)
   const { data: employees = [] } = useEmployees(companyId)
   const { data: equipments = [] } = useEquipment()
   const { data: sites = [] } = useSites()
   const { data: departments = [] } = useDepartments()
+  const { data: companies = [] } = useCompaniesQuery({ enabled: isGlobalAdmin })
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
 
@@ -274,6 +290,14 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
     return map
   }, [departments])
 
+  const companyById = React.useMemo(() => {
+    const map: Record<string, string> = {}
+    ;(companies as any[]).forEach((c: any) => {
+      if (c?.id) map[c.id] = c.businessName || c.taxName || ""
+    })
+    return map
+  }, [companies])
+
   const handleCreate = () => {
     setSelectedSupervision(null)
     setIsFormOpen(true)
@@ -298,6 +322,8 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
           equipmentById,
           siteById,
           departmentById,
+          companyById,
+          isGlobalAdmin,
           onEdit: handleEdit,
         })}
         searchKey="cod"

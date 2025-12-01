@@ -80,7 +80,6 @@ export default function CustomerDetailsPage() {
           <Card className="border-none bg-transparent shadow-none">
             <CardHeader className="space-y-6 p-0">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <Skeleton className="h-24 w-24 md:h-36 md:w-36 rounded-full" />
                 <div className="space-y-3 flex-1">
                   <Skeleton className="h-6 w-48" />
                   <Skeleton className="h-4 w-32" />
@@ -155,7 +154,7 @@ export default function CustomerDetailsPage() {
         Voltar
       </Button>
 
-      <section className="grid md:grid-cols-2 md:gap-8 gap-6 bg-white p-6 rounded-lg">
+      <section className="grid md:grid-cols-2 md:gap-8 gap-6 bg-white p-4 rounded-lg">
         <Card className="border-none bg-transparent shadow-none">
           <CardHeader className="space-y-6 p-0">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -188,11 +187,9 @@ export default function CustomerDetailsPage() {
       </section>
 
       <Tabs defaultValue="sites" className="space-y-4">
-        <TabsList className="w-full justify-start overflow-auto">
+        <TabsList className="max-w-lg justify-start overflow-auto">
           <TabsTrigger value="sites" className="cursor-pointer">Sites</TabsTrigger>
           <TabsTrigger value="equipment" className="cursor-pointer">Equipamentos</TabsTrigger>
-          <TabsTrigger value="cars" className="cursor-pointer">Veículos</TabsTrigger>
-          <TabsTrigger value="employees" className="cursor-pointer">Funcionários</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sites">
@@ -203,18 +200,7 @@ export default function CustomerDetailsPage() {
           <EquipmentTable customerId={customer.id} data={equipmentFromSites} isLoadingOverride={isLoadingSites} />
         </TabsContent>
 
-        <TabsContent value="cars">
-          <CarsTable companyId={customer.companyId} data={customerCars} isLoadingOverride={isLoadingSites} />
-        </TabsContent>
-
-        <TabsContent value="employees">
-          <EmployeesTable
-            companyId={customer.companyId}
-            siteIds={siteIds}
-            data={customerEmployees}
-            isLoadingOverride={isLoadingSites}
-          />
-        </TabsContent>
+    
       </Tabs>
     </div>
   );

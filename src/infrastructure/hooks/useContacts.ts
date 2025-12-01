@@ -31,6 +31,18 @@ export function useContactsByEmail(email: string) {
   });
 }
 
+export function useContactById(id?: string) {
+  return useQuery({
+    queryKey: ["contact", id],
+    queryFn: async (): Promise<Contact | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/contact/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateContact() {
   const queryClient = useQueryClient();
 

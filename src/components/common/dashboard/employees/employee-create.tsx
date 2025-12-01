@@ -73,7 +73,9 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       setIsSubmitting(true);
       if (props.id) {
         const { companyId: _omit, ...updateOnly } = (data as any) || {};
-        await updateEmployee.mutateAsync({ id: props.id as string, data: updateOnly });
+        await updateEmployee.mutateAsync({        
+          ...updateOnly,
+        });
         toast.success("Funcionário atualizado com sucesso!");
       } else {
         const createPayload: any = { ...data, companyId: (data as any).companyId || companyId };

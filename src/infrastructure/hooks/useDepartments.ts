@@ -10,7 +10,7 @@ export function useDepartments() {
       const { data } = await api.get("/department/GetAll");
       return (data?.data ?? data) as Department[];
     },
-  
+
   });
 }
 
@@ -22,6 +22,18 @@ export function useDepartmentsByName(name: string) {
       return (data?.data ?? data) as Department[];
     },
     enabled: Boolean(name && name.trim().length > 0),
+  });
+}
+
+export function useDepartmentById(id?: string) {
+  return useQuery({
+    queryKey: ["department", id],
+    queryFn: async (): Promise<Department | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/department/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
   });
 }
 

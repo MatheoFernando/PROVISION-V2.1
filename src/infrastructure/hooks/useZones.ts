@@ -13,6 +13,18 @@ export function useZones() {
   });
 }
 
+export function useZoneById(id?: string) {
+  return useQuery({
+    queryKey: ["zone", id],
+    queryFn: async (): Promise<Zone | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/zone/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateZone() {
   const queryClient = useQueryClient();
   return useMutation<Zone, unknown, CreateZonePayload>({

@@ -13,6 +13,18 @@ export function useTypeOccorrence() {
   });
 }
 
+export function useTypeOccorrenceById(id?: string) {
+  return useQuery({
+    queryKey: ["type-occorrence", id],
+    queryFn: async (): Promise<TypeOccorrence | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/typeOccorrence/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateTypeOccorrence() {
   const queryClient = useQueryClient();
   return useMutation({

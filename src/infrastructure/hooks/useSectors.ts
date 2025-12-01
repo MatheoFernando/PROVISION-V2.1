@@ -13,6 +13,18 @@ export function useSectors() {
   });
 }
 
+export function useSectorById(id?: string) {
+  return useQuery({
+    queryKey: ["sector", id],
+    queryFn: async (): Promise<Sector | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/sector/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateSector() {
   const queryClient = useQueryClient();
   return useMutation({

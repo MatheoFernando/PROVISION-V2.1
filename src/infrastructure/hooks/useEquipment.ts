@@ -31,23 +31,35 @@ export function useEquipment(customerId?: string, options?: EquipmentQueryOption
     queryFn: async (): Promise<Equipment[]> => {
       const response = await api.get("/equipment/getAll");
       const allEquipment = response.data.data as Equipment[];
-      
+
       // Se customerId fornecido, precisamos buscar sites primeiro e filtrar
       if (customerId && Array.isArray(allEquipment)) {
         // Buscar sites do cliente para obter os IDs
         const sitesResponse = await api.get("/site/getAll", { params: { customerId } });
         const customerSites = sitesResponse.data.data || [];
         const siteIds = new Set(customerSites.map((site: Site) => site.id).filter(Boolean));
-        
+
         // Filtrar equipamentos cujos sites pertencem ao cliente
         return allEquipment.filter((eq: Equipment) => siteIds.has(eq.siteId));
       }
-      
+
       return allEquipment;
     },
     refetchOnWindowFocus: false,
     staleTime: 30_000,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useEquipmentById(id?: string, companyId?: string) {
+  return useQuery({
+    queryKey: ["equipment", id, companyId],
+    queryFn: async (): Promise<Equipment | null> => {
+      if (!id) return null;
+      const { data } = await api.get(`/equipment/getById/${id}`);
+      return data || null;
+    },
+    enabled: !!id,
   });
 }
 
@@ -68,7 +80,7 @@ export function useCreateEquipment() {
       };
       const response = await api.post("/equipment/create", payload, {
         headers: { "Content-Type": "application/json" },
-      }); 
+      });
       return response.data as Equipment;
     },
     onSuccess: async (created) => {

@@ -34,11 +34,7 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       return response.data.data;
     },
     enabled: (options?.enabled ?? true) && !!companyId,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    retry: 1,
+    
   });
 }
 
@@ -160,13 +156,11 @@ export function useCustomerById(id?: string) {
         const response = await api.get(`/customer/${id}`);
         return response.data.data ?? response.data ?? null;
       } catch {
-        // Se falhar, tentar buscar de todos
         const response = await api.get("/customer/getAll");
         const customers = response.data.data ?? [];
         return (customers as Customer[]).find((c) => c.id === id) ?? null;
       }
     },
     enabled: Boolean(id),
-    staleTime: 5 * 60 * 1000,
   });
 }

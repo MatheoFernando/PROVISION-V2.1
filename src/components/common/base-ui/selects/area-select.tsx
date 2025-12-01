@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAreas, useCreateArea } from "@/infrastructure/hooks/useAreas";
 import {
   Select,
@@ -32,16 +32,20 @@ interface AreaSelectProps {
 }
 
 export function AreaSelect({
-  value,
+  value: valueProp,
   onChange,
   companyId,
   employeeId,
 }: AreaSelectProps) {
+  const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
-  const { data: areas = [], isLoading, refetch } = useAreas();
+  const [createdAreas, setCreatedAreas] = useState<Array<Area & { createdAt?: string }>>([]);
+  const { data: areas = [], isLoading, isFetching, refetch } = useAreas();
   const createArea = useCreateArea();
+
   const form = useForm<AreaForm>({
     resolver: zodResolver(
       areaSchema.pick({ name: true, companyId: true, employeeId: true })
@@ -56,8 +60,14 @@ export function AreaSelect({
   useEffect(() => {
     if (value) {
       setSelectedAreaId(value);
+    } else {
+      setSelectedAreaId(null);
     }
   }, [value]);
+
+  useEffect(() => {
+    form.reset({ name: "", companyId, employeeId: employeeId ?? "" });
+  }, [companyId, employeeId, form, open]);
 
   function handleSubmit(data: AreaForm) {
     const effectiveEmployeeId = data.employeeId || employeeId || "";
@@ -71,36 +81,106 @@ export function AreaSelect({
       {
         onSuccess: (created) => {
           setOpen(false);
+          if (created?.id) {
+            const areaWithMeta = created as Area & { createdAt?: string };
+            const normalizedArea: Area & { createdAt?: string } = {
+              ...areaWithMeta,
+              id: created.id,
+              name: created?.name ?? "",
+              createdAt: areaWithMeta.createdAt ?? new Date().toISOString(),
+            };
 
+            setCreatedAreas((prev) => {
+              if (prev.some((item) => item.id === created.id)) return prev;
+              return [normalizedArea, ...prev];
+            });
+
+            setTimeout(() => {
+              setSelectedAreaId(created.id!);
+              onChange(created.id!);
+            }, 0);
+          }
           form.reset({ name: "", companyId, employeeId });
+          void refetch();
         },
       }
     );
   }
 
-  const list = Array.isArray(areas) ? areas : [];
-  const filtered = list.filter((a: Area) =>
-    String(a?.name ?? "")
-      .toLowerCase()
-      .includes(query.toLowerCase())
+  const areasList = useMemo<Area[]>(() => {
+    const baseList = Array.isArray(areas) ? areas : [];
+    const merged: Array<Area & { createdAt?: string }> = [
+      ...createdAreas,
+      ...baseList,
+    ];
+    const map = new Map<string, Area & { createdAt?: string }>();
+    merged.forEach((area) => {
+      if (!area?.id) return;
+      map.set(area.id, {
+        ...area,
+        id: area.id,
+        name: area.name ?? "",
+        createdAt:
+          (area as Area & { createdAt?: string }).createdAt ??
+          new Date().toISOString(),
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [createdAreas, areas]);
+
+  const filtered = useMemo(
+    () =>
+      areasList.filter((a: Area) =>
+        String(a?.name ?? "")
+          .toLowerCase()
+          .includes(query.toLowerCase())
+      ),
+    [areasList, query]
   );
+
+  useEffect(() => {
+    if (value && areasList.length > 0) {
+      const areaExists = areasList.some(area => area.id === value);
+      if (areaExists) {
+        setSelectedAreaId(value);
+      }
+    }
+  }, [value, areasList]);
+
+  const isLoadingOptions = isLoading || isFetching;
+  const isSaving = createArea.status === "pending";
+
+  const displayValue = useMemo(() => {
+    const normalizedValue = value && value.trim() !== '' ? value : undefined;
+
+    if (!normalizedValue) {
+      return undefined;
+    }
+
+    const exists = areasList.some(area => area.id === normalizedValue);
+    return exists ? normalizedValue : undefined;
+  }, [value, areasList]);
 
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
         <Select
-          value={selectedAreaId || undefined}
+          value={displayValue}
           onValueChange={(selected) => {
             setSelectedAreaId(selected);
             onChange(selected);
           }}
-          disabled={isLoading}
+          disabled={isLoadingOptions}
           onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione a área" />
           </SelectTrigger>
-          {isLoading && (
+          {isLoadingOptions && (
             <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           )}
           <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -110,7 +190,7 @@ export function AreaSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar áreas..."
                 className="w-full placeholder:text-xs"
-                disabled={isLoading || list.length === 0}
+                disabled={isLoadingOptions || areasList.length === 0}
               />
             </div>
             {filtered.length === 0 ? (
@@ -126,7 +206,7 @@ export function AreaSelect({
                 }
               >
                 {filtered.map((a: Area) => (
-                  <SelectItem key={a.id} value={a.id!}>
+                  <SelectItem key={a.id} value={a.id!} className="cursor-pointer">
                     <span className="truncate">{a.name}</span>
                   </SelectItem>
                 ))}
@@ -135,16 +215,26 @@ export function AreaSelect({
           </SelectContent>
         </Select>
       </div>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (isSaving) return;
+          setOpen(next);
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-            disabled={createArea.status === "pending"}
+            disabled={isSaving}
           >
-            <Plus className="w-4 h-4" />
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -152,10 +242,10 @@ export function AreaSelect({
           sideOffset={8}
           className="w-[26rem] p-4"
           onInteractOutside={(e) => {
-            if (createArea.status === "pending") e.preventDefault();
+            if (isSaving) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
-            if (createArea.status === "pending") e.preventDefault();
+            if (isSaving) e.preventDefault();
           }}
         >
           <div className="font-medium mb-4 text-lg">Criar Área</div>
@@ -167,6 +257,7 @@ export function AreaSelect({
                   id="name-area"
                   {...form.register("name")}
                   placeholder="Nome da área"
+                  disabled={isSaving}
                 />
                 {form.formState.errors.name && (
                   <span className="text-red-500 text-xs">
@@ -190,14 +281,27 @@ export function AreaSelect({
                 )}
               </div>
             </div>
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-end gap-2 mt-4">
               <Button
                 type="button"
-                disabled={createArea.status === "pending"}
+                variant="outline"
+                onClick={() => {
+                  if (isSaving) return;
+                  form.reset({ name: "", companyId, employeeId });
+                  setOpen(false);
+                }}
+                className="cursor-pointer"
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={isSaving}
                 className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
                 onClick={() => form.handleSubmit(handleSubmit)()}
               >
-                {createArea.status === "pending" ? (
+                {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
                   </>

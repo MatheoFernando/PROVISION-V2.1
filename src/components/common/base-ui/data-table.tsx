@@ -41,6 +41,7 @@ interface DataTableProps<TData extends RowData, TValue> {
   data: TData[];
   columns: ColumnDef<TData, TValue>[];
   searchKey?: keyof TData & string;
+  onRefetch?: () => void;
   placeholder?: string;
   actionButton?: {
     label: string;
@@ -61,6 +62,7 @@ interface DataTableProps<TData extends RowData, TValue> {
 export function DataTableGeneric<TData extends RowData, TValue>({
   data,
   columns,
+  onRefetch,
   searchKey,
   placeholder = "Pesquisar...",
   actionButton,
@@ -230,6 +232,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
       <TableView
         table={table}
         isLoading={isLoading}
+        onRefetch={onRefetch}
         colSpan={tableColumns.length}
       />
 
