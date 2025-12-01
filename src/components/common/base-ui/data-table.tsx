@@ -227,6 +227,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         }}
         searchKey={searchKey}
         dateKey={dateKey}
+        onRefetch={onRefetch}
       />
 
       <TableView

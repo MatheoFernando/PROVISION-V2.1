@@ -23,9 +23,10 @@ export function useContainers() {
         throw err as unknown;
       }
     },
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   });
 }
@@ -44,9 +45,10 @@ export function useContainer(id?: string) {
       }
     },
     enabled: !!id,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   });
 }

@@ -11,6 +11,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         retry: 1,
         refetchOnWindowFocus: false,
         staleTime: 5 * 60 * 1000, 
+        
       },
     },
   });
@@ -23,7 +24,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         {children}
-        <Toaster position="top-right" richColors  />
+        <Toaster position="bottom-right" richColors  />
       </QueryClientProvider>
     </ThemeProvider>
   );

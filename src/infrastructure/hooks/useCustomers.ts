@@ -16,7 +16,7 @@ export function useCustomers() {
       const response = await api.get("/customer/getAll");
       return response.data.data;
     },
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -34,7 +34,11 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       return response.data.data;
     },
     enabled: (options?.enabled ?? true) && !!companyId,
-    
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 }
 
@@ -144,6 +148,11 @@ export function useSearchCustomersByName(name: string) {
       return response.data.data ?? response.data;
     },
     enabled: Boolean(name && name.trim().length > 0),
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 }
 
@@ -162,5 +171,10 @@ export function useCustomerById(id?: string) {
       }
     },
     enabled: Boolean(id),
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 }

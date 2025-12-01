@@ -31,6 +31,11 @@ export function useEmployees(
       const response = await api.get(`/employee/getAll/${companyId}`);
       return response.data.data;
     },
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 }
 
@@ -43,6 +48,11 @@ export function useEmployeeById(id?: string, companyId?: string) {
       const list: Employee[] = response.data.data ?? [];
       return (list || []).find((e: any) => e?.id === id) ?? null;
     },
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 }
 
@@ -54,7 +64,7 @@ export function useCreateEmployee() {
       const response = await api.post("/employee/create", data);
       return response.data;
     },
-    onSuccess: (created, variables) => {
+    onSuccess: async (created, variables) => {
       const key = employeesKey(variables.companyId);
       queryClient.setQueryData<Employee[]>(key, (current = []) => {
         const alreadyExists = current.some(
@@ -67,7 +77,8 @@ export function useCreateEmployee() {
         }
         return [created, ...current];
       });
-      queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.refetchQueries({ queryKey: key, type: "active" });
       toast.success("Funcionário criado com sucesso!");
     },
   });
@@ -98,9 +109,10 @@ export function useCreateGrossEmployee() {
       };
       throw error;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (_, variables) => {
       const key = employeesKey(variables.companyId);
-      queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.refetchQueries({ queryKey: key, type: "active" });
       toast.success("Funcionário importado com sucesso!");
     },
     onError: (error) => {
@@ -126,14 +138,15 @@ export function useUpdateEmployee() {
       const response = await api.put("/employee", payload);
       return response.data;
     },
-    onSuccess: (updated) => {
+    onSuccess: async (updated) => {
       const key = employeesKey(updated.companyId);
       queryClient.setQueryData<Employee[]>(key, (current = []) =>
         current.map((employee) =>
           employee.id === updated.id ? { ...employee, ...updated } : employee
         )
       );
-      queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.refetchQueries({ queryKey: key, type: "active" });
       toast.success("Funcionário atualizado com sucesso!");
     },
   });
@@ -151,12 +164,13 @@ export function useDeleteEmployee(defaultCompanyId?: string) {
     }): Promise<void> => {
       await api.delete(`/employee/${id}`);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (_, variables) => {
       const key = employeesKey(variables.companyId ?? defaultCompanyId);
       queryClient.setQueryData<Employee[]>(key, (current = []) =>
         current.filter((employee) => employee.id !== variables.id)
       );
-      queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.refetchQueries({ queryKey: key, type: "active" });
       toast.success("Funcionário excluído com sucesso!");
     },
   });

@@ -18,9 +18,10 @@ export function useSites(customerId?: string, options?: SitesQueryOptions) {
         : await api.get("/site/getAll");
       return response.data.data ?? response.data ?? [];
     },
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
     enabled: options?.enabled ?? true,
   });
@@ -38,9 +39,10 @@ export function useSitesByCompanyAndCustomer(
       const response = await api.get(`/site/getByCompanyAndCustomerId:${companyId},${customerId}`);
       return response.data.data ?? response.data ?? [];
     },
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
     enabled: (options?.enabled ?? true) && Boolean(companyId && customerId),
   });
@@ -54,9 +56,9 @@ export function useCreateSite() {
       const response = await api.post("/site/create", data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      await queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
       toast.success("Site criado com sucesso!");
     },
     onError: (error: any) => {
@@ -91,9 +93,9 @@ export function useCreateGrossSite() {
       };
       throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.refetchQueries({ queryKey: ["sites"], type: "active" });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      await queryClient.refetchQueries({ queryKey: ["sites"], type: "active" });
       toast.success("Site importado com sucesso!");
     },
     onError: error => {
@@ -115,9 +117,9 @@ export function useUpdateSite() {
       const response = await api.put(`/site`, { id, ...data });
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      await queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
       toast.success("Site atualizado com sucesso!");
     },
   });
@@ -130,9 +132,9 @@ export function useDeleteSite() {
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/site/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      await queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
       toast.success("Site excluído com sucesso!");
     },
   });

@@ -45,9 +45,12 @@ export function useEquipment(customerId?: string, options?: EquipmentQueryOption
 
       return allEquipment;
     },
-    refetchOnWindowFocus: false,
-    staleTime: 30_000,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     enabled: options?.enabled ?? true,
+    retry: 1,
   });
 }
 
@@ -60,6 +63,11 @@ export function useEquipmentById(id?: string, companyId?: string) {
       return data || null;
     },
     enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 }
 

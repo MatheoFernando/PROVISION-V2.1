@@ -26,10 +26,10 @@ export function useCompaniesQuery(options?: { enabled?: boolean }) {
       return data?.data ?? data ?? [];
     },
     enabled: options?.enabled ?? true,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   });
 }
@@ -45,7 +45,10 @@ export function useCompanyByIdQuery(id?: string) {
       return parsed.data as Company;
     },
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
@@ -60,7 +63,10 @@ export function useCompanyByCodQuery(cod?: string) {
       return parsed.data as Company;
     },
     enabled: !!cod,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
@@ -77,7 +83,10 @@ export function useCompaniesByNameQuery(name?: string) {
       return parsed.data as Company[];
     },
     enabled: !!name,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
@@ -89,7 +98,10 @@ export function useCompanyModulesByModuleQuery(moduleId: string) {
       return response.data;
     },
     enabled: !!moduleId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
@@ -110,8 +122,10 @@ export function useCreateCompanyModuleMutation() {
       const { data } = await api.post("/companyModules/create", body);
       return data;
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["company-modules"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["company-modules"] });
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
       toast.success("Serviço associado à empresa com sucesso");
     },
     onError: (error) => {
@@ -134,8 +148,9 @@ export function useCreateCompanyMutation() {
       const { data } = await api.post("/company/create", payload);
       return data;
     },
-    onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
       toast.success("Empresa criada com sucesso");
     },
     onError: (error) => {
@@ -158,8 +173,9 @@ export function useUpdateCompanyMutation() {
       const { data } = await api.put("/company", payload);
       return data;
     },
-    onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
       toast.success("Empresa atualizada com sucesso");
     },
     onError: (error) => {
@@ -177,8 +193,9 @@ export function useDeleteCompanyMutation() {
       const { data } = await api.delete(`/company/${companyId}`);
       return data;
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
       toast.success("Empresa excluída com sucesso");
     },
     onError: () => {

@@ -29,9 +29,10 @@ export function useCars(options?: CarsQueryOptions) {
         throw err as unknown;
       }
     },
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
     enabled: options?.enabled ?? true,
   });

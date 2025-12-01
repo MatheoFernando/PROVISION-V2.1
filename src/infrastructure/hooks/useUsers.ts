@@ -13,10 +13,10 @@ export function useUsersQuery(companyId?: string) {
       return data?.data ?? data ?? []
     },
     enabled: true,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   })
 }
@@ -31,8 +31,9 @@ export function useCreateUser() {
       const { data } = await api.post('/users/create', payload)
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
+      await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
       toast.success('Utilizador criado com sucesso')
     },
     onError: () => {
@@ -50,8 +51,9 @@ export function useUpdateUser() {
       const { data } = await api.put('/users', payload)
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
+      await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
       toast.success('Utilizador atualizado com sucesso')
     },
     onError: () => {
@@ -69,8 +71,9 @@ export function useDeleteUser() {
       const { data } = await api.delete(`/users/${userId}`)
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
+      await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
       toast.success('Utilizador eliminado com sucesso')
     },
     onError: () => {
