@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { zoneSchema } from "@/infrastructure/schema/schema-zone";
 import { Label } from "@/components/ui/label";
 import { useCreateZone, useZones } from "@/infrastructure/hooks/useZones";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
-import { Zone } from "@/infrastructure/types/domain";
+import { Zone, type CreateZonePayload } from "@/infrastructure/types/domain";
 
 const createZoneSchema = zoneSchema.pick({
   name: true,
@@ -28,7 +28,7 @@ const createZoneSchema = zoneSchema.pick({
 interface ZoneForm {
   name: string;
   companyId: string;
-  employeeId: string;
+  employeeId?: string;
   areaId: string;
 }
 
@@ -50,7 +50,7 @@ export function ZoneSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const { data: zones = [], isLoading } = useZones();
+  const { data: zones = [], isLoading  , refetch } = useZones();
   const createZone = useCreateZone();
   const form = useForm<ZoneForm>({
     resolver: zodResolver(createZoneSchema),
@@ -66,18 +66,22 @@ export function ZoneSelect({
     setSelectedZoneId(null);
   }, [value]);
 
-  function handleSubmit(data: ZoneForm) {
+  const handleSubmit: SubmitHandler<ZoneForm> = (data) => {
     const effectiveEmployeeId = employeeId || data.employeeId;
-    if (!effectiveEmployeeId) {
-      form.setError("employeeId", { message: "Funcionário é obrigatório" });
-      return;
-    }
+  
     if (!areaId) {
       return;
     }
 
+    const payload: CreateZonePayload = {
+      name: data.name,
+      companyId,
+      areaId,
+      ...(effectiveEmployeeId ? { employeeId: effectiveEmployeeId } : {}),
+    };
+
     createZone.mutate(
-      { ...data, employeeId: effectiveEmployeeId, areaId },
+      payload,
       {
         onSuccess: (created) => {
           setOpen(false);
@@ -95,7 +99,7 @@ export function ZoneSelect({
         },
       }
     );
-  }
+  };
 
   const hasArea = Boolean(areaId);
 
@@ -138,6 +142,7 @@ export function ZoneSelect({
             onChange(selected);
           }}
           disabled={isLoading || !hasArea}
+          onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full">
             <SelectValue
@@ -220,6 +225,19 @@ export function ZoneSelect({
             className="space-y-3 mt-2"
           >
             <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="name-zone">Nome da zona</Label>
+                <Input
+                  id="name-zone"
+                  {...form.register("name")}
+                  placeholder="Nome da zona"
+                />
+                {form.formState.errors.name && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.name.message as string}
+                  </span>
+                )}
+              </div>
               <div className="space-y-2">
                 <Label>Funcionário *</Label>
                 <EmployeeSelect
@@ -236,19 +254,7 @@ export function ZoneSelect({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name-zone">Nome da zona</Label>
-                <Input
-                  id="name-zone"
-                  {...form.register("name")}
-                  placeholder="Nome da zona"
-                />
-                {form.formState.errors.name && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.name.message as string}
-                  </span>
-                )}
-              </div>
+         
             </div>
 
             <div className="flex justify-end mt-4">

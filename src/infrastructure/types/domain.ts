@@ -125,7 +125,7 @@ export interface User {
 export interface CreateUserPayload {
   phone: string;
   password: string;
-  isGlobalAdmin: boolean;
+  isGlobalAdmin?: boolean;
   status: boolean;
   companyId?: string;
   departmentId?: string;
@@ -305,7 +305,7 @@ export interface Role {
 export interface Sector {
   id?: string;
   name: string;
-  employeeId: string;
+  employeeId?: string;
   zoneId: string;
   companyId: string;
   createdAt?: string;

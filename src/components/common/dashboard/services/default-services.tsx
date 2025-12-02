@@ -13,52 +13,60 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 type ServiceType = "supervision" | "occurrence" | "rsu" | "modules" | null;
 
 export function DefaultServices() {
+  const { isGlobalAdmin } = useAuthStore();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const view = searchParams.get("view") as ServiceType;
 
-  const [selectedService, setSelectedService] = useState<ServiceType>(view || "supervision");
+  const [selectedService, setSelectedService] = useState<ServiceType>(
+    view || (isGlobalAdmin ? "modules" : "supervision"),
+  );
 
   const { data: modules = [], isLoading, isError } = useModules();
-  const { isGlobalAdmin } = useAuthStore();
 
   useEffect(() => {
-    setSelectedService(view || "supervision");
-  }, [view]);
+    setSelectedService(view || (isGlobalAdmin ? "modules" : "supervision"));
+  }, [view, isGlobalAdmin]);
 
-  const defaultServices = [
-    {
-      id: "supervision" as const,
-      name: "Supervisão",
-      description: "Serviço de supervisão e monitoramento",
-      status: true,
-      imageSrc: "/supervisionado.png",
-    },
-    {
-      id: "occurrence" as const,
-      name: "Ocorrência",
-      description: "Gestão de ocorrências e incidentes",
-      status: true,
-      imageSrc: "/incidente.png",
-    },
-    {
-      id: "rsu" as const,
-      name: "RSU",
-      description: "Recolha Seletiva de Resíduos",
-      status: true,
-      imageSrc: "/reciclar.png",
-    },
-    {
-      id: "modules" as const,
-      name: "Ver todos os serviços",
-      description: isGlobalAdmin
-        ? "Visualizar todos os serviços criados"
-        : "Visualizar serviços criados na sua empresa",
-      status: true,
-      imageSrc: "/prioritize.png",
-    },
-  ] as const;
+  const defaultServices: Array<{
+    id: ServiceType;
+    name: string;
+    description: string;
+    status: boolean;
+    imageSrc: string;
+  }> = isGlobalAdmin
+    ? [   ]
+    : [
+        {
+          id: "supervision",
+          name: "Supervisão",
+          description: "Serviço de supervisão e monitoramento",
+          status: true,
+          imageSrc: "/supervisionado.png",
+        },
+        {
+          id: "occurrence",
+          name: "Ocorrência",
+          description: "Gestão de ocorrências e incidentes",
+          status: true,
+          imageSrc: "/incidente.png",
+        },
+        {
+          id: "rsu",
+          name: "RSU",
+          description: "Recolha Seletiva de Resíduos",
+          status: true,
+          imageSrc: "/reciclar.png",
+        },
+        {
+          id: "modules",
+          name: "Ver todos os serviços",
+          description: "Visualizar serviços criados na sua empresa",
+          status: true,
+          imageSrc: "/prioritize.png",
+        },
+      ];
 
   const handleServiceClick = (serviceId: ServiceType) => {
     const newService = selectedService === serviceId ? null : serviceId;
@@ -75,17 +83,16 @@ export function DefaultServices() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4 ">
+      <div className="flex flex-wrap gap-4">
         {defaultServices.map((service, index) => {
           const disabled = !service.status;
           const isSelected = selectedService === service.id;
+         
           return (
             <div
               key={index}
               onClick={() => !disabled && handleServiceClick(service.id)}
-              className={`border rounded-lg p-4 transition-all w-full cursor-pointer ${
-                disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-accent"
-              } ${isSelected ? "ring-2 ring-blue-400 bg-accent" : ""}`}
+              className={`border rounded-lg p-4 transition-all flex-1 cursor-pointer  ${isSelected ? "ring-2 ring-blue-400 bg-accent" : ""}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -126,13 +133,7 @@ export function DefaultServices() {
       )}
       {selectedService === "modules" && (
         <div className="mt-6">
-          {isLoading && <p className="text-sm text-muted-foreground">Carregando serviços...</p>}
-          {isError && (
-            <p className="text-sm text-red-500">
-              Erro ao carregar serviços. Tente novamente mais tarde.
-            </p>
-          )}
-          {!isLoading && !isError && <ListServices services={modules} />}
+         <ListServices services={modules} />
         </div>
       )}
     </div>

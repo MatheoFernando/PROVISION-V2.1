@@ -21,7 +21,6 @@ import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import {
   Drawer,
@@ -155,65 +154,35 @@ const formatHour = (value?: string) => {
     .replace(".", ":");
 };
 
-const createOccurrenceColumns = (options?: {
-  isGlobalAdmin?: boolean;
-  companyById?: Record<string, string>;
-}): ColumnDef<Occurrence>[] => [
+const createOccurrenceColumns = (): ColumnDef<Occurrence>[] => [
   {
     accessorKey: "cod",
     header: "Código",
     size: 40,
-    cell: ({ row }: { row: { original: Occurrence } }) => (
-      <div className="font-medium">{row.original.cod}</div>
-    ),
+    cell: ({ row }) => <div className="font-medium">{row.original.cod}</div>,
   },
 
   {
     accessorKey: "equipmentId",
     header: "Equipamento",
-    cell: ({
-      row,
-    }: {
-      row: { getValue: <T = unknown>(key: string) => T };
-    }) => <div>{row.getValue<string>("equipmentId")}</div>,
+    cell: ({ row }) => <div>{row.getValue<string>("equipmentId")}</div>,
   },
   {
     accessorKey: "employeeId",
     header: "Funcionário",
-    cell: ({
-      row,
-    }: {
-      row: { getValue: <T = unknown>(key: string) => T };
-    }) => <div>{row.getValue<string>("employeeId")}</div>,
+    cell: ({ row }) => <div>{row.getValue<string>("employeeId")}</div>,
   },
   {
     accessorKey: "siteId",
     header: "Site",
     size: 120,
-    cell: ({
-      row,
-    }: {
-      row: { getValue: <T = unknown>(key: string) => T };
-    }) => <div>{row.getValue<string>("siteId")}</div>,
+    cell: ({ row }) => <div>{row.getValue<string>("siteId")}</div>,
   },
-
-  options?.isGlobalAdmin && options.companyById
-    ? {
-        accessorFn: (row: Occurrence) =>
-          options.companyById?.[row.companyId || ""] || "N/A",
-        id: "company",
-        header: "Empresa",
-        cell: ({ row }: { row: { original: Occurrence } }) => {
-          const name = options.companyById?.[row.original.companyId || ""];
-          return <div>{name || "N/A"}</div>;
-        },
-      }
-    : null,
 
   {
     accessorKey: "correctiveAction",
     header: "Ação Corretiva",
-    cell: ({ row }: { row: { original: Occurrence } }) => (
+    cell: ({ row }) => (
       <div
         className="max-w-[200px] truncate"
         title={row.original.correctiveAction}
@@ -225,7 +194,7 @@ const createOccurrenceColumns = (options?: {
   {
     accessorKey: "gravity",
     header: "Gravidade",
-    cell: ({ row }: { row: { original: Occurrence } }) => {
+    cell: ({ row }) => {
       const gravity = row.original.gravity;
       const variant =
         gravity === "Alta"
@@ -254,7 +223,7 @@ const createOccurrenceColumns = (options?: {
   {
     accessorKey: "status",
     header: "Estado",
-    cell: ({ row }: { row: { original: Occurrence } }) => {
+    cell: ({ row }) => {
       const isOpen = row.original.status === "Ativo";
       return (
         <Badge
@@ -269,10 +238,10 @@ const createOccurrenceColumns = (options?: {
     },
   },
   {
-    accessorFn: (row: Occurrence) => formatHour(row.time),
+    accessorFn: (row) => formatHour(row.time),
     header: "Horário",
     size: 40,
-    cell: ({ row }: { row: { original: Occurrence } }) => {
+    cell: ({ row }) => {
       const hhmm = formatHour(row.original.time);
       return <div className="text-center">{hhmm}</div>;
     },
@@ -281,11 +250,9 @@ const createOccurrenceColumns = (options?: {
   {
     id: "actions",
     header: "Ações",
-    cell: ({ row }: { row: { original: Occurrence } }) => (
-      <ActionsButtons occurrence={row.original} />
-    ),
+    cell: ({ row }) => <ActionsButtons occurrence={row.original} />,
   },
-].filter(Boolean) as ColumnDef<Occurrence>[];
+];
 
 interface OccurrenceTableProps {
   data: Occurrence[];
@@ -298,11 +265,9 @@ export function OccurrenceTable({
   isLoading,
 }: OccurrenceTableProps) {
   const companyId = useAuthStore((s) => s.companyId || undefined);
-  const isGlobalAdmin = useAuthStore((s) => s.isGlobalAdmin);
   const { data: employees = [] } = useEmployees(companyId);
   const { data: equipments = [] } = useEquipment();
   const { data: sites = [] } = useSites();
-  const { data: companies = [] } = useCompaniesQuery({ enabled: isGlobalAdmin });
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
 
   const employeeById = React.useMemo(() => {
@@ -329,14 +294,6 @@ export function OccurrenceTable({
     return map;
   }, [sites]);
 
-  const companyById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (companies as any[]).forEach((c: any) => {
-      if (c?.id) map[c.id] = c.businessName || c.taxName || "";
-    });
-    return map;
-  }, [companies]);
-
   const resolvedData = React.useMemo(() => {
     return (data || []).map((o) => ({
       ...o,
@@ -350,7 +307,7 @@ export function OccurrenceTable({
     <div className="w-full">
       <DataTableGeneric
         data={resolvedData}
-        columns={createOccurrenceColumns({ isGlobalAdmin, companyById })}
+        columns={createOccurrenceColumns()}
         searchKey="cod"
         placeholder="Pesquisar..."
         dateKey="createdAt"

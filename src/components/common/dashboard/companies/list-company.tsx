@@ -5,33 +5,15 @@ import { useRouter } from "next/navigation";
 import {
   useCompaniesQuery,
   useDeleteCompanyMutation,
-  useCreateCompanyModuleMutation,
 } from "@/infrastructure/hooks/useCompanies";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Company } from "@/infrastructure/types/domain";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DataTableGeneric } from "../../base-ui/data-table";
-import { Eye, Edit, Trash2, Link2 } from "lucide-react";
+import { Eye, Edit, Trash2 } from "lucide-react";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { CompanyView } from "./company-view";
-import { useModules } from "@/infrastructure/hooks/useModules";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+
 
 function getPrimaryAddress(company: any) {
   return company?.address ?? company?.addresses?.[0] ?? undefined;
@@ -138,17 +120,13 @@ function ListCompany() {
   const router = useRouter();
   const { data, isLoading, refetch } = useCompaniesQuery();
   const { mutateAsync: deleteAsync } = useDeleteCompanyMutation();
-  const { data: modules = [] } = useModules();
-  const createCompanyModule = useCreateCompanyModuleMutation();
 
   const [viewOpen, setViewOpen] = React.useState(false);
   const [selectedCompany, setSelectedCompany] = React.useState<Company | null>(
     null,
   );
   const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const [associateOpen, setAssociateOpen] = React.useState(false);
-  const [moduleId, setModuleId] = React.useState<string>("");
-  const [isActive, setIsActive] = React.useState(true);
+
 
   const handleView = (company: Company) => {
     setSelectedCompany(company);
@@ -164,25 +142,7 @@ function ListCompany() {
     setDeleteOpen(true);
   };
 
-  const handleAssociate = (company: Company) => {
-    setSelectedCompany(company);
-    setModuleId("");
-    setIsActive(true);
-    setAssociateOpen(true);
-  };
 
-  const handleConfirmAssociate = async () => {
-    if (!selectedCompany?.id || !moduleId) return;
-    await createCompanyModule.mutateAsync({
-      companyId: selectedCompany.id,
-      moduleId,
-      status: isActive,
-    });
-    setAssociateOpen(false);
-    setSelectedCompany(null);
-    setModuleId("");
-    void refetch();
-  };
 
   return (
     <div className="space-y-6">
@@ -214,14 +174,7 @@ function ListCompany() {
             onClick: handleEdit,
             variant: "ghost",
           },
-          {
-            label: "Associar serviço",
-            icon: (
-              <Link2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />
-            ),
-            onClick: handleAssociate,
-            variant: "ghost",
-          },
+     
           {
             label: "Excluir",
             icon: (
@@ -267,70 +220,7 @@ function ListCompany() {
         } ? Esta ação não pode ser desfeita.`}
       />
 
-      <Dialog open={associateOpen} onOpenChange={setAssociateOpen}>
-        <DialogContent>
-          <DialogHeader className="py-4">
-            <DialogTitle>
-              Associar serviço à empresa{" "}
-              <span className="font-semibold">
-                {selectedCompany?.businessName ?? ""}
-              </span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="module">Serviço / Módulo</Label>
-              <Select
-                value={moduleId}
-                onValueChange={(value) => setModuleId(value)}
-              >
-                <SelectTrigger id="module" className="w-full">
-                  <SelectValue placeholder="Selecione um serviço" />
-                </SelectTrigger>
-                <SelectContent>
-                  {modules.map((module) =>
-                    module.id ? (
-                      <SelectItem key={module.id} value={module.id}>
-                        {module.name}
-                      </SelectItem>
-                    ) : null,
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="status" className="mr-4">
-                Ativo
-              </Label>
-              <Switch
-                className=" cursor-pointer data-[state=checked]:bg-green-600"
-                id="status"
-                checked={isActive}
-                onCheckedChange={setIsActive}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAssociateOpen(false);
-                setSelectedCompany(null);
-                setModuleId("");
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              disabled={!moduleId || createCompanyModule.isPending}
-              onClick={handleConfirmAssociate}
-              className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white"
-            >
-              {createCompanyModule.isPending ? "Salvando..." : "Associar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+     
     </div>
   );
 }

@@ -244,8 +244,7 @@ export function SitesTable({
           label: "Importar sites",
           onClick: () => setIsBulkOpen(true),
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+      
         dateKey={"createdAt" as keyof Site}
         rowActions={[
           {

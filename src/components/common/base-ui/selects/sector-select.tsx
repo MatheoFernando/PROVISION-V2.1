@@ -13,7 +13,7 @@ import {
 import { Plus, Loader2 } from "lucide-react";
 import { useCreateSector, useSectors } from "@/infrastructure/hooks/useSectors";
 import { Sector } from "@/infrastructure/types/domain";
-import { sectorSchema } from "@/infrastructure/schema/schema-sector";
+import { sectorSchema, type SectorEntity } from "@/infrastructure/schema/schema-sector";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
@@ -36,37 +36,36 @@ export function SectorSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
-  const { data: sectors = [], isLoading } = useSectors();
+  const { data: sectors = [], isLoading , refetch } = useSectors();
   const createSector = useCreateSector();
-  const form = useForm<Sector>({
+  const form = useForm<SectorEntity>({
     resolver: zodResolver(sectorSchema),
     defaultValues: { name: "", employeeId, zoneId, companyId },
   });
 
-  // Sincroniza o valor externo
+  
   useEffect(() => {
     if (value) {
       setSelectedSectorId(value);
     }
   }, [value]);
 
-  function handleSubmit(data: Sector) {
+  function handleSubmit(data: SectorEntity) {
     const effectiveEmployeeId = employeeId || data.employeeId;
-    if (!effectiveEmployeeId) {
-      form.setError("employeeId", { message: "Funcionário é obrigatório" });
-      return;
-    }
+
     if (!zoneId) {
       return;
     }
 
+    const basePayload: Omit<Sector, "id" | "createdAt" | "updatedAt"> = {
+      name: data.name,
+      zoneId,
+      companyId,
+      ...(effectiveEmployeeId ? { employeeId: effectiveEmployeeId } : {}),
+    };
+
     createSector.mutate(
-      {
-        ...data,
-        employeeId: effectiveEmployeeId,
-        zoneId,
-        companyId,
-      },
+      basePayload,
       {
         onSuccess: (created: Sector) => {
           setOpen(false);
@@ -122,6 +121,7 @@ export function SectorSelect({
             onChange(selected);
           }}
           disabled={isLoading || !hasZone}
+          onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full">
             <SelectValue

@@ -211,13 +211,7 @@ function ListUsers() {
     resetDeletionState()
   }
 
-  const handleBulkDelete = React.useCallback(
-    async (selected: User[]) => {
-      if (!selected.length) return
-      await executeDeletion(selected)
-    },
-    [executeDeletion]
-  )
+
 
   const deleteTitle =
     usersToDelete.length > 1 ? 'Excluir utilizadores' : 'Excluir utilizador'

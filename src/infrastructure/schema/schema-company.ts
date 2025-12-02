@@ -17,7 +17,7 @@ const contactSchema = z.object({
     .array(
       z
         .object({
-          phone: z.string().min(14, "Telefone é obrigatório").regex(/^\d+$/, "Telefone deve conter apenas números"),
+          phone: z.string().min(9, "Telefone é obrigatório")
         })
         .or(z.object({ phone: z.literal("") }))
     )
@@ -30,7 +30,7 @@ export const companySchema = z.object({
   cod: z.string(),
   taxName: z.string().min(1, "Nome fiscal é obrigatório"),
   businessName: z.string().min(1, "Nome empresarial é obrigatório"),
-  nif: z.string().min(14, "NIF deve ter pelo menos 14 caracteres"),
+  nif: z.string().min(9, "NIF deve ter pelo menos 9 caracteres"),
   photo: z.string().optional(),
   status: z.boolean().default(true),
   hasExistedSince: z.string().min(1, "Data de existência é obrigatória"),

@@ -24,6 +24,7 @@ import {
   Building2,
   UserCog,
   Users,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
@@ -80,7 +81,10 @@ function CreateUserDialog({
   };
 
   const { createUser, updateUser, isCreating, isUpdating } = useUsers();
-  const { companyId: authCompanyId } = useAuthStore();
+  const {
+    companyId: authCompanyId,
+    isGlobalAdmin: canGrantGlobalAdmin,
+  } = useAuthStore();
 
   type UserFormSchema = z.infer<typeof userSchema>;
 
@@ -147,9 +151,12 @@ function CreateUserDialog({
         const createPayload: CreateUserPayload = {
           phone: data.phone,
           password,
-          isGlobalAdmin: data.isGlobalAdmin,
           status: data.status,
         };
+
+        if (canGrantGlobalAdmin) {
+          createPayload.isGlobalAdmin = data.isGlobalAdmin;
+        }
 
         if (company) createPayload.companyId = company;
         if (department) createPayload.departmentId = department;
@@ -355,7 +362,7 @@ function CreateUserDialog({
                           <FormControl>
                             <Switch
                               checked={field.value}
-                              className="cursor-pointer"
+                              className="cursor-pointer data-[state=checked]:bg-green-600"
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
@@ -363,7 +370,34 @@ function CreateUserDialog({
                       </FormItem>
                     )}
                   />
-
+                  {canGrantGlobalAdmin && (
+                    <FormField
+                      control={form.control}
+                      name="isGlobalAdmin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex flex-row items-center justify-between rounded-xl bg-card">
+                            <div className="space-y-1">
+                              <FormLabel className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                                Super Administrador
+                              </FormLabel>
+                              <p className="text-xs font-medium text-muted-foreground">
+                                Controla acesso global
+                              </p>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                className="cursor-pointer data-[state=checked]:bg-green-600"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </div>
             </div>

@@ -7,7 +7,7 @@ import {
 import Cookies from "js-cookie";
 
 interface AuthState {
-  isGlobalAdmin: boolean;
+  isGlobalAdmin: boolean | null;
   userId: string | null;
   companyId: string | null;
   setCompanyId: (companyId: string | null) => void;
@@ -41,12 +41,14 @@ function readUserId(): string | null {
   }
 }
 
-function readIsGlobalAdmin(): boolean {
-  if (typeof window === "undefined") return false;
+function readIsGlobalAdmin(): boolean | null {
+  if (typeof window === "undefined") return null;
   try {
-    return Cookies.get("isGlobalAdmin") === "true";
+    const value = Cookies.get("isGlobalAdmin");
+    if (value === undefined) return null;
+    return value === "true";
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -100,7 +102,7 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== "undefined")
           window.localStorage.removeItem("userId");
         Cookies.remove("isGlobalAdmin");
-        set({ isGlobalAdmin: false, userId: null, companyId: null });
+        set({ isGlobalAdmin: null, userId: null, companyId: null });
       },
     }),
     { name: "auth", storage: undefined }

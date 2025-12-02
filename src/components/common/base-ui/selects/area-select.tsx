@@ -20,7 +20,7 @@ import { EmployeeSelect } from "./employee-select";
 
 type AreaForm = {
   name: string;
-  employeeId: string;
+  employeeId?: string;
   companyId: string;
 };
 
@@ -48,12 +48,12 @@ export function AreaSelect({
 
   const form = useForm<AreaForm>({
     resolver: zodResolver(
-      areaSchema.pick({ name: true, companyId: true, employeeId: true })
+      areaSchema.pick({ name: true, companyId: true })
     ),
     defaultValues: {
       name: "",
       companyId: companyId,
-      employeeId: employeeId ?? "",
+      employeeId: employeeId,
     },
   });
 
@@ -70,14 +70,16 @@ export function AreaSelect({
   }, [companyId, employeeId, form, open]);
 
   function handleSubmit(data: AreaForm) {
-    const effectiveEmployeeId = data.employeeId || employeeId || "";
-    if (!effectiveEmployeeId) {
-      form.setError("employeeId", { message: "Funcionário é obrigatório" });
-      return;
-    }
+    const effectiveEmployeeId = data.employeeId || employeeId;
+
+    const payload: Omit<Area, "id" | "createdAt" | "updatedAt"> = {
+      name: data.name,
+      companyId,
+      ...(effectiveEmployeeId ? { employeeId: effectiveEmployeeId } : {}),
+    };
 
     createArea.mutate(
-      { ...data, employeeId: effectiveEmployeeId },
+      payload,
       {
         onSuccess: (created) => {
           setOpen(false);
