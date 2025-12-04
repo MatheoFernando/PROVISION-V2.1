@@ -36,15 +36,33 @@ export function useSitesByCompanyAndCustomer(
     queryKey: ["sites", "by-company-customer", companyId, customerId],
     queryFn: async (): Promise<Site[]> => {
       if (!companyId || !customerId) return [];
-      const response = await api.get(`/site/getByCompanyAndCustomerId:${companyId},${customerId}`);
+      const response = await api.get(
+        `/site/getByCompanyAndCustomerId:${companyId},${customerId}`,
+      );
       return response.data.data ?? response.data ?? [];
     },
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
     enabled: (options?.enabled ?? true) && Boolean(companyId && customerId),
+  });
+}
+
+export function useSiteById(id?: string, options?: SitesQueryOptions) {
+  return useQuery({
+    queryKey: ["site", id],
+    queryFn: async (): Promise<Site | null> => {
+      if (!id) return null;
+      const response = await api.get(`/site/getById/${id}`);
+      const data = response.data?.data ?? response.data ?? null;
+      return (data as Site) ?? null;
+    },
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
+    enabled: (options?.enabled ?? true) && Boolean(id),
   });
 }
 

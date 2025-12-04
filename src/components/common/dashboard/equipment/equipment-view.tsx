@@ -65,11 +65,6 @@ export function EquipmentView({ equipment, isOpen, onClose }: EquipmentViewProps
 
   const siteCustomerName =
     resolveName(equipment.site?.customers) ?? resolveName(equipment.site?.customer);
-  const siteSectorName =
-    resolveName(equipment.site?.sectors) ?? resolveName(equipment.site?.sector);
-  const siteZoneName =
-    resolveName(equipment.site?.zones) ?? resolveName(equipment.site?.zone);
-
   const equipmentStatus = resolveStatus(equipment.status);
 
   return (
@@ -128,8 +123,8 @@ export function EquipmentView({ equipment, isOpen, onClose }: EquipmentViewProps
             <SimpleSection title="Detalhes do Site e Tipo">
               <Tabs defaultValue="site" className="w-full">
                 <TabsList className="mb-4">
-                  <TabsTrigger value="site">Site</TabsTrigger>
-                  <TabsTrigger value="type">Tipo de Equipamento</TabsTrigger>
+                  <TabsTrigger value="site" className="cursor-pointer">Site</TabsTrigger>
+                  <TabsTrigger value="type" className="cursor-pointer">Tipo de Equipamento</TabsTrigger>
                 </TabsList>
                 <TabsContent value="site">
                   <div className="grid gap-4 md:grid-cols-2">

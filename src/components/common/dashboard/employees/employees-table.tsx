@@ -7,6 +7,8 @@ import {
   useCreateGrossEmployee,
   useDeleteEmployee,
   useEmployees,
+  useEmployeeByCod,
+  useEmployeesByName,
 } from "@/infrastructure/hooks/useEmployees";
 import { Employee } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
@@ -26,6 +28,7 @@ import {
 import EmployeesCreatePage from "./employee-create";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
 import { type CreateGrossEmployeePayload } from "@/infrastructure/schema/schema-employees";
+import { Input } from "@/components/ui/input";
 
 interface EmployeesTableProps {
   companyId?: string;
@@ -50,10 +53,11 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
   const [selectedEmployee, setSelectedEmployee] = React.useState<
     Employee | undefined
   >();
-  const [employeesToDelete, setEmployeesToDelete] = React.useState<Employee[]>(
-    []
-  );
+  const [employeesToDelete, setEmployeesToDelete] =
+    React.useState<Employee[]>([]);
   const [isBulkOpen, setIsBulkOpen] = React.useState(false);
+  const [codFilter, setCodFilter] = React.useState("");
+  const [nameFilter, setNameFilter] = React.useState("");
 
   const departmentIdToName = React.useMemo(() => {
     return Object.fromEntries(
@@ -84,14 +88,7 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
           return <div>{fullName}</div>;
         },
       },
-      {
-        accessorKey: "siteId",
-        header: "Site",
-        cell: ({ row }) => {
-          const siteId = row.getValue("siteId") as string;
-          return <div>{"Sem site"}</div>;
-        },
-      },
+
       {
         accessorKey: "departmentId",
         header: "Departamento",
@@ -171,14 +168,6 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
     resetDeletionState();
   };
 
-  const handleBulkDelete = React.useCallback(
-    async (selected: Employee[]) => {
-      if (!selected.length) return;
-      await executeDeletion(selected);
-    },
-    [executeDeletion]
-  );
-
   const deleteTitle =
     employeesToDelete.length > 1
       ? "Excluir Funcionários"
@@ -190,35 +179,122 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
       ? `Tem certeza que deseja excluir ${employeesToDelete.length} funcionários selecionados? Esta ação não pode ser desfeita.`
       : `Tem certeza que deseja excluir ${deleteTargetLabel}? Esta ação não pode ser desfeita.`;
 
-  const sourceEmployees = React.useMemo(() => data ?? employees, [data, employees]);
+  const { data: employeeByCod, error: codFilterError } = useEmployeeByCod(
+    codFilter.trim() ? codFilter.trim() : undefined,
+    companyId,
+  );
+  const {
+    data: employeesByName = [],
+    error: nameFilterError,
+  } = useEmployeesByName(
+    nameFilter.trim() ? nameFilter.trim() : undefined,
+    companyId,
+  );
+
+  const sourceEmployees = React.useMemo(
+    () => data ?? employees,
+    [data, employees],
+  );
+
+  const apiFilteredEmployees = React.useMemo(() => {
+    const trimmedCod = codFilter.trim();
+    const trimmedName = nameFilter.trim();
+
+    // Prioridade: filtro por código
+    if (trimmedCod) {
+      if (codFilterError) return [];
+      if (employeeByCod === null) return [];
+      if (employeeByCod) return [employeeByCod];
+      // carregando: não mostrar lista completa para não confundir
+      return [];
+    }
+
+    // Segundo: filtro por nome
+    if (trimmedName) {
+      if (nameFilterError) return [];
+      if (employeesByName.length === 0) return [];
+      return employeesByName;
+    }
+
+    // Sem filtros → lista padrão
+    return sourceEmployees;
+  }, [
+    codFilter,
+    nameFilter,
+    codFilterError,
+    nameFilterError,
+    employeeByCod,
+    employeesByName,
+    sourceEmployees,
+  ]);
 
   const filteredEmployees = React.useMemo(() => {
-    if (!siteIds?.length) return sourceEmployees;
+    const base = apiFilteredEmployees;
+    if (!siteIds?.length) return base;
     const ids = new Set(siteIds.filter(Boolean));
-    return sourceEmployees.filter((employee) => ids.has(employee.siteId));
-  }, [sourceEmployees, siteIds]);
+    return base.filter((employee) => ids.has(employee.siteId));
+  }, [apiFilteredEmployees, siteIds]);
 
+  
   return (
     <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">
+            Código do funcionário
+          </label>
+          <Input
+            value={codFilter}
+            onChange={(event) => setCodFilter(event.target.value)}
+            placeholder="Filtrar por código "
+            className="h-9"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">
+            Nome do funcionário
+          </label>
+          <Input
+            value={nameFilter}
+            onChange={(event) => setNameFilter(event.target.value)}
+            placeholder="Filtrar por nome "
+            className="h-9"
+          />
+        </div>
+        <div className="flex items-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 cursor-pointer"
+            onClick={() => {
+              setCodFilter("");
+              setNameFilter("");
+            }}
+          >
+            Limpar filtros
+          </Button>
+        </div>
+      </div>
+
+ 
+
       <DataTableGeneric
         columns={columns}
         data={filteredEmployees}
         isLoading={isLoadingOverride ?? isLoading}
         searchKey="fullName"
-        onBulkDelete={handleBulkDelete}
         actionButton={{
           label: "Novo Funcionário",
           onClick: () => {
             setSelectedEmployee(undefined);
             setIsCreateOpen(true);
           },
-        }}
+        }
+      }
         bulkImportButton={{
           label: "Importar funcionários",
           onClick: () => setIsBulkOpen(true),
         }}
-        enableRowSelection
-        includeSelection
         dateKey="createdAt"
         rowActions={[
           {

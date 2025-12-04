@@ -169,14 +169,7 @@ const createColumns = (maps: {
       );
     },
   },
-  {
-    accessorKey: "createdAt",
-    header: "Criado em",
-    cell: ({ row }) => {
-      const value = row.getValue("createdAt") as string | undefined;
-      return <span>{formatDate(value)}</span>;
-    },
-  },
+
   {
     id: "actions",
     header: "Ações",
@@ -281,7 +274,6 @@ export function RsuTable({
         columns={columns}
         searchKey="cod"
         placeholder="Pesquisar por código ou descrição..."
-        includeSelection
         isLoading={isLoading}
         dateKey="createdAt"
         onDateRangeChange={onDateRangeChange}

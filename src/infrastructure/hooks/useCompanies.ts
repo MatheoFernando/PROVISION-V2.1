@@ -105,6 +105,22 @@ export function useCompanyModulesByModuleQuery(moduleId: string) {
   });
 }
 
+export function useCompanyModuleByIdQuery(companyModuleId?: string | null) {
+  return useQuery<CompanyModuleWithDetails | null>({
+    queryKey: ["company-module", companyModuleId],
+    queryFn: async (): Promise<CompanyModuleWithDetails | null> => {
+      if (!companyModuleId) return null;
+      const { data } = await api.get(`/companyModules/${companyModuleId}`);
+      return (data?.data ?? data ?? null) as CompanyModuleWithDetails | null;
+    },
+    enabled: Boolean(companyModuleId),
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+}
+
 export function useCreateCompanyModuleMutation() {
   const queryClient = useQueryClient();
 
@@ -131,6 +147,74 @@ export function useCreateCompanyModuleMutation() {
     onError: (error) => {
       console.error("Erro ao associar serviço à empresa", error);
       toast.error("Erro ao associar serviço à empresa");
+    },
+  });
+}
+
+export function useUpdateCompanyModuleMutation() {
+  const queryClient = useQueryClient();
+
+  interface UpdatePayload extends UpdateCompanyModule {
+    id: string;
+    status?: boolean;
+  }
+
+  return useMutation<
+    { message: string; data?: CompanyModule },
+    unknown,
+    UpdatePayload
+  >({
+    mutationKey: ["company-module-update"],
+    mutationFn: async (payload: UpdatePayload) => {
+      const { id, status, ...rest } = payload;
+
+      const body: Record<string, unknown> = {
+        id,
+        ...rest,
+      };
+
+      if (typeof status === "boolean") {
+        body.status = String(status);
+      } else if (typeof rest.isActive === "boolean") {
+        body.status = String(rest.isActive);
+      }
+
+      const { data } = await api.put("/companyModules", body);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["company-modules"] });
+      await queryClient.refetchQueries({
+        queryKey: ["company-modules"],
+        type: "active",
+      });
+      toast.success("Serviço da empresa atualizado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar serviço da empresa");
+    },
+  });
+}
+
+export function useDeleteCompanyModuleMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ message: string }, unknown, string>({
+    mutationKey: ["company-module-delete"],
+    mutationFn: async (companyModuleId: string) => {
+      const { data } = await api.delete(`/companyModules/${companyModuleId}`);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["company-modules"] });
+      await queryClient.refetchQueries({
+        queryKey: ["company-modules"],
+        type: "active",
+      });
+      toast.success("Serviço desassociado da empresa com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao desassociar serviço da empresa");
     },
   });
 }

@@ -8,6 +8,7 @@ import {
   useSites,
   useDeleteSite,
   useCreateGrossSite,
+  useSitesByCompanyAndCustomer,
 } from "@/infrastructure/hooks/useSites";
 import { Site } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
@@ -130,17 +131,6 @@ interface SitesTableProps {
   isLoadingOverride?: boolean;
 }
 
-interface StatusCodeError extends Error {
-  statusCode: number;
-}
-
-function throwMissingStatusCodeError(elementKey: string): never {
-  const error = new Error(
-    `O elemento ${elementKey} falta statusCode: 404`,
-  ) as StatusCodeError;
-  error.statusCode = 404;
-  throw error;
-}
 
 function parseWorkersCount(rawValue: string | undefined) {
   if (!rawValue) return 0;
@@ -158,10 +148,22 @@ export function SitesTable({
 }: SitesTableProps = {}) {
   const router = useRouter();
   const shouldFetch = !data;
-  const { data: sites = [], isLoading } = useSites(customerId, { enabled: shouldFetch });
+  const companyId = useAuthStore((state) => state.companyId) || "";
   const deleteSite = useDeleteSite();
   const createGrossSite = useCreateGrossSite();
-  const companyId = useAuthStore((state) => state.companyId) || "";
+
+  const { data: sitesByCompanyAndCustomer = [], isLoading: isLoadingByCompanyAndCustomer } = useSitesByCompanyAndCustomer(
+    companyId,
+    customerId,
+    { enabled: shouldFetch && !!companyId && !!customerId }
+  );
+
+  const { data: sites = [], isLoading } = useSites(customerId, {
+    enabled: shouldFetch && (!companyId || !customerId)
+  });
+
+  const finalSites = (companyId && customerId) ? sitesByCompanyAndCustomer : sites;
+  const finalIsLoading = (companyId && customerId) ? isLoadingByCompanyAndCustomer : isLoading;
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -223,8 +225,8 @@ export function SitesTable({
     }
   };
 
-  const resolvedData = data ?? sites;
-  const resolvedIsLoading = isLoadingOverride ?? isLoading;
+  const resolvedData = data ?? finalSites;
+  const resolvedIsLoading = isLoadingOverride ?? finalIsLoading;
 
   return (
     <div className="space-y-4">
@@ -244,7 +246,7 @@ export function SitesTable({
           label: "Importar sites",
           onClick: () => setIsBulkOpen(true),
         }}
-      
+
         dateKey={"createdAt" as keyof Site}
         rowActions={[
           {

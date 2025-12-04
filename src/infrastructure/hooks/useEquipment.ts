@@ -23,29 +23,44 @@ const QUERY_KEY = ["equipment"] as const;
 
 interface EquipmentQueryOptions {
   enabled?: boolean;
+  companyId?: string;
 }
 
-export function useEquipment(customerId?: string, options?: EquipmentQueryOptions) {
+export function useEquipment(
+  customerId?: string,
+  options?: EquipmentQueryOptions,
+) {
   return useQuery({
-    queryKey: [...QUERY_KEY, customerId],
+    queryKey: [...QUERY_KEY, customerId, options?.companyId],
     queryFn: async (): Promise<Equipment[]> => {
-      const response = await api.get("/equipment/getAll");
-      const allEquipment = response.data.data as Equipment[];
+      const companyId = options?.companyId;
+      if (companyId) {
+        const response = await api.get("/equipment/getByCompanyId", {
+          params: { companyId },
+        });
+        const list = (response.data?.data ?? response.data ?? []) as Equipment[];
 
-      // Se customerId fornecido, precisamos buscar sites primeiro e filtrar
-      if (customerId && Array.isArray(allEquipment)) {
-        // Buscar sites do cliente para obter os IDs
-        const sitesResponse = await api.get("/site/getAll", { params: { customerId } });
-        const customerSites = sitesResponse.data.data || [];
-        const siteIds = new Set(customerSites.map((site: Site) => site.id).filter(Boolean));
+        if (customerId) {
+          const sitesResponse = await api.get("/site/getAll", {
+            params: { customerId },
+          });
+          const customerSites = (sitesResponse.data?.data ?? []) as Site[];
+          const siteIds = new Set(
+            customerSites.map((site) => site.id).filter(Boolean),
+          );
+          return list.filter((eq: Equipment) => siteIds.has(eq.siteId));
+        }
 
-        // Filtrar equipamentos cujos sites pertencem ao cliente
-        return allEquipment.filter((eq: Equipment) => siteIds.has(eq.siteId));
+        return list;
       }
+
+      const response = await api.get("/equipment/getAll");
+      const allEquipment = (response.data?.data ?? response.data ?? []) as Equipment[];
+
 
       return allEquipment;
     },
-    staleTime: 2 * 60 * 1000,
+   
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -62,8 +77,7 @@ export function useEquipmentById(id?: string, companyId?: string) {
       const { data } = await api.get(`/equipment/getById/${id}`);
       return data || null;
     },
-    enabled: !!id,
-    staleTime: 2 * 60 * 1000,
+    enabled: !!id && !!companyId,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

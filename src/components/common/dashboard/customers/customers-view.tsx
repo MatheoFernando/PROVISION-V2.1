@@ -47,7 +47,7 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
       <DrawerContent className="h-auto max-w-md flex flex-col max-h-screen bg-white">
         <DrawerHeader className="px-6 py-4 border-b border-gray-100">
           <DrawerTitle className="text-xl font-semibold text-gray-900">
-            Detalhes da Empresa
+            Detalhes do Cliente
           </DrawerTitle>
           <DrawerClose asChild>
             <Button
@@ -110,7 +110,7 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <TabsContent value="basic" className="mt-0 p-0 space-y-3">
-                <div className="space-y-3">
+                <div className="space-y-3 grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</label>
                     <p className="text-base font-semibold text-gray-900 mt-1">{customer.cod}</p>
@@ -132,6 +132,7 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
 
               {hasCompany && (
                 <TabsContent value="company" className="mt-0 p-0 space-y-3">
+                  <div className="space-y-3 grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</label>
                     <p className="text-base font-semibold text-gray-900 mt-1">{company.cod}</p>
@@ -148,11 +149,13 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">NIF</label>
                     <p className="text-sm font-mono text-gray-900 mt-1">{company.nif}</p>
                   </div>
+                  </div>
                 </TabsContent>
               )}
 
               {hasAddress && (
                 <TabsContent value="address" className="mt-0 p-0 space-y-3">
+                  <div className="space-y-3 grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Domicílio</label>
                     <p className="text-sm text-gray-900 mt-1">{address.houseHold}</p>
@@ -175,11 +178,12 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
                       <p className="text-sm text-gray-900 mt-1">{address.country}</p>
                     </div>
                   )}
+                  </div>
                 </TabsContent>
               )}
 
               {hasContact && (
-                <TabsContent value="contact" className="mt-0 p-0 space-y-2">
+                <TabsContent value="contact" className="mt-0 p-0 space-y-2 grid grid-cols-2 gap-3">
                   {phoneNumbers.map((p) => (
                     <div key={p.phone} className="flex items-center gap-3 p-3 border border-gray-200 hover:border-gray-300 transition-colors">
                       <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -196,7 +200,7 @@ export function CustomersView({ isOpen, onClose, customer }: CustomersViewProps)
               )}
 
               {hasSites && (
-                <TabsContent value="sites" className="mt-0 p-0">
+                <TabsContent value="sites" className="mt-0 p-0 grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     {sites.map((site) => (
                       <div key={site.id} className="p-3 border border-gray-200 hover:border-gray-300 transition-colors">

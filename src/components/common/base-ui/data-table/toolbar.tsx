@@ -69,24 +69,11 @@ export function Toolbar<TData extends RowData>({
   dateKey,
   onRefetch,
 }: ToolbarProps<TData>) {
-  const queryClient = useQueryClient();
   const [showDatePicker, setShowDatePicker] = React.useState(false);
-  const [sortLabel, setSortLabel] = React.useState("Mais recente");
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [sortLabel, setSortLabel] = React.useState("Mais recente")
   const d = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-  async function handleRefetch() {
-    setIsRefreshing(true);
-    try {
-      if (onRefetch) {
-        await onRefetch();
-      } else {
-        await queryClient.refetchQueries({ type: "active" });
-      }
-    } finally {
-      setTimeout(() => setIsRefreshing(false), 500);
-    }
-  }
+
 
   function setSortRecent() {
     if (dateKey) table.setSorting([{ id: dateKey, desc: true } as any]);
@@ -164,19 +151,6 @@ export function Toolbar<TData extends RowData>({
       </div>
 
       <div className="flex items-center gap-2  w-full justify-end">
-          <Button
-            variant="ghost"
-            className="h-11 cursor-pointer bg-muted/40 hover:bg-muted/60 dark:bg-muted/20 dark:hover:bg-muted/30"
-            aria-label="Atualizar dados"
-            disabled={isRefreshing}
-            onClick={handleRefetch}
-          >
-            <ArrowClockwise
-              className={`size-4 transition-transform duration-500 ${
-                isRefreshing ? "animate-spin" : ""
-              }`}
-            />
-          </Button>
       
         <Drawer
           open={isFilterOpen}

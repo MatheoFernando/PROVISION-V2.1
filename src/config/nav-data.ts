@@ -13,7 +13,7 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => [
     ? []
     : [
         {
-          title: "Empresas",
+          title: "Empresa",
           url: "/dashboard/customers",
           iconKey: "Buildings",
           items: [
@@ -27,11 +27,22 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => [
               url: "/dashboard/employees",
               iconKey: "Users",
             },
-            {
-              title: "Veículos",
-              url: "/dashboard/car",
-              iconKey: "Car",
-            },
+              {
+                title: "Veículos",
+                url: "/dashboard/car",
+                iconKey: "Car",
+              },
+              {
+                title: "Sites",
+                url: "/dashboard/sites",
+                iconKey: "MapPinLine",
+              },
+              {
+                title: "Equipamentos",
+                url: "/dashboard/equipment",
+                iconKey: "Wrench",
+              },
+
           ],
         },
       ]),
@@ -45,11 +56,8 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => [
         url: "/dashboard/users",
         iconKey: "Users",
       },
-      {
-        title: "Empresas",
-        url: "/dashboard/companies",
-        iconKey: "Buildings",
-      },
+      ...(isGlobalAdmin ? [{ title: "Empresas", url: "/dashboard/companies", iconKey: "Buildings" }] : []),
+    
     ],
   },
   {

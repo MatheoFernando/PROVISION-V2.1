@@ -10,10 +10,11 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { useCustomerById } from "@/infrastructure/hooks/useCustomers";
+
 import { allNavItems } from "./nav-items";
 import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useCustomersByCompanyId } from "@/infrastructure/hooks/useCustomers";
 
 export function BreadcrumbClient(): React.ReactElement {
   const pathname = usePathname();
@@ -30,7 +31,6 @@ export function BreadcrumbClient(): React.ReactElement {
     return isLikelyId ? candidate : undefined;
   }, [parts]);
 
-  const { data: breadcrumbCustomer } = useCustomerById(customerIdFromPath);
 
   const mapTitle = React.useMemo(() => {
     const m = new Map<string, { label: string; icon?: LucideIcon }>();
@@ -55,22 +55,12 @@ export function BreadcrumbClient(): React.ReactElement {
     parts.forEach((p) => {
       current += `/${p}`;
       const meta = mapTitle.get(current);
-      const isCustomerDetail =
-        customerIdFromPath &&
-        current.endsWith(`/customers/${customerIdFromPath}`);
-      const dynamicLabel =
-        isCustomerDetail && breadcrumbCustomer
-          ? `${
-              breadcrumbCustomer.company?.businessName ??
-              breadcrumbCustomer.name ??
-              ""
-            }`.trim()
-          : undefined;
-      const label = dynamicLabel ?? meta?.label ?? p;
+    
+      const label =  meta?.label ?? p;
       acc.push({ href: current, label, Icon: meta?.icon });
     });
     return acc;
-  }, [parts, mapTitle, customerIdFromPath, breadcrumbCustomer]);
+  }, [parts, mapTitle, customerIdFromPath]);
 
   return (
     <Breadcrumb>

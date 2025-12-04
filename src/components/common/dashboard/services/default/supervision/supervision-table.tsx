@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { Eye, PencilSimple, Trash, DotsThree } from "phosphor-react"
+import { ColumnDef, CellContext } from "@tanstack/react-table"
+import { Eye, PencilSimple, Trash, DotsThree, X } from "phosphor-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,7 +26,6 @@ import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
 import { SupervisionDrawer } from "./supervision-view"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
-import { X } from "phosphor-react"
 interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
@@ -87,8 +86,6 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
       />
 
 
-
-
       <DeleteModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
@@ -132,111 +129,121 @@ const createSupervisionColumns = (
   }
 ): ColumnDef<Supervision>[] => [
   {
-      accessorKey: "cod",
-      header: "Código",
-      size: 50,
-      cell: ({ row }) => (
-        <div className="font-medium">{row.original.cod}</div>
-      ),
-    },
+    accessorKey: "cod",
+    header: "Código",
+    size: 50,
+    cell: ({ row }: CellContext<Supervision, unknown>) => (
+      <div className="font-medium">{row.original.cod}</div>
+    ),
+  },
   {
-      accessorKey: "desiredNumberWorkers",
-      header: "Desejado",
-      size: 20,
-      cell: ({ row }) => (
-        <div >{row.original.desiredNumberWorkers}</div>
-      ),
-    },
+    accessorKey: "desiredNumberWorkers",
+    header: "Desejado",
+    size: 20,
+    cell: ({ row }: CellContext<Supervision, unknown>) => (
+      <div>{row.original.desiredNumberWorkers}</div>
+    ),
+  },
   {
-      accessorKey: "numberWorkerPresent",
-      header: "Presente",
-      size: 20,
-      cell: ({ row }) => (
-        <div >{row.original.numberWorkerPresent}</div>
-      ),
+    accessorKey: "numberWorkerPresent",
+    header: "Presente",
+    size: 20,
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const present = Number(row.original.numberWorkerPresent) || 0
+      const desired = Number(row.original.desiredNumberWorkers) || 0
+      const isEqual = present === desired
+      const isLess = present < desired
+      const difference = present - desired
+
+      return (
+        <div className={isEqual ? 'text-green-600 font-medium' : isLess ? 'text-red-600 font-medium' : ''}>
+          {isLess ? `${difference}` : present}
+        </div>
+      )
     },
+  },
   {
-      accessorFn: (row) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
-      id: "equipment",
-      header: `Equipamentos`,
-      cell: ({ row }) => {
-        const equipment = maps.equipmentById[row.original.equipmentId || ""] || ""
-        return <div>{equipment || 'N/A'}</div>
-      },
+    accessorFn: (row: Supervision) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
+    id: "equipment",
+    header: `Equipamentos`,
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const equipment = maps.equipmentById[row.original.equipmentId || ""] || ""
+      return <div>{equipment || 'N/A'}</div>
     },
+  },
   {
-      accessorFn: (row) => maps.employeeById[row.employeeId || ""] || 'N/A',
-      id: "employee",
-      header: "Funcionário",
-      cell: ({ row }) => {
-        const name = maps.employeeById[row.original.employeeId || ""]
-        return <div>{name || 'N/A'}</div>
-      },
+    accessorFn: (row: Supervision) => maps.employeeById[row.employeeId || ""] || 'N/A',
+    id: "employee",
+    header: "Funcionário",
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const name = maps.employeeById[row.original.employeeId || ""]
+      return <div>{name || 'N/A'}</div>
     },
+  },
   {
-      accessorFn: (row) => maps.siteById[row.siteId || ""] || 'N/A',
-      id: "site",
-      header: "Site",
-      cell: ({ row }) => {
-        const name = maps.siteById[row.original.siteId || ""]
-        return <div>{name || 'N/A'}</div>
-      },
+    accessorFn: (row: Supervision) => maps.siteById[row.siteId || ""] || 'N/A',
+    id: "site",
+    header: "Site",
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const name = maps.siteById[row.original.siteId || ""]
+      return <div>{name || 'N/A'}</div>
     },
+  },
   maps.isGlobalAdmin && maps.companyById
     ? {
-        accessorFn: (row) => maps.companyById?.[row.companyId || ""] || "N/A",
-        id: "company",
-        header: "Empresa",
-        cell: ({ row }) => {
-          const name = maps.companyById?.[row.original.companyId || ""]
-          return <div>{name || "N/A"}</div>
-        },
-      }
+      accessorFn: (row: Supervision) => maps.companyById?.[row.companyId || ""] || "N/A",
+      id: "company",
+      header: "Empresa",
+      cell: ({ row }: CellContext<Supervision, unknown>) => {
+        const name = maps.companyById?.[row.original.companyId || ""]
+        return <div>{name || "N/A"}</div>
+      },
+    }
     : null,
   {
-      accessorFn: (row) => formatHour(row.time),
-      id: "time",
-      header: "Horário",
-      size: 20,
-      cell: ({ row }) => {
-        const hhmm = formatHour(row.original.time)
-        return <div>{hhmm}</div>
-      },
+    accessorFn: (row: Supervision) => formatHour(row.time),
+    id: "time",
+    header: "Horário",
+    size: 20,
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const hhmm = formatHour(row.original.time)
+      return <div>{hhmm}</div>
     },
+  },
   {
-      accessorFn: (row) => maps.departmentById[row.departmentId || ""] || 'N/A',
-      id: "department",
-      header: "Departamento",
-      cell: ({ row }) => {
-        const name = maps.departmentById[row.original.departmentId || ""]
-        return <div>{name || 'N/A'}</div>
-      },
+    accessorFn: (row: Supervision) => maps.departmentById[row.departmentId || ""] || 'N/A',
+    id: "department",
+    header: "Departamento",
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const name = maps.departmentById[row.original.departmentId || ""]
+      return <div>{name || 'N/A'}</div>
     },
+  },
   {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const isActive = row.original.status === 'Finalizado'
-        return (
-          <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-            {row.original.status}
-          </Badge>
-        )
-      },
+    accessorKey: "status",
+    header: "Estado",
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const isActive = row.original.status === 'Finalizado'
+      return (
+        <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
+          {row.original.status}
+        </Badge>
+      )
     },
+  },
 
   {
-      id: "actions",
-      header: "Ações",
-      size: 50,
-      cell: ({ row }) => (
-        <ActionsButtons
-          supervision={row.original}
-          equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
-          onEdit={maps.onEdit}
-        />
-      ),
-    },
+    id: "actions",
+    header: "Ações",
+    size: 50,
+    cell: ({ row }: CellContext<Supervision, unknown>) => (
+      <ActionsButtons
+        supervision={row.original}
+        equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
+        onEdit={maps.onEdit}
+      />
+    ),
+  },
 ].filter(Boolean) as ColumnDef<Supervision>[]
 
 interface SupervisionTableProps {
@@ -254,7 +261,6 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
   const { data: equipments = [] } = useEquipment()
   const { data: sites = [] } = useSites()
   const { data: departments = [] } = useDepartments()
-  const { data: companies = [] } = useCompaniesQuery({ enabled: isGlobalAdmin })
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
 
@@ -290,13 +296,7 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
     return map
   }, [departments])
 
-  const companyById = React.useMemo(() => {
-    const map: Record<string, string> = {}
-    ;(companies as any[]).forEach((c: any) => {
-      if (c?.id) map[c.id] = c.businessName || c.taxName || ""
-    })
-    return map
-  }, [companies])
+
 
   const handleCreate = () => {
     setSelectedSupervision(null)
@@ -322,14 +322,10 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
           equipmentById,
           siteById,
           departmentById,
-          companyById,
-          isGlobalAdmin,
           onEdit: handleEdit,
         })}
         searchKey="cod"
         placeholder="Pesquisar..."
-        enableRowSelection={true}
-        includeSelection={true}
         isLoading={isLoading}
         dateKey="createdAt"
         onDateRangeChange={onDateRangeChange}

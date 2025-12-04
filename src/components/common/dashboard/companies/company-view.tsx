@@ -106,7 +106,7 @@ export function CompanyView({
         <DrawerHeader className="relative border-b border-slate-200 px-6 py-6">
           <DrawerTitle className="flex items-center gap-2 text-2xl font-semibold text-slate-900">
             <Building2 className="h-5 w-5 text-slate-500" />
-            Detalhes da Empresa
+            Detalhes da Em
           </DrawerTitle>
   
           <DrawerClose asChild>

@@ -116,8 +116,6 @@ export function TypeEquipmentTable() {
           label: "Novo Tipo de Equipamento",
           onClick: handleCreate,
         }}
-        enableRowSelection={true}
-        includeSelection={true}
         dateKey="createdAt"
         rowActions={[
 

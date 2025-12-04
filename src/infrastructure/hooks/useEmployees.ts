@@ -44,11 +44,59 @@ export function useEmployeeById(id?: string, companyId?: string) {
     queryKey: ["employee", id, companyId],
     enabled: Boolean(id && companyId),
     queryFn: async (): Promise<Employee | null> => {
-      const response = await api.get(`/employee/getAll/${companyId}`);
-      const list: Employee[] = response.data.data ?? [];
-      return (list || []).find((e: any) => e?.id === id) ?? null;
+      if (!id) return null;
+      try {
+        const response = await api.get(`/employee/getById/${id}`);
+        const data = response.data?.data ?? response.data ?? null;
+        return (data as Employee) ?? null;
+      } catch {
+        if (!companyId) return null;
+        const response = await api.get(`/employee/getAll/${companyId}`);
+        const list: Employee[] = response.data.data ?? [];
+        return (list || []).find((e: any) => e?.id === id) ?? null;
+      }
     },
-    staleTime: 2 * 60 * 1000,
+  
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
+  });
+}
+
+export function useEmployeeByCod(cod?: string, companyId?: string) {
+  return useQuery({
+    queryKey: ["employee-cod", cod, companyId],
+    enabled: Boolean(cod && cod.trim().length > 0),
+    queryFn: async (): Promise<Employee | null> => {
+      if (!cod) return null;
+      const response = await api.get("/employee/getByCod", {
+        params: { cod },
+      });
+      const data = response.data?.data ?? response.data ?? null;
+      return (data as Employee) ?? null;
+    },
+    
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
+  });
+}
+
+export function useEmployeesByName(name?: string, companyId?: string) {
+  return useQuery({
+    queryKey: ["employees-name", name, companyId],
+    enabled: Boolean(name && name.trim().length > 0 && companyId),
+    queryFn: async (): Promise<Employee[]> => {
+      if (!name) return [];
+      const response = await api.get("/employee/getByName", {
+        params: { name },
+      });
+      const data = response.data?.data ?? response.data ?? [];
+      return (data as Employee[]) ?? [];
+    },
+  
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

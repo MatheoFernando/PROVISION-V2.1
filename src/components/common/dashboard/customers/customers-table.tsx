@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, PencilSimple, Trash, X } from "phosphor-react";
+import { Eye, MapPinLine, PencilSimple, Trash, X } from "phosphor-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -17,6 +17,12 @@ import { Customer, Company } from "@/infrastructure/types/domain";
 import { type CreateGrossCustomerPayload } from "@/infrastructure/schema/schema-customers";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -26,6 +32,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { CustomersCreateForm } from "./customer-create";
 import { CustomersView } from "./customers-view";
+import { useSitesByCompanyAndCustomer } from "@/infrastructure/hooks/useSites";
+import { SitesTable } from "../sites/sites-table";
 
 const customerColumns: ColumnDef<Customer>[] = [
   {
@@ -72,7 +80,6 @@ export function CustomersTable({
   const {
     data: customers = [],
     isLoading: isLoadingCustomers,
-    refetch,
   } = useCustomersByCompanyId(companyId, {
     enabled: !isGlobalAdmin && !!companyId,
   });
@@ -86,6 +93,30 @@ export function CustomersTable({
   const [selectedCustomer, setSelectedCustomer] = useState<
     Customer | Company | undefined
   >();
+  const [isSitesOpen, setIsSitesOpen] = useState(false);
+  const [selectedCustomerForSites, setSelectedCustomerForSites] = useState<
+    Customer | Company | undefined
+  >();
+
+  const selectedCustomerId =
+    (selectedCustomer as Customer | Company | undefined)?.id;
+
+  const { data: customerSites = [] } = useSitesByCompanyAndCustomer(
+    companyId,
+    selectedCustomerId,
+    {
+      enabled: isViewOpen && !!companyId && !!selectedCustomerId,
+    },
+  );
+
+  const customerForView = ((): Customer | undefined => {
+    if (!selectedCustomer) return undefined;
+    const base = selectedCustomer as Customer;
+    return {
+      ...base,
+      sites: customerSites,
+    } as Customer;
+  })();
 
   const data = customers;
   const isLoading = isLoadingCustomers;
@@ -121,12 +152,14 @@ export function CustomersTable({
 
   const handleView = (customer: Customer | Company) => {
     if (!customer?.id) return;
-    if (!isGlobalAdmin) {
-      router.push(`/dashboard/customers/${customer.id}`);
-      return;
-    }
     setSelectedCustomer(customer);
     setIsViewOpen(true);
+  };
+
+  const handleViewSites = (customer: Customer | Company) => {
+    if (!customer?.id) return;
+    setSelectedCustomerForSites(customer);
+    setIsSitesOpen(true);
   };
   const handleEdit = (customer: Customer | Company) => {
     setSelectedCustomer(customer);
@@ -159,9 +192,8 @@ export function CustomersTable({
         columns={tableColumns as ColumnDef<TableData>[]}
         data={data as TableData[]}
         isLoading={isLoading}
-        onRefetch={refetch}
         actionButton={{
-          label:  "Novo Cliente",
+          label: "Novo Cliente",
           onClick: () => {
             if (isGlobalAdmin) {
               router.push("/dashboard/companies/create");
@@ -190,11 +222,25 @@ export function CustomersTable({
             onClick: (customer) => handleEdit(customer),
           },
           {
+            label: "Ver sites",
+            icon: <MapPinLine className="h-4 w-4 mr-2" />,
+            onClick: (customer) => handleViewSites(customer),
+          },
+          {
             label: "Excluir",
             icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (customer) => handleDelete(customer),
           },
+
         ]}
+      />
+
+      <CustomersView
+        isOpen={isViewOpen}
+        onClose={() => {
+          setIsViewOpen(false);
+        }}
+        customer={customerForView}
       />
 
       <Drawer
@@ -233,14 +279,33 @@ export function CustomersTable({
         </DrawerContent>
       </Drawer>
 
-      <CustomersView
-        isOpen={isViewOpen && isGlobalAdmin}
-        onClose={() => {
-          setIsViewOpen(false);
-          setSelectedCustomer(undefined);
+      <Dialog
+        open={isSitesOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsSitesOpen(false);
+            setSelectedCustomerForSites(undefined);
+          }
         }}
-        customer={selectedCustomer as Customer | undefined}
-      />
+      >
+        <DialogContent className="sm:max-w-7xl">
+          <DialogHeader>
+            <DialogTitle>
+              Sites do {(selectedCustomerForSites as any)?.name || "Cliente"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[80vh] overflow-y-auto">
+            {selectedCustomerForSites?.id && (
+              <SitesTable
+                customerId={selectedCustomerForSites.id}
+                shouldNavigateBack={false}
+              />
+            )}
+           
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       <DeleteModal
         isOpen={isDeleteOpen}

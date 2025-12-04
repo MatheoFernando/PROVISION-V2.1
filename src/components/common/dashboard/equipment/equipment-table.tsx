@@ -125,22 +125,21 @@ export function EquipmentTable({
 }: EquipmentTableProps = {}) {
   const router = useRouter();
   const shouldFetch = !data;
+  const companyId = useAuthStore((s) => s.companyId) ?? "";
   const {
     data: allEquipment = [],
     isLoading,
     refetch: refetchEquipment,
-  } = useEquipment(customerId, { enabled: shouldFetch });
+  } = useEquipment(companyId, { enabled: shouldFetch, companyId });
 
   const equipment = React.useMemo(() => {
     if (data) return data;
     if (!customerId) return allEquipment;
-    // Filtrar equipamentos através dos sites do cliente
-    // Isso será feito pelo hook, mas garantimos aqui também
+  
     return allEquipment;
   }, [data, allEquipment, customerId]);
   const deleteEquipment = useDeleteEquipment();
   const createGrossEquipment = useCreateGrossEquipment();
-  const companyId = useAuthStore((s) => s.companyId) ?? "";
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -222,8 +221,7 @@ export function EquipmentTable({
           label: "Importar equipamentos",
           onClick: () => setIsBulkOpen(true),
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+      
         dateKey="createdAt"
         rowActions={[
           {

@@ -33,8 +33,8 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       });
       return response.data.data;
     },
-    enabled: (options?.enabled ?? true) && !!companyId,
-    staleTime: 2 * 60 * 1000,
+    enabled: (options?.enabled ?? true) && !!companyId,      
+    staleTime: 0, 
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

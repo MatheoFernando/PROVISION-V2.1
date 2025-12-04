@@ -7,6 +7,8 @@ import {
   Package,
   ChartPie,
   Car,
+  MapPinLine ,
+  Wrench
 } from "phosphor-react";
 import { getNavData, type NavItemData } from "@/config/nav-data";
 
@@ -23,6 +25,8 @@ const iconMap: Record<string, Icon> = {
   Package,
   ChartPie,
   Car,
+  MapPinLine  ,
+  Wrench
 };
 
 function mapNavItem(item: NavItemData): BaseNavItem {

@@ -6,14 +6,15 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Supervision from "./default/supervision/supervision";
 import Occurrence from "./default/occurrence/occurrence";
 import { Rsu } from "./default/rsu/rsu";
-import { useModules } from "@/infrastructure/hooks/useModules";
 import { ListServices } from "./list-services";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useCompanyModules } from "@/infrastructure/hooks/useCompanyModules";
+import { AdminServicesTabs } from "./admin-services-tabs";
 
 type ServiceType = "supervision" | "occurrence" | "rsu" | "modules" | null;
 
 export function DefaultServices() {
-  const { isGlobalAdmin } = useAuthStore();
+  const { isGlobalAdmin, companyId } = useAuthStore();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -23,7 +24,17 @@ export function DefaultServices() {
     view || (isGlobalAdmin ? "modules" : "supervision"),
   );
 
-  const { data: modules = [], isLoading, isError } = useModules();
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  const {
+    data: companyModules = [],
+    isLoading,
+    isError,
+  } = useCompanyModules({
+    companyId,
+    isGlobalAdmin,
+    status: statusFilter,
+  });
 
   useEffect(() => {
     setSelectedService(view || (isGlobalAdmin ? "modules" : "supervision"));
@@ -133,7 +144,20 @@ export function DefaultServices() {
       )}
       {selectedService === "modules" && (
         <div className="mt-6">
-         <ListServices services={modules} />
+          {isGlobalAdmin ? (
+            <AdminServicesTabs
+              companyModules={companyModules}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              isLoading={isLoading}
+              isError={isError}
+            />
+          ) : (
+            <ListServices
+              services={companyModules}
+              isLoading={isLoading}
+            />
+          )}
         </div>
       )}
     </div>
