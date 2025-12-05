@@ -7,6 +7,8 @@ export const rsuSchema = z.object({
   companyId: z.string().min(1, "Empresa é obrigatória"),
   quantity: z.number().nonnegative("Quantidade deve ser positiva"),
   comment: z.string().optional(),
+  dataStart: z.string().optional(),
+  clientTime: z.string().optional(),
   employeeId: z.string().min(1, "Funcionário é obrigatório"),
   siteId: z.string().min(1, "Site é obrigatório"),
   status: z.string().min(1, "Estado é obrigatório"),

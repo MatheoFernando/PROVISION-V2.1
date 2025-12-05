@@ -336,6 +336,8 @@ export interface Rsu {
   companyId: string;
   quantity: number;
   comment?: string;
+  dataStart?: string;
+  clientTime?: string;
   employeeId: string;
   siteId: string;
   status: string;

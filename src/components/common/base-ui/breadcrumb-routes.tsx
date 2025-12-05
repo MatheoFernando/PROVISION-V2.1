@@ -14,7 +14,6 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { allNavItems } from "./nav-items";
 import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useCustomersByCompanyId } from "@/infrastructure/hooks/useCustomers";
 
 export function BreadcrumbClient(): React.ReactElement {
   const pathname = usePathname();

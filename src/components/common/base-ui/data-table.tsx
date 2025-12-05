@@ -19,22 +19,24 @@ import { type DateRange } from "react-day-picker";
 import { Toolbar } from "./data-table/toolbar";
 import { TableView } from "./data-table/table-view";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DotsThree } from "phosphor-react";
 
 interface ActionButton<TData> {
   label: string;
   icon?: React.ReactNode;
   onClick: (row: TData) => void;
   variant?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link";
+  | "default"
+  | "destructive"
+  | "outline"
+  | "secondary"
+  | "ghost"
+  | "link";
 }
 
 interface DataTableProps<TData extends RowData, TValue> {
@@ -286,34 +288,43 @@ export function createActionsColumn<TData extends RowData>(
     id: "actions",
     header: "Ações",
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        {actions.map((action, index) => (
-          <Tooltip key={index}>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant={action.variant ?? "ghost"}
-                size="icon"
-                className="h-8 w-8 rounded-full p-0 cursor-pointer"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  action.onClick(row.original);
-                }}
-                aria-label={action.label}
-              >
-                {action.icon ?? (
-                  <span className="text-xs font-medium">{action.label}</span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent sideOffset={6}>{action.label}</TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full p-0 cursor-pointer"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            aria-label="Ações"
+          >
+            <DotsThree size={20} weight="bold" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="center" className="w-48" >
+          {actions.map((action, index) => (
+            <DropdownMenuItem
+              key={index}
+              variant={action.variant === "destructive" ? "destructive" : "default"}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                action.onClick(row.original);
+              }}
+              className="cursor-pointer"
+            >
+              {action.icon && <span className="mr-2">{action.icon}</span>}
+              <span>{action.label}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     ),
     enableSorting: false,
     enableHiding: false,
-    size: Math.max(48, actions.length * 32),
+    size: 48,
   };
 }

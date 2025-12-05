@@ -229,6 +229,7 @@ function CreateUserDialog({
                             onBlur={field.onBlur}
                             disabled={isLoading}
                             size="lg"
+                            maxLength={14}
                           />
                         </FormControl>
                         <FormMessage className="text-xs" />

@@ -190,7 +190,7 @@ function ListUsers() {
           variant: 'ghost' as const
         },
         {
-          label: 'Ver atividade dos seus utilizadores',
+          label: 'Ver atividade',
           icon: <ChartLine className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
           onClick: handleViewActivity,
           variant: 'ghost' as const

@@ -70,7 +70,7 @@ export function TableView<TData extends RowData>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-b border-border hover:bg-muted/50 dark:hover:bg-muted/30 data-[state=selected]:bg-muted"
+                className="border-b border-border  dark:hover:bg-muted/30 "
                 onClick={() => onRefetch?.()}
               >
                 {row.getVisibleCells().map((cell) => (

@@ -11,7 +11,7 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useCompanyModules } from "@/infrastructure/hooks/useCompanyModules";
 import { AdminServicesTabs } from "./admin-services-tabs";
 
-type ServiceType = "supervision" | "occurrence" | "rsu" | "modules" | null;
+type ServiceType = "supervision" | "occurrence" | "rsu" | "ronda" | "modules" | null;
 
 export function DefaultServices() {
   const { isGlobalAdmin, companyId } = useAuthStore();
@@ -71,9 +71,16 @@ export function DefaultServices() {
           imageSrc: "/reciclar.png",
         },
         {
+          id: "ronda",
+          name: "Ronda",
+          description: "Ronda de recolha",
+          status: true,
+          imageSrc: "/guard.png",
+        },
+        {
           id: "modules",
-          name: "Ver todos os serviços",
-          description: "Visualizar serviços criados na sua empresa",
+          name: "Ver todos os módulos",
+          description: "Visualizar módulos criados na sua empresa",
           status: true,
           imageSrc: "/prioritize.png",
         },
@@ -105,7 +112,7 @@ export function DefaultServices() {
               onClick={() => !disabled && handleServiceClick(service.id)}
               className={`border rounded-lg p-4 transition-all flex-1 cursor-pointer  ${isSelected ? "ring-2 ring-blue-400 bg-accent" : ""}`}
             >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-wrap items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg p-2 bg-accent/10">
                     <Image
@@ -137,7 +144,13 @@ export function DefaultServices() {
           <Occurrence />
         </div>
       )}
+      
       {selectedService === "rsu" && (
+        <div className="mt-6">
+          <Rsu />
+        </div>
+      )}
+        {selectedService === "ronda" && (
         <div className="mt-6">
           <Rsu />
         </div>

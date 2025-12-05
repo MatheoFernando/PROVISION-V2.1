@@ -36,8 +36,8 @@ export function PhoneField({
   return (
     <div
       className={cn(
-        " group flex w-full items-center gap-3 rounded-md outline-none focus:outline-none focus-visible:outline-none focus-within:outline-none focus-within:ring-0 pl-3 text-base text-slate-900 shadow-sm border  overflow-hidden border-slate-300 transition-all ",
-        size === "lg" ? "h-10" : "h-10",
+        " file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input group flex w-full items-center gap-3 rounded-md outline-none focus:outline-none focus-visible:outline-none focus-within:outline-none focus-within:ring-0 pl-3 text-base text-slate-900  border shadow-xs overflow-hidden  transition-all ",
+        size === "lg" ? "h-11" : "h-9",
         disabled && "opacity-60",
         className
       )}
@@ -56,8 +56,8 @@ export function PhoneField({
         numberInputProps={{
           ...numberInputProps,
           className: cn(
-            "w-full  bg-transparent text-base text-slate-900 outline-none focus:outline-none focus-visible:outline-none focus-within:outline-none focus-within:ring-0 ",
-            size === "lg" ? "h-10" : "h-10",
+            "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input w-full  bg-transparent text-base text-slate-900 outline-none focus:outline-none focus-visible:outline-none focus-within:outline-none focus-within:ring-0 ",
+
             numberInputProps?.className
           ),
         }}
