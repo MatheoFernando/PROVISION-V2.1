@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCars, useCreateCar } from "@/infrastructure/hooks/useCars";
+import { useCars, useCreateCar, useCarById } from "@/infrastructure/hooks/useCars";
 import {
   Select,
   SelectContent,
@@ -29,8 +29,7 @@ interface CarSelectProps {
 
 export function CarSelect({ value, onChange, companyId }: CarSelectProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const { data: cars = [], isLoading, isFetching } = useCars();
+  const { data: selectedCar, isLoading } = useCarById(value);
   const createCar = useCreateCar();
   const { companyId: storeCompanyId } = useAuthStore();
   const normalizedCompanyId = companyId ?? storeCompanyId ?? "";
@@ -54,7 +53,7 @@ export function CarSelect({ value, onChange, companyId }: CarSelectProps) {
       model: "",
       capacity: 0,
       companyId: normalizedCompanyId,
-    });
+    }, { keepDefaultValues: true });
   }, [normalizedCompanyId, form, open]);
 
   function handleSubmit(data: CarForm) {
@@ -66,83 +65,34 @@ export function CarSelect({ value, onChange, companyId }: CarSelectProps) {
         onSuccess: (created: Car) => {
           setOpen(false);
           onChange(created.id!);
-          form.reset({
-            cod: "",
-            mark: "",
-            model: "",
-            capacity: 0,
-            companyId: normalizedCompanyId,
-          });
+          form.reset();
         },
       }
     );
   }
 
-  const filtered = useMemo(
-    () =>
-      cars.filter((car: Car) => {
-        const searchString = `${car?.cod ?? ""} ${car?.mark ?? ""} ${car?.model ?? ""}`.toLowerCase();
-        return searchString.includes(query.toLowerCase());
-      }),
-    [cars, query]
-  );
-
   const isSaving = createCar.status === "pending";
-  const isLoadingOptions = isLoading || isFetching;
+  const displayValue = selectedCar
+    ? `${selectedCar.cod} - ${selectedCar.mark} ${selectedCar.model}`
+    : "";
 
   return (
     <div className="flex items-end gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select
-          value={value}
-          onValueChange={onChange}
-
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue
-              placeholder={
-                isCompanyUnavailable
-                  ? "Selecione uma empresa primeiro"
-                  : "Selecione a viatura"
-              }
-            />
-          </SelectTrigger>
-          {isLoadingOptions && (
-            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          )}
-          <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-1 sticky top-0 bg-popover">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filtrar viaturas..."
-                className="w-full placeholder:text-xs"
-                disabled={isLoadingOptions || cars.length === 0}
-              />
-            </div>
-            {isCompanyUnavailable ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">
-                Selecione uma empresa para listar viaturas.
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">
-                Não há dados disponíveis.
-              </div>
-            ) : (
-              <div
-                className={
-                  filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
-                }
-              >
-                {filtered.map((car: Car) => (
-                  <SelectItem key={car.id} value={car.id!} className="cursor-pointer">
-                    {car.cod} - {car.mark} {car.model}
-                  </SelectItem>
-                ))}
-              </div>
-            )}
-          </SelectContent>
-        </Select>
+        <Input
+          readOnly
+          value={displayValue}
+          placeholder={
+            isCompanyUnavailable
+              ? "Selecione uma empresa primeiro"
+              : "Nenhuma viatura selecionada"
+          }
+          disabled={isLoading || isCompanyUnavailable}
+          className="w-full"
+        />
+        {isLoading && (
+          <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        )}
       </div>
       <Popover
         open={open}
@@ -157,7 +107,7 @@ export function CarSelect({ value, onChange, companyId }: CarSelectProps) {
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-
+            disabled={isCompanyUnavailable || isSaving}
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -179,81 +129,81 @@ export function CarSelect({ value, onChange, companyId }: CarSelectProps) {
         >
           <div className="space-y-3">
             <h3 className="font-semibold">Adicionar viatura</h3>
-<div className="grid grid-cols-2 gap-4 mt-4">
-  
-            <div className="space-y-2">
-              <Label htmlFor="cod" className="block">
-                Código
-              </Label>
-              <Input
-                id="cod"
-                {...form.register("cod")}
-                className="w-full"
-                placeholder="Código da viatura"
-                disabled={isSaving}
-              />
-              {form.formState.errors.cod && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.cod.message}
-                </span>
-              )}
-            </div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
 
-            <div className="space-y-2">
-              <Label htmlFor="mark" className="block">
-                Marca
-              </Label>
-              <Input
-                id="mark"
-                {...form.register("mark")}
-                className="w-full"
-                placeholder="Marca da viatura"
-                disabled={isSaving}
-              />
-              {form.formState.errors.mark && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.mark.message}
-                </span>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="cod" className="block">
+                  Código
+                </Label>
+                <Input
+                  id="cod"
+                  {...form.register("cod")}
+                  className="w-full"
+                  placeholder="Código da viatura"
+                  disabled={isSaving}
+                />
+                {form.formState.errors.cod && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.cod.message}
+                  </span>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="model" className="block">
-                Modelo
-              </Label>
-              <Input
-                id="model"
-                {...form.register("model")}
-                className="w-full"
-                placeholder="Modelo da viatura"
-                disabled={isSaving}
-              />
-              {form.formState.errors.model && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.model.message}
-                </span>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="mark" className="block">
+                  Marca
+                </Label>
+                <Input
+                  id="mark"
+                  {...form.register("mark")}
+                  className="w-full"
+                  placeholder="Marca da viatura"
+                  disabled={isSaving}
+                />
+                {form.formState.errors.mark && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.mark.message}
+                  </span>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="capacity" className="block">
-                Capacidade
-              </Label>
-              <Input
-                id="capacity"
-                type="number"
-                {...form.register("capacity", { valueAsNumber: true })}
-                className="w-full"
-                placeholder="0"
-                disabled={isSaving}
-              />
-              {form.formState.errors.capacity && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.capacity.message}
-                </span>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="model" className="block">
+                  Modelo
+                </Label>
+                <Input
+                  id="model"
+                  {...form.register("model")}
+                  className="w-full"
+                  placeholder="Modelo da viatura"
+                  disabled={isSaving}
+                />
+                {form.formState.errors.model && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.model.message}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="capacity" className="block">
+                  Capacidade
+                </Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  {...form.register("capacity", { valueAsNumber: true })}
+                  className="w-full"
+                  placeholder="0"
+                  disabled={isSaving}
+                />
+                {form.formState.errors.capacity && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.capacity.message}
+                  </span>
+                )}
+              </div>
             </div>
-</div>
 
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -261,13 +211,7 @@ export function CarSelect({ value, onChange, companyId }: CarSelectProps) {
                 variant="outline"
                 onClick={() => {
                   if (isSaving) return;
-                  form.reset({
-                    cod: "",
-                    mark: "",
-                    model: "",
-                    capacity: 0,
-                    companyId: normalizedCompanyId,
-                  });
+                  form.reset();
                   setOpen(false);
                 }}
                 className="cursor-pointer"

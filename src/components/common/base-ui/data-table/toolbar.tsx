@@ -94,7 +94,7 @@ export function Toolbar<TData extends RowData>({
     if (searchKey) table.setSorting([{ id: searchKey, desc: true } as any]);
     setSortLabel("Z–A");
   }
- 
+
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between ">
       <div className="flex w-full items-center gap-3">
@@ -151,7 +151,7 @@ export function Toolbar<TData extends RowData>({
       </div>
 
       <div className="flex items-center gap-2  w-full justify-end">
-      
+
         <Drawer
           open={isFilterOpen}
           onOpenChange={setIsFilterOpen}
@@ -293,7 +293,7 @@ export function Toolbar<TData extends RowData>({
             <Button
               size="sm"
               variant="default"
-              className="h-11 cursor-pointer text-base"
+              className="h-11 cursor-pointer"
               onClick={actionButton.onClick}
             >
               <Plus className="mr-2 size-4" />

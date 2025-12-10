@@ -19,7 +19,13 @@ import { TypeOccorrenceSelect } from "@/components/common/base-ui/selects/type-o
 import { z } from "zod"
 import type { Occorrence } from "@/infrastructure/types/domain"
 import { createOccurrenceSchema } from "@/infrastructure/schema/schema-occurrence"
-import { useSearchParams } from "next/navigation"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 type CreateOccurrenceFormValues = z.infer<typeof createOccurrenceSchema>
 
@@ -50,61 +56,64 @@ const toIsoFromTime = (value: string) => {
   return composed.toISOString()
 }
 
-interface OccurrenceCreateProps {
-  id?: string
-  initialData?: any
-  onSuccess?: () => void
-  onCancel?: () => void
+interface OccurrenceDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  occurrenceToEdit?: any
 }
 
-export function OccurrenceCreate(props: OccurrenceCreateProps) {
-  const params = useSearchParams()
-  const routeId = params.get("id") || undefined
-  const id = props.id ?? routeId
+export function OccurrenceDialog({
+  open,
+  onOpenChange,
+  occurrenceToEdit,
+}: OccurrenceDialogProps) {
+  const id = occurrenceToEdit?.id
   const companyId = useAuthStore((s) => s.companyId || "")
   const createMutation = useCreateOccurrenceMutation()
   const updateMutation = useUpdateOccurrenceMutation()
 
+  const defaultValues = React.useMemo(() => ({
+    cod: "",
+    description: "",
+    companyId,
+    typeOccorrenceId: "",
+    equipmentId: "",
+    employeeId: "",
+    siteId: "",
+    time: "",
+    correctiveAction: "",
+    gravity: undefined,
+    status: "Ativo" as const,
+  }), [companyId]);
+
   const form = useForm<CreateOccurrenceFormValues>({
     resolver: zodResolver(createOccurrenceSchema) as Resolver<CreateOccurrenceFormValues>,
-    defaultValues: {
-      cod: "",
-      description: "",
-      companyId,
-      typeOccorrenceId: "",
-      equipmentId: "",
-      employeeId: "",
-      siteId: "",
-      time: "",
-      correctiveAction: "",
-      gravity: undefined,
-      status: "Ativo",
-    },
+    defaultValues,
   })
   const timeValue = form.watch("time") ?? ""
-  const shouldQuery = !props.initialData && !!id
-  const { data: occurrenceData } = useOccurrence(shouldQuery ? id || "" : "")
 
   React.useEffect(() => {
-    const dataToUse = props.initialData || occurrenceData
-    if (!id || !dataToUse) return
-    form.reset({
-      cod: dataToUse.cod || "",
-      description: dataToUse.description || "",
-      companyId: dataToUse.companyId || companyId,
-      typeOccorrenceId: dataToUse.typeOccorrenceId || dataToUse.typeOccurrenceId || "",
-      equipmentId: dataToUse.equipmentId || "",
-      employeeId: dataToUse.employeeId || "",
-      siteId: dataToUse.siteId || "",
-      time: toInputTime(dataToUse.time),
-      correctiveAction: dataToUse.correctiveAction || "",
-      gravity: dataToUse.gravity || undefined,
-      status: dataToUse.status || "Ativo",
-    })
-  }, [props.initialData, occurrenceData, form, companyId, id])
+    if (occurrenceToEdit && open) {
+      form.reset({
+        cod: occurrenceToEdit.cod || "",
+        description: occurrenceToEdit.description || "",
+        companyId: occurrenceToEdit.companyId || companyId,
+        typeOccorrenceId: occurrenceToEdit.typeOccorrenceId || occurrenceToEdit.typeOccurrenceId || "",
+        equipmentId: occurrenceToEdit.equipmentId || "",
+        employeeId: occurrenceToEdit.employeeId || "",
+        siteId: occurrenceToEdit.siteId || "",
+        time: toInputTime(occurrenceToEdit.time),
+        correctiveAction: occurrenceToEdit.correctiveAction || "",
+        gravity: occurrenceToEdit.gravity || undefined,
+        status: (occurrenceToEdit.status as "Ativo" | "Inativo" | "Em Andamento" | "Fechado") || "Ativo",
+      })
+    } else if (open) {
+      form.reset(defaultValues)
+    }
+  }, [occurrenceToEdit, form, companyId, open, defaultValues])
 
   function handleSubmit(data: CreateOccurrenceFormValues) {
-    const basePayload: CreateOccurrenceFormValues = {
+    const basePayload = {
       ...data,
       time: toIsoFromTime(data.time),
       companyId: data.companyId || companyId,
@@ -122,52 +131,57 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
         siteId: basePayload.siteId,
         time: basePayload.time,
         correctiveAction: basePayload.correctiveAction ?? "",
-        gravity: basePayload.gravity ?? "Baixa",
-        status: basePayload.status ?? "Ativo",
+        gravity: (basePayload.gravity as any) ?? "Baixa",
+        status: (basePayload.status as any) ?? "Ativo",
       };
 
       updateMutation.mutate(updatePayload, {
         onSuccess: () => {
-          if (props.onSuccess) props.onSuccess()
+          onOpenChange(false)
         },
       });
     } else {
-      createMutation.mutate(basePayload as Occorrence, {
+      createMutation.mutate(basePayload as any, {
         onSuccess: () => {
-          if (props.onSuccess) props.onSuccess()
+          onOpenChange(false)
         },
       });
     }
   }
 
-  return (
-    <div>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-6 "
-      >
-        <div className="py-4 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2 md:col-span-3">
-              <Label className="text-slate-700">Funcionário</Label>
-              <EmployeeSelect
-                value={form.watch("employeeId")}
-                onChange={(v) =>
-                  form.setValue("employeeId", v, { shouldValidate: true })
-                }
-                companyId={companyId}
-              />
-              {form.formState.errors.employeeId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.employeeId.message}
-                </p>
-              )}
-            </div>
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:col-span-3">
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden  dark:bg-slate-950">
+        <DialogHeader className="pt-6 px-6 pb-2 border-b border-gray-100 bg-white dark:bg-slate-900/50">
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {occurrenceToEdit ? "Editar Ocorrência" : "Nova Ocorrência"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col">
+          <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 col-span-2">
+                <Label className="text-slate-700 font-medium">Funcionário *</Label>
+                <EmployeeSelect
+                  value={form.watch("employeeId")}
+                  onChange={(v) =>
+                    form.setValue("employeeId", v, { shouldValidate: true })
+                  }
+                  companyId={companyId}
+                />
+                {form.formState.errors.employeeId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.employeeId.message}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="time" className="text-slate-700">
-                  Horário
+                <Label htmlFor="time" className="text-slate-700 font-medium">
+                  Horário *
                 </Label>
                 <div className="relative flex w-full items-center gap-2">
                   <Clock2Icon className="text-muted-foreground pointer-events-none absolute left-2.5 size-4 select-none" />
@@ -175,7 +189,7 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
                     id="time"
                     type="time"
                     step="60"
-                    className="appearance-none pl-8 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                    className="appearance-none pl-8 rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                     value={timeValue}
                     defaultValue="08:00"
                     onClick={(event) => {
@@ -186,14 +200,14 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
                   />
                 </div>
                 {form.formState.errors.time && (
-                  <p className="text-sm text-red-500">
+                  <p className="text-sm text-red-500 font-medium">
                     {form.formState.errors.time.message}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2 ">
-                <Label htmlFor="gravity" className="text-slate-700">
+              <div className="space-y-2">
+                <Label htmlFor="gravity" className="text-slate-700 font-medium">
                   Gravidade
                 </Label>
                 <Select
@@ -204,7 +218,7 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
                     })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full rounded-xl border-gray-200 bg-white">
                     <SelectValue placeholder="Selecione a gravidade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -214,9 +228,67 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <div className="space-y-2 w-16">
-                <Label className="text-slate-700">Estado</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 w-full md:w-auto">
+                <Label htmlFor="cod" className="text-slate-700 font-medium">
+                  Código *
+                </Label>
+                <Input
+                  id="cod"
+                  placeholder="Ex: OCC001"
+                  className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  {...form.register("cod")}
+                />
+                {form.formState.errors.cod && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.cod.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2 flex-1">
+                <Label className="text-slate-700 font-medium">Site *</Label>
+                <SiteSelect
+                  value={form.watch("siteId")}
+                  onChange={(v) =>
+                    form.setValue("siteId", v, { shouldValidate: true })
+                  }
+                />
+                {form.formState.errors.siteId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.siteId.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-medium">Tipo de Ocorrência *</Label>
+                <TypeOccorrenceSelect
+                  value={form.watch("typeOccorrenceId")}
+                  onChange={(v) =>
+                    form.setValue("typeOccorrenceId", v, { shouldValidate: true })
+                  }
+                />
+                {form.formState.errors.typeOccorrenceId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.typeOccorrenceId.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-medium">Equipamento</Label>
+                <EquipmentSelect
+                  value={form.watch("equipmentId")}
+                  onChange={(v) =>
+                    form.setValue("equipmentId", v, { shouldValidate: true })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2 flex items-center md:col-span-2">
                 <div className="flex items-center gap-3">
                   <Switch
                     checked={form.watch("status") === "Ativo"}
@@ -225,136 +297,70 @@ export function OccurrenceCreate(props: OccurrenceCreateProps) {
                         shouldValidate: true,
                       })
                     }
-                    className="cursor-pointer data-[state=checked]:bg-green-600"
+                    className="cursor-pointer"
                   />
-                  <span className="text-sm text-muted-foreground">
-                    {form.watch("status") === "Ativo" ? "Ativo" : "Inativo"}
-                  </span>
+                  <Label className="text-slate-700 font-medium">
+                    {form.watch("status") === "Ativo" ? "Estado: Ativo" : "Estado: Inativo"}
+                  </Label>
                 </div>
-                {form.formState.errors.status && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.status.message}
-                  </p>
-                )}
               </div>
             </div>
 
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex flex-col md:flex-row gap-4 md:col-span-2">
-              <div className="space-y-2 w-full md:w-auto">
-                <Label htmlFor="cod" className="text-slate-700">
-                  Código
-                </Label>
-                <Input
-                  id="cod"
-                  placeholder="Ex: OCC001"
-                  className="rounded-lg w-32"
-                  {...form.register("cod")}
-                />
-                {form.formState.errors.cod && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.cod.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2 flex-1">
-                <Label className="text-slate-700">Site</Label>
-                <SiteSelect
-                  value={form.watch("siteId")}
-                  onChange={(v) =>
-                    form.setValue("siteId", v, { shouldValidate: true })
-                  }
-                />
-                {form.formState.errors.siteId && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.siteId.message}
-                  </p>
-                )}
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label className="text-slate-700">Tipo de Ocorrência</Label>
-              <TypeOccorrenceSelect
-                value={form.watch("typeOccorrenceId")}
-                onChange={(v) =>
-                  form.setValue("typeOccorrenceId", v, { shouldValidate: true })
-                }
-              />
-              {form.formState.errors.typeOccorrenceId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.typeOccorrenceId.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-slate-700">Equipamento</Label>
-              <EquipmentSelect
-                value={form.watch("equipmentId")}
-                onChange={(v) =>
-                  form.setValue("equipmentId", v, { shouldValidate: true })
-                }
-              />
-              {form.formState.errors.equipmentId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.equipmentId.message}
-                </p>
-              )}
-            </div>
-
-
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-slate-700">
+              <Label htmlFor="description" className="text-slate-700 font-medium">
                 Descrição
               </Label>
               <Textarea
                 id="description"
-                className="rounded-lg resize-none"
-                placeholder="Digite a descrição"
+                className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white resize-none"
+                placeholder="Detalhe o ocorrido..."
                 {...form.register("description")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="correctiveAction" className="text-slate-700">
+              <Label htmlFor="correctiveAction" className="text-slate-700 font-medium">
                 Ação Corretiva
               </Label>
               <Textarea
                 id="correctiveAction"
-                className="rounded-lg resize-none"
-                placeholder="Digite a ação corretiva"
+                className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white resize-none"
+                placeholder="Ação tomada..."
                 {...form.register("correctiveAction")}
               />
             </div>
           </div>
 
-          <div className="space-x-2 pt-4 flex justify-end gap-3">
+          <DialogFooter className="p-4 border-t border-gray-100 bg-gray-50/50 dark:bg-slate-900/50">
             <Button
               type="button"
-              variant="outline"
-              onClick={() => props.onCancel?.()}
-              className="rounded-lg px-6 cursor-pointer"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
+              disabled={isPending}
+              className="shadow-lg rounded-xl px-6"
             >
-              {createMutation.isPending || updateMutation.isPending ? (
+              {isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
                 </>
-              ) : props.id ? "Atualizar Ocorrência" : "Criar Ocorrência"}
+              ) : occurrenceToEdit ? (
+                "Atualizar Ocorrência"
+              ) : (
+                "Criar Ocorrência"
+              )}
             </Button>
-          </div>
-        </div>
-      </form>
-    </div>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
+

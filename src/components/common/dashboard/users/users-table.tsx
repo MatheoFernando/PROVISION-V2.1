@@ -5,8 +5,9 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { type User, type Company } from '@/infrastructure/types/domain'
 import { Badge } from '@/components/ui/badge'
 import { DataTableGeneric } from '../../base-ui/data-table'
-import CreateUserDialog from './users-create'
-import {  Bell, ChartLine, PencilSimple, ShieldCheck, Trash,  } from "phosphor-react";
+import { UserDialog } from './users-create'
+import { Plus } from "lucide-react";
+import { Bell, ChartLine, PencilSimple, ShieldCheck, Trash, } from "phosphor-react";
 import { DeleteModal } from '@/components/ui/delete-modal'
 import { useUsers } from '../../../../infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
@@ -14,6 +15,7 @@ import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
 import { SendNotificationDrawer } from './send-notification-drawer'
 import { ChangePermissionsDrawer } from './permissions-drawer'
 import { ViewActivityDrawer } from './view-activity-drawer'
+import { Button } from "@/components/ui/button";
 import { Send } from 'lucide-react'
 import { MakeEmployeeUserDrawer } from '@/components/common/dashboard/employees/make-employee-user-drawer'
 
@@ -161,34 +163,23 @@ function ListUsers() {
         icon: <Trash className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
         onClick: handleDeleteClick,
         variant: 'ghost' as const
+      },
+      {
+        label: 'Alterar permissões',
+        icon: <ShieldCheck className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+        onClick: handleChangePermissions,
+        variant: 'ghost' as const
+      },
+      {
+        label: 'Enviar notificação',
+        icon: <Send className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+        onClick: handleSendNotification,
+        variant: 'ghost' as const
       }
     ]
 
-    if (isGlobalAdmin) {
+    if (!isGlobalAdmin) {
       actions.push(
-        {
-          label: 'Alterar permissões',
-          icon: <ShieldCheck className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-          onClick: handleChangePermissions,
-          variant: 'ghost' as const
-        },
-        {
-          label: 'Enviar notificação',
-          icon: <Send className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-          onClick: handleSendNotification,
-          variant: 'ghost' as const
-        }
-  
-      )
-    } else {
-     
-      actions.push(
-        {
-          label: 'Enviar notificação ',
-          icon: <Send className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-          onClick: handleSendNotification,
-          variant: 'ghost' as const
-        },
         {
           label: 'Ver atividade',
           icon: <ChartLine className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
@@ -236,19 +227,28 @@ function ListUsers() {
           component: (
             <div className="flex flex-wrap gap-2">
               <MakeEmployeeUserDrawer />
-              <CreateUserDialog />
+              <Button
+                onClick={() => {
+                  setSelectedUser(null);
+                  setIsEditDialogOpen(true);
+                }}
+                size="sm"
+                variant="default"
+                className="cursor-pointer h-11"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Utilizador
+              </Button>
             </div>
           ),
         }}
         rowActions={rowActions}
       />
 
-      <CreateUserDialog
-        user={selectedUser}
-        isEdit
+      <UserDialog
+        userToEdit={selectedUser ?? undefined}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        children={null}
       />
       <DeleteModal
         isOpen={isDeleteDialogOpen}
@@ -274,7 +274,7 @@ function ListUsers() {
         open={isActivityDrawerOpen}
         onOpenChange={setIsActivityDrawerOpen}
       />
-  
+
     </div>
   )
 }

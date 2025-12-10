@@ -256,6 +256,8 @@ export interface Site {
   equipments?: Equipment[] | null;
   employees?: Employee[] | null;
   cars?: Car[] | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Occorrence {

@@ -8,15 +8,18 @@ import { Button } from "@/components/ui/button";
 import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface CompanySelectProps {
   value?: string;
   onChange: (value: string) => void;
   required?: boolean;
+  disabled?: boolean;
   onCompanyCreated?: () => void;
 }
 
-export function CompanySelect({ value, onChange, required = false, onCompanyCreated }: CompanySelectProps) {
+export function CompanySelect({ value, onChange, required = false, disabled = false, onCompanyCreated }: CompanySelectProps) {
+  const t = useTranslations("Components.CompanySelect");
   const { data: companies = [], isLoading } = useCompaniesQuery();
   const [search, setSearch] = useState("");
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin);
@@ -31,34 +34,39 @@ export function CompanySelect({ value, onChange, required = false, onCompanyCrea
     if (onCompanyCreated) {
       sessionStorage.setItem('returnToUserCreate', 'true');
     }
-    router.push('/dashboard/companies/create');
+    router.push('/dashboard/empresa/create');
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 w-full">
       <div className="relative flex-1">
-        <Select value={value} onValueChange={onChange} disabled={isLoading} required={required}>
-          <SelectTrigger className="w-full ">
+        <Select value={value} onValueChange={onChange} disabled={isLoading || disabled} required={required}>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione a empresa" />
           </SelectTrigger>
           {isLoading && (
-            <Loader2 className="animate-spin w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2" />
+            <div className="absolute right-8 top-1/2 -translate-y-1/2">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            </div>
           )}
           <SelectContent>
-            <div className="px-3 pt-2 pb-1 border-b bg-background sticky top-0 z-10">
+            <div className="p-2 sticky top-0 bg-popover z-10">
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Pesquisar empresa..."
-                className="h-8 text-sm placeholder:font-normal"
+                placeholder="Pesquisar..."
+                className="h-8 text-xs"
                 disabled={isLoading || companies.length === 0}
                 autoFocus
+                onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
             {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-4 text-center">Nenhum dado encontrado</div>
+              <div className="text-sm text-muted-foreground p-3 text-center">
+                {search ? "Nenhum resultado" : "Sem empresas"}
+              </div>
             ) : (
-              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+              <div className="max-h-60 overflow-y-auto">
                 {filtered.map((company: any) => (
                   <SelectItem key={company.id} value={company.id!}>
                     {company.businessName}
@@ -77,6 +85,7 @@ export function CompanySelect({ value, onChange, required = false, onCompanyCrea
           className="shrink-0 cursor-pointer"
           onClick={handleCreateCompany}
           title="Criar nova empresa"
+          disabled={disabled}
         >
           <Plus className="h-4 w-4" />
         </Button>

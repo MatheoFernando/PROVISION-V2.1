@@ -11,6 +11,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import { useTranslations } from "next-intl";
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,6 +44,13 @@ function hasActiveChild(item: NavItem, pathname: string): boolean {
 }
 
 function NavMenuItem({ item, pathname, level = 0 }: { item: NavItem; pathname: string; level?: number }) {
+  const t = useTranslations();
+  // Note: t is not passed down. We should probably use translations in the parent and pass translated title, 
+  // OR use useTranslations inside this component.
+  // Ideally, if item.title is a key, we translate it.
+
+  const title = item.title.includes('.') ? t(item.title) : item.title;
+
   const isActiveUrl = (url?: string) => {
     if (!url) return false;
     if (url === "/dashboard") {
@@ -64,7 +72,7 @@ function NavMenuItem({ item, pathname, level = 0 }: { item: NavItem; pathname: s
           <CollapsibleTrigger asChild>
             <SidebarMenuSubButton>
               {item.icon && <item.icon className="size-4" />}
-              <span>{item.title}</span>
+              <span>{title}</span>
               <CaretRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
             </SidebarMenuSubButton>
           </CollapsibleTrigger>
@@ -93,7 +101,7 @@ function NavMenuItem({ item, pathname, level = 0 }: { item: NavItem; pathname: s
       >
         <Link href={item.url ?? "#"} prefetch>
           {item.icon && <item.icon className="size-4" />}
-          <span>{item.title}</span>
+          <span>{title}</span>
         </Link>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
@@ -110,6 +118,9 @@ export function NavMain({
   })[];
 }) {
   const pathname = usePathname();
+  const t = useTranslations();
+
+  // Need to define isActiveUrl here too as it's not exported
   const isActiveUrl = (url?: string) => {
     if (!url) return false;
     if (url === "/dashboard") {
@@ -125,6 +136,8 @@ export function NavMain({
       </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
+          const title = item.title.includes('.') ? t(item.title) : item.title;
+
           if (item.items?.length) {
             const isActive = hasActiveChild(item, pathname);
             return (
@@ -134,9 +147,9 @@ export function NavMain({
                   className="group/collapsible"
                 >
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
+                    <SidebarMenuButton tooltip={title}>
                       {item.icon && <item.icon className="size-4" />}
-                      <span>{item.title}</span>
+                      <span>{title}</span>
                       <CaretRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -161,12 +174,12 @@ export function NavMain({
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
-                tooltip={item.title}
+                tooltip={title}
                 isActive={isActiveUrl(item.url)}
               >
                 <Link href={item.url ?? "#"} prefetch>
                   {item.icon && <item.icon className="size-4" />}
-                  <span>{item.title}</span>
+                  <span>{title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

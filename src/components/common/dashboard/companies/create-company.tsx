@@ -207,7 +207,7 @@ function CompanyFormPage() {
       const shouldReturnToUserCreate = sessionStorage.getItem('returnToUserCreate');
       if (shouldReturnToUserCreate === 'true') {
         sessionStorage.removeItem('returnToUserCreate');
-        router.push('/dashboard/users');
+        router.push('/dashboard/configuracoes/utilizadores-permissoes');
       } else {
         router.back();
       }
@@ -681,7 +681,7 @@ function CompanyFormPage() {
                   type="button"
                   disabled={saving}
                   onClick={form.handleSubmit(onSubmit)}
-                  className=" px-6 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white"
+                  className=" px-6 cursor-pointer"
                 >
                   {saving ? (
                     <>

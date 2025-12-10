@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
 import type { Occorrence } from '@/infrastructure/types/domain';
 
@@ -27,6 +28,7 @@ export function useOccurrence(id: string) {
 
 export function useCreateOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Occurrences");
 
   return useMutation({
     mutationFn: async (data: Omit<Occorrence, 'id' | 'createdAt' | 'updatedAt'>): Promise<Occorrence> => {
@@ -35,17 +37,18 @@ export function useCreateOccurrenceMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
-      toast.success('Ocorrência criada com sucesso!');
+      toast.success(t('create.success'));
     },
     onError: (error) => {
       console.error('Erro ao criar ocorrência:', error);
-      toast.error('Erro ao criar ocorrência. Tente novamente.');
+      toast.error(t('create.error'));
     },
   });
 }
 
 export function useUpdateOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Occurrences");
 
   return useMutation({
     mutationFn: async (data: Occorrence): Promise<Occorrence> => {
@@ -57,17 +60,18 @@ export function useUpdateOccurrenceMutation() {
       if (updated.id) {
         queryClient.invalidateQueries({ queryKey: ['occurrence', updated.id] });
       }
-      toast.success('Ocorrência atualizada com sucesso!');
+      toast.success(t('update.success'));
     },
     onError: (error) => {
       console.error('Erro ao atualizar ocorrência:', error);
-      toast.error('Erro ao atualizar ocorrência. Tente novamente.');
+      toast.error(t('update.error'));
     },
   });
 }
 
 export function useDeleteOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Occurrences");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
@@ -75,11 +79,11 @@ export function useDeleteOccurrenceMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
-      toast.success('Ocorrência excluída com sucesso!');
+      toast.success(t('delete.success'));
     },
     onError: (error) => {
       console.error('Erro ao excluir ocorrência:', error);
-      toast.error('Erro ao excluir ocorrência. Tente novamente.');
+      toast.error(t('delete.error'));
     },
   });
 }

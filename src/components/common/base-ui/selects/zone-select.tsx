@@ -1,8 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,27 +6,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2 } from "lucide-react";
+import {  Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { zoneSchema } from "@/infrastructure/schema/schema-zone";
-import { Label } from "@/components/ui/label";
-import { useCreateZone, useZones } from "@/infrastructure/hooks/useZones";
-import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
-import { Zone, type CreateZonePayload } from "@/infrastructure/types/domain";
+import { useZones } from "@/infrastructure/hooks/useZones";
+import { Zone } from "@/infrastructure/types/domain";
 
-const createZoneSchema = zoneSchema.pick({
-  name: true,
-  companyId: true,
-  employeeId: true,
-  areaId: true,
-});
-
-interface ZoneForm {
-  name: string;
-  companyId: string;
-  employeeId?: string;
-  areaId: string;
-}
 
 interface ZoneSelectProps {
   value?: string;
@@ -51,13 +31,8 @@ export function ZoneSelect({
   const [query, setQuery] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const { data: zones = [], isLoading  , refetch } = useZones();
-  const createZone = useCreateZone();
-  const form = useForm<ZoneForm>({
-    resolver: zodResolver(createZoneSchema),
-    defaultValues: { name: "", companyId, employeeId, areaId: areaId ?? "" },
-  });
 
-  // Sincroniza o valor externo com o estado local
+  
   useEffect(() => {
     if (value) {
       setSelectedZoneId(value);
@@ -66,40 +41,6 @@ export function ZoneSelect({
     setSelectedZoneId(null);
   }, [value]);
 
-  const handleSubmit: SubmitHandler<ZoneForm> = (data) => {
-    const effectiveEmployeeId = employeeId || data.employeeId;
-  
-    if (!areaId) {
-      return;
-    }
-
-    const payload: CreateZonePayload = {
-      name: data.name,
-      companyId,
-      areaId,
-      ...(effectiveEmployeeId ? { employeeId: effectiveEmployeeId } : {}),
-    };
-
-    createZone.mutate(
-      payload,
-      {
-        onSuccess: (created) => {
-          setOpen(false);
-          if (created?.id) {
-            // Auto-seleciona o novo item criado
-            setSelectedZoneId(created.id);
-            onChange(created.id);
-          }
-          form.reset({
-            name: "",
-            companyId,
-            employeeId,
-            areaId: areaId as string,
-          });
-        },
-      }
-    );
-  };
 
   const hasArea = Boolean(areaId);
 
@@ -129,8 +70,6 @@ export function ZoneSelect({
     [areaId, hasArea, list, query]
   );
 
-  // Encontra o objeto da zona selecionada para exibir seu name
-  const selectedZone = selectedZoneId ? list.find(z => z.id === selectedZoneId) : undefined;
 
   return (
     <div className="flex items-stretch gap-2 w-full">
@@ -190,92 +129,7 @@ export function ZoneSelect({
           </SelectContent>
         </Select>
       </div>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="cursor-pointer shrink-0"
-            disabled={createZone.status === "pending" || !hasArea}
-            onClick={() => {
-              if (!areaId) return;
-              form.setValue("areaId", areaId as string, { shouldValidate: true });
-            }}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="end"
-          sideOffset={8}
-          className="w-[26rem] p-4"
-          onInteractOutside={(e) => {
-            if (createZone.status === "pending") e.preventDefault();
-          }}
-          onEscapeKeyDown={(e) => {
-            if (createZone.status === "pending") e.preventDefault();
-          }}
-        >
-          <div className="font-medium mb-4 text-lg">Criar Zona</div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
-            className="space-y-3 mt-2"
-          >
-            <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="name-zone">Nome da zona</Label>
-                <Input
-                  id="name-zone"
-                  {...form.register("name")}
-                  placeholder="Nome da zona"
-                />
-                {form.formState.errors.name && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.name.message as string}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Funcionário *</Label>
-                <EmployeeSelect
-                  value={(form.watch("employeeId") as string) || ""}
-                  onChange={(v: string) =>
-                    form.setValue("employeeId", v, { shouldValidate: true })
-                  }
-                  companyId={companyId}
-                />
-                {form.formState.errors.employeeId && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.employeeId.message as string}
-                  </span>
-                )}
-              </div>
-
-         
-            </div>
-
-            <div className="flex justify-end mt-4">
-              <Button
-                type="button"
-                disabled={createZone.status === "pending"}
-                className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => form.handleSubmit(handleSubmit)()}
-              >
-                {createZone.status === "pending" ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
-                  </>
-                ) : (
-                  "Salvar"
-                )}
-              </Button>
-            </div>
-          </form>
-        </PopoverContent>
-      </Popover>
+   
     </div>
   );
 }

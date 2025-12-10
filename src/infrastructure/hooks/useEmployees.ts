@@ -11,6 +11,7 @@ import {
   resolveApiErrorPayload,
   resolveApiResponse,
 } from "../utils/api-response";
+import { useTranslations } from "next-intl";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
@@ -42,7 +43,7 @@ export function useEmployees(
 export function useEmployeeById(id?: string, companyId?: string) {
   return useQuery({
     queryKey: ["employee", id, companyId],
-    enabled: Boolean(id && companyId),
+    enabled: Boolean(id),
     queryFn: async (): Promise<Employee | null> => {
       if (!id) return null;
       try {
@@ -56,7 +57,7 @@ export function useEmployeeById(id?: string, companyId?: string) {
         return (list || []).find((e: any) => e?.id === id) ?? null;
       }
     },
-  
+
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -76,7 +77,7 @@ export function useEmployeeByCod(cod?: string, companyId?: string) {
       const data = response.data?.data ?? response.data ?? null;
       return (data as Employee) ?? null;
     },
-    
+
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -96,7 +97,7 @@ export function useEmployeesByName(name?: string, companyId?: string) {
       const data = response.data?.data ?? response.data ?? [];
       return (data as Employee[]) ?? [];
     },
-  
+
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -106,6 +107,7 @@ export function useEmployeesByName(name?: string, companyId?: string) {
 
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Employees");
 
   return useMutation<Employee, unknown, CreateEmployeeInput>({
     mutationFn: async (data: CreateEmployeeInput): Promise<Employee> => {
@@ -125,15 +127,16 @@ export function useCreateEmployee() {
         }
         return [created, ...current];
       });
-      await queryClient.invalidateQueries({ queryKey: key });
-      await queryClient.refetchQueries({ queryKey: key, type: "active" });
-      toast.success("Funcionário criado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.refetchQueries({ queryKey: key, type: "active" });
+      toast.success(t("create.success"));
     },
   });
 }
 
 export function useCreateGrossEmployee() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Employees");
 
   return useMutation<Employee, unknown, CreateGrossEmployeePayload>({
     mutationFn: async (data) => {
@@ -161,14 +164,14 @@ export function useCreateGrossEmployee() {
       const key = employeesKey(variables.companyId);
       await queryClient.invalidateQueries({ queryKey: key });
       await queryClient.refetchQueries({ queryKey: key, type: "active" });
-      toast.success("Funcionário importado com sucesso!");
+      toast.success(t("import.success"));
     },
     onError: (error) => {
       const resolved = resolveApiErrorPayload<Employee>(error);
       const message =
         resolved.message ||
         (typeof resolved.payload === "string" ? resolved.payload : undefined) ||
-        "Erro ao importar funcionário";
+        t("import.error");
       toast.error(message);
     },
   });
@@ -176,6 +179,7 @@ export function useCreateGrossEmployee() {
 
 export function useUpdateEmployee() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Employees");
 
   return useMutation({
     mutationFn: async (
@@ -193,15 +197,17 @@ export function useUpdateEmployee() {
           employee.id === updated.id ? { ...employee, ...updated } : employee
         )
       );
-      await queryClient.invalidateQueries({ queryKey: key });
-      await queryClient.refetchQueries({ queryKey: key, type: "active" });
-      toast.success("Funcionário atualizado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.invalidateQueries({ queryKey: ["site"] });
+      queryClient.refetchQueries({ queryKey: key, type: "active" });
+      toast.success(t("update.success"));
     },
   });
 }
 
 export function useDeleteEmployee(defaultCompanyId?: string) {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Employees");
 
   return useMutation({
     mutationFn: async ({
@@ -217,9 +223,9 @@ export function useDeleteEmployee(defaultCompanyId?: string) {
       queryClient.setQueryData<Employee[]>(key, (current = []) =>
         current.filter((employee) => employee.id !== variables.id)
       );
-      await queryClient.invalidateQueries({ queryKey: key });
-      await queryClient.refetchQueries({ queryKey: key, type: "active" });
-      toast.success("Funcionário excluído com sucesso!");
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.refetchQueries({ queryKey: key, type: "active" });
+      toast.success(t("delete.success"));
     },
   });
 }

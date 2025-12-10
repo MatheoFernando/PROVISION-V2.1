@@ -7,12 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   createSiteSchema,
   type CreateSite,
 } from "@/infrastructure/schema/schema-sites";
-import { useCreateSite, useSites } from "@/infrastructure/hooks/useSites";
+import { useCreateSite } from "@/infrastructure/hooks/useSites";
 import { useUpdateSite as useUpdateSiteHook } from "@/infrastructure/hooks/useSites";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { SectorSelect } from "@/components/common/base-ui/selects/sector-select";
 import { ContactSelect } from "@/components/common/base-ui/selects/contact-select";
@@ -21,41 +27,30 @@ import { ZoneSelect } from "@/components/common/base-ui/selects/zone-select";
 import { AreaSelect } from "@/components/common/base-ui/selects/area-select";
 import { CustomerSelect } from "@/components/common/base-ui/selects/customer-select";
 import type { Site } from "@/infrastructure/types/domain";
+import { Loader2 } from "lucide-react";
 
-interface SitesCreatePageProps {
-  id?: string;
-  initialData?: Partial<CreateSite> & { id?: string };
+interface SiteDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  siteToEdit?: Site;
   customerId?: string;
-  onSuccess?: (site?: Site) => void;
-  onCancel?: () => void;
+  companyId?: string;
+  onSuccess?: (site: Site) => void;
 }
 
-export default function SitesCreatePage(props: SitesCreatePageProps) {
-  const router = useRouter();
+export function SiteDialog({
+  open,
+  onOpenChange,
+  siteToEdit,
+  customerId: propCustomerId,
+  companyId: propCompanyId,
+  onSuccess,
+}: SiteDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const companyId = useAuthStore((state) => state.companyId) || "";
-  const { data: sites = [] } = useSites();
+  const storeCompanyId = useAuthStore((state) => state.companyId);
+  const companyId = propCompanyId || storeCompanyId || "";
   const createSite = useCreateSite();
   const updateSite = useUpdateSiteHook();
-  const fetchedSite = useMemo<Partial<CreateSite> | undefined>(() => {
-    if (!props.id || !Array.isArray(sites)) return undefined;
-    const found = (sites as Site[]).find((siteItem) => siteItem.id === props.id);
-    if (!found) return undefined;
-    return {
-      cod: found.cod ?? "",
-      name: found.name ?? "",
-      numberWorkersContract: found.numberWorkersContract ?? 0,
-      customerId: found.customerId ?? "",
-      areaId: found.areaId ?? "",
-      contactId: found.contactId ?? "",
-      addressId: found.addressId ?? "",
-      sectorId: found.sectorId ?? "",
-      zoneId: found.zoneId ?? "",
-      companyId: found.companyId ?? companyId,
-      geoLocationId: found.geoLocationId ?? "",
-    };
-  }, [sites, props.id, companyId]);
-  const activeSite = props.initialData ?? fetchedSite;
 
   const form = useForm<CreateSite>({
     resolver: zodResolver(createSiteSchema) as any,
@@ -63,7 +58,7 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
       cod: "",
       name: "",
       numberWorkersContract: 0,
-      customerId: props.customerId || "",
+      customerId: propCustomerId || "",
       areaId: "",
       contactId: "",
       addressId: "",
@@ -74,32 +69,54 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
     },
   });
 
+
+  const getId = (val: string | any | any[] | undefined) => {
+    if (typeof val === 'string') return val;
+    if (!val) return "";
+    if (Array.isArray(val) && val.length > 0) return val[0]?.id || "";
+    if (typeof val === 'object' && val.id) return val.id;
+    return "";
+  };
+
   useEffect(() => {
-    if (activeSite) {
+    if (siteToEdit) {
       form.reset({
-        cod: activeSite.cod || "",
-        name: activeSite.name || "",
-        numberWorkersContract: activeSite.numberWorkersContract ?? 0,
-        customerId: activeSite.customerId || props.customerId || "",
-        areaId: activeSite.areaId || "",
-        contactId: activeSite.contactId || "",
-        addressId: activeSite.addressId || "",
-        sectorId: activeSite.sectorId || "",
-        zoneId: activeSite.zoneId || "",
-        companyId: activeSite.companyId || companyId,
-        geoLocationId: (activeSite as any).geoLocationId || "",
+        cod: siteToEdit.cod || "",
+        name: siteToEdit.name || "",
+        numberWorkersContract: siteToEdit.numberWorkersContract ?? 0,
+        customerId: siteToEdit.customerId || getId(siteToEdit.customer) || getId(siteToEdit.customers) || propCustomerId || "",
+        areaId: siteToEdit.areaId || getId(siteToEdit.area) || getId(siteToEdit.areas) || "",
+        contactId: siteToEdit.contactId || getId(siteToEdit.contact) || "",
+        addressId: siteToEdit.addressId || getId(siteToEdit.address) || "",
+        sectorId: siteToEdit.sectorId || getId(siteToEdit.sector) || getId(siteToEdit.sectors) || "",
+        zoneId: siteToEdit.zoneId || getId(siteToEdit.zone) || getId(siteToEdit.zones) || "",
+        companyId: siteToEdit.companyId || companyId,
+        geoLocationId: (siteToEdit as any).geoLocationId || "",
       });
-    } else if (props.customerId) {
-      form.setValue("customerId", props.customerId);
+    } else {
+      form.reset({
+        cod: "",
+        name: "",
+        numberWorkersContract: 0,
+        customerId: propCustomerId || "",
+        areaId: "",
+        contactId: "",
+        addressId: "",
+        sectorId: "",
+        zoneId: "",
+        companyId: companyId,
+        geoLocationId: "",
+      });
     }
-  }, [activeSite, form, companyId, props.customerId]);
+  }, [siteToEdit, form, companyId, propCustomerId, open]);
+
   const onSubmit = async (data: CreateSite) => {
     try {
       setIsSubmitting(true);
-      let savedSite: Site | undefined;
-      if (props.id && updateSite) {
+      let savedSite;
+      if (siteToEdit) {
         savedSite = await updateSite.mutateAsync({
-          id: props.id,
+          id: siteToEdit.id!,
           data: {
             ...data,
             companyId: (data as any).companyId || companyId,
@@ -111,98 +128,120 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
           companyId: (data as any).companyId || companyId,
         } as any);
       }
-      if (props.onSuccess) props.onSuccess(savedSite);
-      else form.reset();
+      onOpenChange(false);
+      form.reset();
+      if (onSuccess && savedSite) {
+        onSuccess(savedSite as Site);
+      }
     } catch (error) {
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isPending = isSubmitting || createSite.isPending || updateSite.isPending;
+
   return (
-    <div>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="py-4 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="name" className="text-slate-700">
-                Nome *
-              </Label>
-              <Input
-                id="name"
-                {...form.register("name")}
-                placeholder="Digite o nome"
-                className="rounded-lg"
-              />
-              {form.formState.errors.name && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.name.message}
-                </p>
-              )}
-            </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden dark:bg-slate-950">
+        <DialogHeader className="pt-6 px-6 pb-2 border-b border-gray-100 bg-white dark:bg-slate-900/50">
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {siteToEdit ? "Editar Site" : "Novo Site"}
+          </DialogTitle>
+        </DialogHeader>
 
-            <div className="flex flex-col md:flex-row gap-4 md:col-span-2">
-              <div className="space-y-2 w-full md:w-auto">
-                <Label htmlFor="cod" className="text-slate-700">
-                  Código *
-                </Label>
-                <Input
-                  id="cod"
-                  {...form.register("cod")}
-                  placeholder="Digite o código"
-                  className="rounded-lg w-32"
-                />
-                {form.formState.errors.cod && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.cod.message}
-                  </p>
-                )}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
+          <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="md:col-span-2 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label
+                      htmlFor="customerId"
+                      className="text-slate-700 font-medium"
+                    >
+                      Cliente *
+                    </Label>
+                    <CustomerSelect
+                      value={form.watch("customerId")}
+                      onChange={(value) => {
+                        form.setValue("customerId", value);
+                      }}
+                      companyId={companyId}
+                      disabled={!!propCustomerId}
+                    />
+                    {form.formState.errors.customerId && (
+                      <p className="text-sm text-red-500 font-medium">
+                        {form.formState.errors.customerId.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cod" className="text-slate-700 font-medium">
+                      Código *
+                    </Label>
+                    <Input
+                      id="cod"
+                      {...form.register("cod")}
+                      placeholder="Ex: ST-001"
+                      className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                    {form.formState.errors.cod && (
+                      <p className="text-sm text-red-500 font-medium">
+                        {form.formState.errors.cod.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2 ">
+                    <Label htmlFor="name" className="text-slate-700 font-medium">
+                      Nome do Site *
+                    </Label>
+                    <Input
+                      id="name"
+                      {...form.register("name")}
+                      placeholder="Ex: Obra Central"
+                      className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                    {form.formState.errors.name && (
+                      <p className="text-sm text-red-500 font-medium">
+                        {form.formState.errors.name.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="customerId" className="text-slate-700">
-                  Selecione o Cliente *
-                </Label>
-                <CustomerSelect
-                  value={form.watch("customerId")}
-                  onChange={(value) => {
-                    form.setValue("customerId", value);
-                  }}
-                  companyId={companyId}
-                  disabled={!!props.customerId}
-                />
-                {form.formState.errors.customerId && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.customerId.message}
-                  </p>
-                )}
-              </div>
 
+              <div className="md:col-span-2 border-t border-gray-100 pt-6"></div>
 
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:col-span-2">
-              <div className="space-y-1 ">
-                <Label htmlFor="geoLocationEntityId" className="text-slate-700">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="geoLocationEntityId"
+                  className="text-slate-700 font-medium"
+                >
                   Geolocalização *
                 </Label>
-                <div>
-                  <Input
-                    id="geoLocationEntityId"
-                    {...form.register("geoLocationId")}
-                    placeholder="geolocalização (ex.: GEO-XYZ)"
-                    className="rounded-lg"
-                    type="text"
-                  />
-                </div>
-
+                <Input
+                  id="geoLocationEntityId"
+                  {...form.register("geoLocationId")}
+                  placeholder="ID da Geolocalização (ex.: GEO-XYZ)"
+                  className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                />
                 {form.formState.errors.geoLocationId && (
-                  <p className="text-sm text-red-500">
+                  <p className="text-sm text-red-500 font-medium">
                     {form.formState.errors.geoLocationId.message}
                   </p>
                 )}
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="numberWorkersContract" className="text-slate-700">
-                  Trabalhadores *
+                <Label
+                  htmlFor="numberWorkersContract"
+                  className="text-slate-700 font-medium"
+                >
+                  Nº Trabalhadores *
                 </Label>
                 <Input
                   id="numberWorkersContract"
@@ -210,18 +249,21 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                   {...form.register("numberWorkersContract", {
                     valueAsNumber: true,
                   })}
-                  placeholder="Digite o número de trabalhadores"
-                  className="rounded-lg"
+                  placeholder="0"
+                  className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                 />
                 {form.formState.errors.numberWorkersContract && (
-                  <p className="text-sm text-red-500">
+                  <p className="text-sm text-red-500 font-medium">
                     {form.formState.errors.numberWorkersContract.message}
                   </p>
                 )}
               </div>
+
+              <div className="md:col-span-2 border-t border-gray-100 pt-6"></div>
+
               <div className="space-y-2">
-                <Label htmlFor="areaId" className="text-slate-700">
-                  Selecione a Área *
+                <Label htmlFor="areaId" className="text-slate-700 font-medium">
+                  Área Operacional *
                 </Label>
                 <AreaSelect
                   value={form.watch("areaId")}
@@ -233,9 +275,10 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                   companyId={companyId}
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="zoneId" className="text-slate-700">
-                  Selecione a Zona
+                <Label htmlFor="zoneId" className="text-slate-700 font-medium">
+                  Zona
                 </Label>
                 <ZoneSelect
                   value={form.watch("zoneId")}
@@ -247,9 +290,10 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                   areaId={form.watch("areaId")}
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="sectorId" className="text-slate-700">
-                  Selecione o Setor *
+                <Label htmlFor="sectorId" className="text-slate-700 font-medium">
+                  Sector *
                 </Label>
                 <SectorSelect
                   value={form.watch("sectorId")}
@@ -258,75 +302,78 @@ export default function SitesCreatePage(props: SitesCreatePageProps) {
                   zoneId={form.watch("zoneId")}
                 />
                 {form.formState.errors.sectorId && (
-                  <p className="text-sm text-red-500">
+                  <p className="text-sm text-red-500 font-medium">
                     {form.formState.errors.sectorId.message}
                   </p>
                 )}
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contactId" className="text-slate-700">
-                Selecione o Contato *
-              </Label>
-              <ContactSelect
-                value={form.watch("contactId")}
-                onChange={(value) => form.setValue("contactId", value)}
-                companyId={companyId}
-              />
-              {form.formState.errors.contactId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.contactId.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="addressId" className="text-slate-700">
-                Selecione o Endereço *
-              </Label>
-              <AddressSelect
-                value={form.watch("addressId")}
-                onChange={(value) => form.setValue("addressId", value)}
-                companyId={companyId}
-              />
-              {form.formState.errors.addressId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.addressId.message}
-                </p>
-              )}
-            </div>
 
+              <div className="md:col-span-2 border-t border-gray-100 pt-6"></div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactId" className="text-slate-700 font-medium">
+                  Contato  *
+                </Label>
+                <ContactSelect
+                  value={form.watch("contactId")}
+                  onChange={(value) => form.setValue("contactId", value)}
+                  companyId={companyId}
+                />
+                {form.formState.errors.contactId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.contactId.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="addressId" className="text-slate-700 font-medium">
+                  Endereço *
+                </Label>
+                <AddressSelect
+                  value={form.watch("addressId")}
+                  onChange={(value) => form.setValue("addressId", value)}
+                  companyId={companyId}
+                />
+                {form.formState.errors.addressId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.addressId.message}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="pt-4 flex justify-end gap-3">
+
+          <DialogFooter className=" p-4 border-t border-gray-100 bg-gray-50/50 dark:bg-slate-900/50">
             <Button
               type="button"
-              variant="outline"
-              onClick={() =>
-                props.onCancel ? props.onCancel() : router.back()
-              }
-              className="rounded-lg px-6 cursor-pointer"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting ||
-                (updateSite?.isPending ?? false) ||
-                (createSite?.isPending ?? false)
-              }
-              className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
+              disabled={isPending}
+              className="shadow-lg rounded-xl px-6"
             >
-              {isSubmitting ||
-                (updateSite?.isPending ?? false) ||
-                (createSite?.isPending ?? false)
-                ? "Salvando..."
-                : props.id
-                  ? "Atualizar Site"
-                  : "Criar Site"}
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : siteToEdit ? (
+                "Atualizar Dados"
+              ) : (
+                "Criar Site"
+              )}
             </Button>
-          </div>
-        </div>
-      </form>
-    </div>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
+

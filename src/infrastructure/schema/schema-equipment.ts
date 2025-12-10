@@ -9,6 +9,7 @@ export const createEquipmentSchema = z.object({
   siteId: z.string(),
   typeEquipmentId: z.string(),
   companyId: z.string(),
+  employeeId: z.string().optional(),
 });
 
 const statusLiterals = z.union([z.literal("ACTIVE"), z.literal("INACTIVE")]);

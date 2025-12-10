@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Loader2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -21,6 +22,9 @@ export function DeleteModal({
   message = "Are you sure you want to delete?",
   isLoading = false,
 }: DeleteModalProps) {
+  const { t: tCommon } = { t: (key: string) => key }; 
+  const t = useTranslations("Components.DeleteModal");
+
   if (!isOpen) return null;
 
   return (
@@ -36,12 +40,12 @@ export function DeleteModal({
         </button>
 
         <div className="flex flex-col items-center text-center space-y-5">
-            <Trash2 className="w-8 h-8 text-red-500" />
-       
+          <Trash2 className="w-8 h-8 text-red-500" />
 
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
 
-          <p className="text-gray-600 text-sm">{message}</p>
+          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
+
+          <p className="text-gray-600 text-sm">{t('message')}</p>
 
           <div className="flex gap-3 w-full">
             <Button
@@ -50,7 +54,7 @@ export function DeleteModal({
               className="flex-1 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200 cursor-pointer"
               disabled={isLoading}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               onClick={onConfirm}
@@ -61,10 +65,10 @@ export function DeleteModal({
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2 text-sm font-medium">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Excluindo...
+                  {t('deleting')}
                 </span>
               ) : (
-                "Eliminar"
+                t('confirm')
               )}
             </Button>
           </div>

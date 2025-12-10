@@ -18,10 +18,17 @@ export function useZoneById(id?: string) {
     queryKey: ["zone", id],
     queryFn: async (): Promise<Zone | null> => {
       if (!id) return null;
-      const { data } = await api.get(`/zone/getById/${id}`);
-      return data || null;
+      try {
+        const { data } = await api.get(`/zone/getById/${id}`);
+        return data?.data || data || null;
+      } catch (error) {
+        const { data } = await api.get("/zone/getAll");
+        const items = (data?.data ?? data ?? []) as Zone[];
+        return items.find((z) => z.id === id) || null;
+      }
     },
     enabled: !!id,
+    retry: 1,
   });
 }
 
@@ -30,7 +37,7 @@ export function useCreateZone() {
   return useMutation<Zone, unknown, CreateZonePayload>({
     mutationFn: async (payload: CreateZonePayload): Promise<Zone> => {
       const { data } = await api.post("/zone/create", payload);
-      return data;
+      return data?.data || data;
     },
     onSuccess: (created) => {
       queryClient.setQueryData(["zones"], (old: Zone[] = []) => {

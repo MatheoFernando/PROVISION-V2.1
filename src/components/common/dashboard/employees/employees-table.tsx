@@ -10,25 +10,27 @@ import {
   useEmployeeByCod,
   useEmployeesByName,
 } from "@/infrastructure/hooks/useEmployees";
+import { useAreas } from "@/infrastructure/hooks/useAreas";
+import { useZones } from "@/infrastructure/hooks/useZones";
+import { useSectors } from "@/infrastructure/hooks/useSectors";
 import { Employee } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { EmployeesView } from "./employees-view";
+
 import { DeleteModal } from "@/components/ui/delete-modal";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useDepartments } from "@/infrastructure/hooks/useDepartments";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import EmployeesCreatePage from "./employee-create";
+import { EmployeeDialog } from "./employee-create";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
 import { type CreateGrossEmployeePayload } from "@/infrastructure/schema/schema-employees";
-import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 interface EmployeesTableProps {
   companyId?: string;
@@ -47,8 +49,8 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
   const { mutateAsync: deleteEmployee, isPending: isDeleting } =
     useDeleteEmployee(companyId);
   const createGrossEmployee = useCreateGrossEmployee();
-  const [isViewOpen, setIsViewOpen] = React.useState(false);
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const router = useRouter();
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [selectedEmployee, setSelectedEmployee] = React.useState<
     Employee | undefined
@@ -56,8 +58,6 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
   const [employeesToDelete, setEmployeesToDelete] =
     React.useState<Employee[]>([]);
   const [isBulkOpen, setIsBulkOpen] = React.useState(false);
-  const [codFilter, setCodFilter] = React.useState("");
-  const [nameFilter, setNameFilter] = React.useState("");
 
   const departmentIdToName = React.useMemo(() => {
     return Object.fromEntries(
@@ -74,7 +74,7 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
         cell: ({ row }) => {
           const cod = row.getValue("cod") as string;
           return (
-            <div className="text-sm text-muted-foreground font-medium">
+            <div className="text-sm ">
               {cod}
             </div>
           );
@@ -143,8 +143,9 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
   );
 
   const handleView = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setIsViewOpen(true);
+    if (employee.id) {
+      router.push(`/dashboard/funcionarios/${employee.id}`);
+    }
   };
 
   const handleEdit = (employee: Employee) => {
@@ -179,108 +180,35 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
       ? `Tem certeza que deseja excluir ${employeesToDelete.length} funcionários selecionados? Esta ação não pode ser desfeita.`
       : `Tem certeza que deseja excluir ${deleteTargetLabel}? Esta ação não pode ser desfeita.`;
 
-  const { data: employeeByCod, error: codFilterError } = useEmployeeByCod(
-    codFilter.trim() ? codFilter.trim() : undefined,
-    companyId,
-  );
-  const {
-    data: employeesByName = [],
-    error: nameFilterError,
-  } = useEmployeesByName(
-    nameFilter.trim() ? nameFilter.trim() : undefined,
-    companyId,
-  );
+
 
   const sourceEmployees = React.useMemo(
     () => data ?? employees,
     [data, employees],
   );
 
-  const apiFilteredEmployees = React.useMemo(() => {
-    const trimmedCod = codFilter.trim();
-    const trimmedName = nameFilter.trim();
 
-    // Prioridade: filtro por código
-    if (trimmedCod) {
-      if (codFilterError) return [];
-      if (employeeByCod === null) return [];
-      if (employeeByCod) return [employeeByCod];
-      // carregando: não mostrar lista completa para não confundir
-      return [];
-    }
 
-    // Segundo: filtro por nome
-    if (trimmedName) {
-      if (nameFilterError) return [];
-      if (employeesByName.length === 0) return [];
-      return employeesByName;
-    }
 
-    // Sem filtros → lista padrão
-    return sourceEmployees;
-  }, [
-    codFilter,
-    nameFilter,
-    codFilterError,
-    nameFilterError,
-    employeeByCod,
-    employeesByName,
-    sourceEmployees,
-  ]);
+  const { data: areas = [] } = useAreas();
+  const { data: zones = [] } = useZones();
+  const { data: sectors = [] } = useSectors();
 
-  const filteredEmployees = React.useMemo(() => {
-    const base = apiFilteredEmployees;
-    if (!siteIds?.length) return base;
-    const ids = new Set(siteIds.filter(Boolean));
-    return base.filter((employee) => ids.has(employee.siteId));
-  }, [apiFilteredEmployees, siteIds]);
+  const employeesWithDependencies = React.useMemo(() => {
+    const ids = new Set<string>();
+    areas.forEach((a) => a.employeeId && ids.add(a.employeeId));
+    zones.forEach((z) => z.employeeId && ids.add(z.employeeId));
+    sectors.forEach((s) => s.employeeId && ids.add(s.employeeId));
+    return ids;
+  }, [areas, zones, sectors]);
 
-  
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">
-            Código do funcionário
-          </label>
-          <Input
-            value={codFilter}
-            onChange={(event) => setCodFilter(event.target.value)}
-            placeholder="Filtrar por código "
-            className="h-9"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">
-            Nome do funcionário
-          </label>
-          <Input
-            value={nameFilter}
-            onChange={(event) => setNameFilter(event.target.value)}
-            placeholder="Filtrar por nome "
-            className="h-9"
-          />
-        </div>
-        <div className="flex items-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-9 cursor-pointer"
-            onClick={() => {
-              setCodFilter("");
-              setNameFilter("");
-            }}
-          >
-            Limpar filtros
-          </Button>
-        </div>
-      </div>
 
- 
 
       <DataTableGeneric
         columns={columns}
-        data={filteredEmployees}
+        data={sourceEmployees}
         isLoading={isLoadingOverride ?? isLoading}
         searchKey="fullName"
         actionButton={{
@@ -290,7 +218,7 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
             setIsCreateOpen(true);
           },
         }
-      }
+        }
         bulkImportButton={{
           label: "Importar funcionários",
           onClick: () => setIsBulkOpen(true),
@@ -311,67 +239,53 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
             label: "Excluir",
             icon: <Trash className="h-4 w-4 mr-2 text-gray-600" />,
             onClick: (employee) => handleDelete(employee),
+            render: (employee, action) => {
+              const hasDependencies = employeesWithDependencies.has(employee.id as string) || !!employee.siteId;
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="w-full outline-none">
+                        <DropdownMenuItem
+                          className={`w-full cursor-pointer ${hasDependencies ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          onClick={(e) => {
+                            if (hasDependencies) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              action.onClick(employee);
+                            }
+                          }}
+                        >
+                          {action.icon && <span className="mr-2">{action.icon}</span>}
+                          {action.label}
+                        </DropdownMenuItem>
+                      </span>
+                    </TooltipTrigger>
+                    {hasDependencies && (
+                      <TooltipContent>
+                        <p>Não pode excluir funcionário associado a Site/Área/Zona/Setor</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            },
           },
         ]}
       />
 
-      <EmployeesView
-        employee={selectedEmployee}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-      />
 
-      <Drawer
+
+      <EmployeeDialog
         open={isCreateOpen}
         onOpenChange={(open) => {
-          if (open) {
-            setIsCreateOpen(true);
-            return;
-          }
-          setIsCreateOpen(false);
-          setSelectedEmployee(undefined);
+          setIsCreateOpen(open);
+          if (!open) setSelectedEmployee(undefined);
         }}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedEmployee
-                      ? "Editar Funcionário"
-                      : "Novo Funcionário"}
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <EmployeesCreatePage
-                id={selectedEmployee?.id}
-                initialData={selectedEmployee as any}
-                onSuccess={() => {
-                  setIsCreateOpen(false);
-                  setSelectedEmployee(undefined);
-                }}
-                onCancel={() => {
-                  setIsCreateOpen(false);
-                  setSelectedEmployee(undefined);
-                }}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        employeeToEdit={selectedEmployee}
+      />
 
       <DeleteModal
         isOpen={isDeleteOpen}

@@ -1,15 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { Eye, Wrench, Calendar, Clock, User, Building, ListChecks, Users, X } from "lucide-react"
+import { Eye, Wrench, Calendar, Clock, User, Building, ListChecks, Users } from "lucide-react"
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Supervision } from "@/infrastructure/types/domain"
@@ -79,96 +84,126 @@ export function SupervisionDrawer({ supervision, isOpen, onOpenChange }: Supervi
   ]
 
   return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="ml-auto flex h-full max-h-screen w-full max-w-4xl flex-col border-l border-slate-200">
-        <DrawerHeader className="border-b border-slate-200 bg-slate-50 px-6 py-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <DrawerTitle className="flex items-center gap-3 text-2xl font-semibold text-slate-900">
-                <Eye className="h-5 w-5 text-slate-600" />
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white dark:bg-slate-950 rounded-3xl shadow-2xl border-none">
+        <DialogHeader className="px-6 py-6 border-b border-gray-100 dark:border-slate-900/50 bg-gray-50/50 dark:bg-slate-900/20">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-slate-900 dark:text-gray-100">
+                <Eye className="h-6 w-6 text-slate-600 dark:text-slate-400" />
                 Supervisão
-              </DrawerTitle>
-              <DrawerDescription className="text-sm text-slate-500">
+              </DialogTitle>
+              <DialogDescription className="text-sm text-slate-500">
                 Visão completa da supervisão e dos recursos envolvidos.
-              </DrawerDescription>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className={`border text-xs ${statusClass}`}>
-                  {detail.status || "Sem status"}
-                </Badge>
-                <Badge variant="outline" className="border-blue-200 text-xs text-blue-700">
+              </DialogDescription>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <Badge variant="outline" className={`border text-xs ${statusClass}`}>
+                {detail.status || "Sem status"}
+              </Badge>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="border-blue-200 text-xs text-blue-700 bg-blue-50">
                   <Clock className="mr-1 h-3.5 w-3.5" />
                   {formatHour(detail.time)}
                 </Badge>
-                <Badge variant="outline" className="border-slate-200 text-xs text-slate-700">
+                <Badge variant="outline" className="border-slate-200 text-xs text-slate-700 bg-slate-50">
                   <Calendar className="mr-1 h-3.5 w-3.5" />
                   {formatDate(detail.createdAt)}
                 </Badge>
               </div>
             </div>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="rounded-full text-slate-500 hover:bg-slate-100">
-                <X className="h-4 w-4" />
-              </Button>
-            </DrawerClose>
           </div>
-        </DrawerHeader>
+        </DialogHeader>
 
-        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
-          <section className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <ListChecks className="h-4 w-4 text-slate-500" />
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Resumo Operacional
-              </h3>
-            </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {metrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-md border border-slate-100 bg-slate-50 p-2 flex flex-col items-center justify-center"
+        <div className="p-0">
+          <Tabs defaultValue="summary" className="w-full">
+            <div className="px-6 pt-4">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100/50 dark:bg-slate-900/50 p-1 rounded-xl">
+                <TabsTrigger
+                  value="summary"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all duration-200"
                 >
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    {metric.label}
-                  </p>
-                  <p className="text-2xl font-semibold text-slate-900">{metric.value}</p>
+                  Resumo
+                </TabsTrigger>
+                <TabsTrigger
+                  value="resources"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all duration-200"
+                >
+                  Recursos
+                </TabsTrigger>
+                <TabsTrigger
+                  value="observations"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all duration-200"
+                >
+                  Observações
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="p-6 h-[400px] overflow-y-auto">
+              <TabsContent value="summary" className="mt-0 space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <section className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <ListChecks className="h-4 w-4 text-slate-500" />
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                      Resumo Operacional
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    {metrics.map((metric) => (
+                      <div
+                        key={metric.label}
+                        className="rounded-xl bg-white dark:bg-slate-900/50 p-4 shadow-sm border border-slate-100 dark:border-slate-800"
+                      >
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-1">
+                          {metric.label}
+                        </p>
+                        <p className="text-3xl font-bold text-slate-900 dark:text-white">{metric.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </TabsContent>
+
+              <TabsContent value="resources" className="mt-0 space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <div className="grid grid-cols-1 gap-6">
+                  <Section icon={User} title="Responsável">
+                    <div className="bg-gray-50 dark:bg-slate-900/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                      <TextRow label="Funcionário" value={detail.employee?.fullName || detail.employee?.name || detail.employeeId} />
+                      <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                      <TextRow label="Departamento" value={detail.department?.name || detail.departmentId} />
+                    </div>
+                  </Section>
+
+                  <Section icon={Building} title="Local e Equipamento">
+                    <div className="bg-gray-50 dark:bg-slate-900/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                      <TextRow label="Site" value={detail.site?.name || detail.site?.cod || detail.siteId} />
+                      <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                      <TextRow
+                        label="Equipamento"
+                        value={
+                          detail.equipment
+                            ? `${detail.equipment.cod || ''} ${detail.equipment.model || ''}`
+                            : detail.equipmentId
+                        }
+                      />
+                    </div>
+                  </Section>
                 </div>
-              ))}
-            </div>
-          </section>
+              </TabsContent>
 
-          <section className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-slate-500" />
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Recursos Alocados
-              </h3>
+              <TabsContent value="observations" className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <Section icon={Wrench} title="Observações e Medidas">
+                  <div className="bg-amber-50/50 dark:bg-amber-900/10 p-5 rounded-xl border border-amber-100 dark:border-amber-900/20 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                    {detail.observation || "Nenhuma observação registrada para esta supervisão."}
+                  </div>
+                </Section>
+              </TabsContent>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
-              <Section icon={User} title="Responsável">
-                <TextRow label="Funcionário" value="-" />
-                <TextRow label="Departamento" value="-" />
-              </Section>
-              <Section icon={Building} title="Local e Equipamento">
-                <TextRow label="Site" value="-" />
-                <TextRow label="Equipamento" value="-" />
-              </Section>
-            </div>
-          </section>
-
-          <section className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-blue-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Observações e Medidas
-              </h3>
-            </div>
-            <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-              {detail.observation || "Nenhuma observação registrada para esta supervisão."}
-            </p>
-          </section>
+          </Tabs>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -182,9 +217,9 @@ function TextRow({
   valueClass?: string
 }) {
   return (
-    <div className="flex justify-between text-sm">
+    <div className="flex justify-between items-center text-sm">
       <span className="text-slate-500">{label}</span>
-      <span className={`font-medium text-slate-900 ${valueClass}`}>{value || "—"}</span>
+      <span className={`font-medium text-slate-900 dark:text-gray-100 ${valueClass}`}>{value || "—"}</span>
     </div>
   )
 }
@@ -204,7 +239,7 @@ function Section({
         <Icon className="h-4 w-4 text-slate-400" />
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</h4>
       </div>
-      <div className="space-y-2">{children}</div>
+      <div>{children}</div>
     </div>
   )
 }

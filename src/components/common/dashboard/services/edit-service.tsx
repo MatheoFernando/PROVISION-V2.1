@@ -103,7 +103,7 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
                     <Textarea
-                    className="resize-none"
+                      className="resize-none"
                       placeholder="Digite a descrição do serviço"
                       {...field}
                     />
@@ -128,7 +128,7 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                       className="cursor-pointer"
                       checked={
                         typeof field.value === 'string'
-                          ? field.value=== 'true' || field.value === '1'
+                          ? field.value === 'true' || field.value === '1'
                           : Boolean(field.value)
                       }
                       onCheckedChange={field.onChange}
@@ -146,7 +146,7 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={updateModuleMutation.isPending} className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white">
+              <Button type="submit" disabled={updateModuleMutation.isPending} className="cursor-pointer">
                 {updateModuleMutation.isPending
                   ? "Atualizando..."
                   : "Atualizar Serviço"}

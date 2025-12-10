@@ -63,13 +63,13 @@ export function CreateService() {
       <DialogTrigger asChild>
         <Button className="px-6 py-5 text-white cursor-pointer">
           <Plus className="h-4 w-4 mr-2" />
-          Criar Serviço
+          Criar Módulo
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Criar Novo Serviço</DialogTitle>
-         
+          <DialogTitle>Criar  Módulo</DialogTitle>
+
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -78,10 +78,10 @@ export function CreateService() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Serviço</FormLabel>
+                  <FormLabel>Nome do Módulo</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Digite o nome do serviço"
+                      placeholder="Digite o nome do módulo"
                       value={field.value as string}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -148,7 +148,7 @@ export function CreateService() {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending} className={`px-6 bg-blue-600 hover:bg-blue-700 text-white ${isPending ? 'cursor-wait opacity-90' : 'cursor-pointer'}`}>
+              <Button type="submit" disabled={isPending} className={`px-6 ${isPending ? 'cursor-wait opacity-90' : 'cursor-pointer'}`}>
                 {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -156,7 +156,7 @@ export function CreateService() {
                   </>
                 ) : (
                   <>
-             
+
                     Criar Serviço
                   </>
                 )}

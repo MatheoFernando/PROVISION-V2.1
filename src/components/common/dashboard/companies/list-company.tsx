@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -134,7 +134,7 @@ function ListCompany() {
   };
 
   const handleEdit = (company: Company) => {
-    router.push(`/dashboard/companies/create?id=${company.id}`);
+    router.push(`/dashboard/empresa/create?id=${company.id}`);
   };
 
   const handleDelete = async (company: Company) => {
@@ -155,7 +155,7 @@ function ListCompany() {
         isLoading={isLoading}
         actionButton={{
           label: "Nova Empresa",
-          onClick: () => router.push("/dashboard/companies/create"),
+          onClick: () => router.push("/dashboard/empresa/create"),
         }}
         rowActions={[
           {
@@ -174,7 +174,7 @@ function ListCompany() {
             onClick: handleEdit,
             variant: "ghost",
           },
-     
+
           {
             label: "Excluir",
             icon: (
@@ -215,12 +215,11 @@ function ListCompany() {
           }
         }}
         title="Excluir empresa"
-        message={`Tem certeza que deseja excluir a empresa ${
-          selectedCompany?.businessName ?? ""
-        } ? Esta ação não pode ser desfeita.`}
+        message={`Tem certeza que deseja excluir a empresa ${selectedCompany?.businessName ?? ""
+          } ? Esta ação não pode ser desfeita.`}
       />
 
-     
+
     </div>
   );
 }

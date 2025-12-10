@@ -36,10 +36,17 @@ export function useContactById(id?: string) {
     queryKey: ["contact", id],
     queryFn: async (): Promise<Contact | null> => {
       if (!id) return null;
-      const { data } = await api.get(`/contact/getById/${id}`);
-      return data || null;
+      try {
+        const { data } = await api.get(`/contact/getById/${id}`);
+        return data?.data || data || null;
+      } catch (error) {
+        const { data } = await api.get("/contact/getAll");
+        const contacts = (data?.data ?? data ?? []) as Contact[];
+        return contacts.find((c) => c.id === id) || null;
+      }
     },
     enabled: !!id,
+    retry: 1,
   });
 }
 
@@ -51,7 +58,7 @@ export function useCreateContact() {
       payload: Omit<Contact, "id" | "createdAt" | "updatedAt">
     ): Promise<Contact> => {
       const response = await api.post("/contact/create", payload);
-      return response.data;
+      return response.data?.data ?? response.data;
     },
     onSuccess: (_created, variables) => {
       queryClient.invalidateQueries({
@@ -75,7 +82,7 @@ export function useUpdateContact() {
       }
     ): Promise<Contact> => {
       const response = await api.put("/contact", data);
-      return response.data;
+      return response.data?.data ?? response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });

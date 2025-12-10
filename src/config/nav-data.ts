@@ -6,121 +6,111 @@ export interface NavItemData {
   items?: NavItemData[];
 }
 
-export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => [
-  { title: "Dashboard", url: "/dashboard", iconKey: "GridFour" },
-  { title: "Módulos", url: "/dashboard/service", iconKey: "Package" },
-  {
-    title: "Entidades",
-    url: "/dashboard/entities",
-    iconKey: "UsersFour",
-    items: [
-      {
-        title: "Clientes",
-        url: "/dashboard/customers",
-        iconKey: "Users",
-      },
-      {
-        title: "Sites",
-        url: "/dashboard/sites",
-        iconKey: "MapPinLine",
-      },
+export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
+  const commonNav: NavItemData[] = [
+    { title: "Sidebar.dashboard", url: "/dashboard", iconKey: "GridFour" },
 
-    ],
-  },
-  {
-    title: "Empresa",
-    url: "/dashboard/customers",
-    iconKey: "Buildings",
-    items: [
-      {
-        title: "Equipamentos",
-        url: "/dashboard/equipment",
-        iconKey: "Wrench",
-      },
-      {
-        title: "Funcionários",
-        url: "/dashboard/employees",
-        iconKey: "UsersFour",
-      },
-      {
-        title: "Veículos",
-        url: "/dashboard/cars",
-        iconKey: "Truck",
-      },
-      {
-        title: "Organização Operacional",
-        url: "/dashboard/operational-organization",
-        iconKey: "TreeStructure",
-        items: [
-          {
-            title: "Áreas",
-            url: "/dashboard/operational-organization/areas",
-            iconKey: "CirclesThreePlus",
-          },
-          {
-            title: "Sectores",
-            url: "/dashboard/operational-organization/sectors",
-            iconKey: "MapTrifold",
-          },
-          {
-            title: "Zonas",
-            url: "/dashboard/operational-organization/zones",
-            iconKey: "MapTrifold",
-          },
-          {
-            title: "Sites/ Postos",
-            url: "/dashboard/operational-organization/sites-postos",
-            iconKey: "MapPinLine",
-          },
-        ],
-      },
-    ],
-  },
+    { title: "Sidebar.modules", url: "/dashboard/modulos", iconKey: "Package" },
+    {
+      title: "Sidebar.entities",
+      url: "/dashboard/entidades",
+      iconKey: "UsersFour",
+      items: [
+        {
+          title: "Sidebar.clients",
+          url: "/dashboard/clientes",
+          iconKey: "Users",
+        },
+        {
+          title: "Sidebar.sites",
+          url: "/dashboard/sites",
+          iconKey: "MapPinLine",
+        },
+      ],
+    },
 
-  {
-    title: "Configurações",
-    url: "/dashboard/setting",
-    iconKey: "Gear",
-    items: [
-      {
-        title: "Utilizadores e Permissões",
-        url: "/dashboard/settings/users-permissions",
-        iconKey: "UserCircleGear",
+    {
+      title: "Sidebar.company", 
+      iconKey: "Buildings",
+      items: [
+        {
+          title: "Sidebar.equipment",
+          url: "/dashboard/equipamentos",
+          iconKey: "Wrench",
+        },
+        {
+          title: "Sidebar.employees",
+          url: "/dashboard/funcionarios",
+          iconKey: "UsersFour",
+        },
+        {
+          title: "Sidebar.vehicles", 
+          url: "/dashboard/veiculos",
+          iconKey: "Truck",
+        },
+        {
+          title: "Sidebar.operationalOrganization",
+          url: "/dashboard/organizacao-operacional",
+          iconKey: "TreeStructure",
+          
+        },
+      ],
+    },
+    {
+      title: "Sidebar.configuration",
+      url: "/dashboard/configuracoes",
+      iconKey: "Gear",
+      items: [
+        {
+          title: "Sidebar.usersAndPermissions",
+          url: "/dashboard/configuracoes/utilizadores-permissoes",
+          iconKey: "UserCircleGear",
+        },
+        {
+          title: "Sidebar.modulesAndServices",
+          url: "/dashboard/configuracoes/modulos-servicos",
+          iconKey: "Package",
+        },
+        {
+          title: "Sidebar.systemDefinitions", 
+          url: "/dashboard/configuracoes/definicoes-sistema",
+          iconKey: "Sliders",
+        },
+        {
+          title: "Sidebar.integrations",
+          url: "/dashboard/configuracoes/integracoes",
+          iconKey: "PlugsConnected",
+        },
+        {
+          title: "Sidebar.securityAndLogs", 
+          url: "/dashboard/configuracoes/seguranca-logs",
+          iconKey: "ShieldCheck",
+        },
+        {
+          title: "Sidebar.backupAndRestore", 
+          url: "/dashboard/configuracoes/backup-restauro",
+          iconKey: "HardDrives",
+        },
+      ],
+    },
+    {
+      title: "Sidebar.analytics",
+      url: "/dashboard/analises",
+      iconKey: "ChartPie",
+    },
+  ];
 
-      },
-      {
-        title: "Módulos e Serviços",
-        url: "/dashboard/settings/modules-services",
-        iconKey: "Package",
-      },
-      {
-        title: "Definições do Sistema",
-        url: "/dashboard/settings/system-settings",
-        iconKey: "Sliders",
-      },
-      {
-        title: "Integrações",
-        url: "/dashboard/settings/integrations",
-        iconKey: "PlugsConnected",
-      },
-      {
-        title: "Segurança e Logs",
-        url: "/dashboard/settings/security-logs",
-        iconKey: "ShieldCheck",
-      },
-      {
-        title: "Backup e Restauro",
-        url: "/dashboard/settings/backup-restore",
-        iconKey: "HardDrives",
-      },
-    ],
-  },
-  {
-    title: "Analytics",
-    url: "/dashboard/analytics",
-    iconKey: "ChartPie",
-  },
-];
+
+
+
+  if (isGlobalAdmin) {
+    const adminList = [...commonNav];
+    return adminList;
+  } else {
+    const userList = [...commonNav];
+    return userList;
+  }
+};
 
 
 export const navData: NavItemData[] = getNavData(false);

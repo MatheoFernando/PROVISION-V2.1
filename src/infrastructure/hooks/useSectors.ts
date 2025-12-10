@@ -18,10 +18,17 @@ export function useSectorById(id?: string) {
     queryKey: ["sector", id],
     queryFn: async (): Promise<Sector | null> => {
       if (!id) return null;
-      const { data } = await api.get(`/sector/getById/${id}`);
-      return data || null;
+      try {
+        const { data } = await api.get(`/sector/getById/${id}`);
+        return data?.data || data || null;
+      } catch (error) {
+        const { data } = await api.get("/sector/getAll");
+        const items = (data?.data ?? data ?? []) as Sector[];
+        return items.find((s) => s.id === id) || null;
+      }
     },
     enabled: !!id,
+    retry: 1,
   });
 }
 
@@ -30,7 +37,7 @@ export function useCreateSector() {
   return useMutation({
     mutationFn: async (payload: Omit<Sector, 'id' | 'createdAt' | 'updatedAt'>): Promise<Sector> => {
       const { data } = await api.post("/sector/create", payload);
-      return data;
+      return data?.data || data;
     },
     onSuccess: (created) => {
       queryClient.setQueryData(["sectors"], (old: Sector[] = []) => {

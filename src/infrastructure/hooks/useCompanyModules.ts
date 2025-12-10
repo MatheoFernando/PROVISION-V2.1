@@ -21,37 +21,67 @@ function buildStatusPath(status?: string | boolean | null): string | null {
   return status.toString();
 }
 
+interface UseCompanyModulesOptions {
+  companyId?: string | null;
+  status?: string | boolean | null;
+  enabled?: boolean;
+}
+
 export function useCompanyModules(options: UseCompanyModulesOptions = {}) {
-  const { companyId, isGlobalAdmin, status } = options;
+  const { companyId, status, enabled = true } = options;
 
   const statusPath = buildStatusPath(status);
-
-  const enabled = Boolean(
-    (isGlobalAdmin && (statusPath !== null || !status)) ||
-      (!isGlobalAdmin && companyId),
-  );
+  const isEnabled = Boolean(companyId && enabled);
 
   return useQuery<CompanyModuleWithDetails[]>({
-    queryKey: ["company-modules", { companyId, isGlobalAdmin, status: statusPath }],
+    queryKey: ["company-modules", { companyId, status: statusPath }],
     queryFn: async (): Promise<CompanyModuleWithDetails[]> => {
-      let url: string | null = null;
+      if (!companyId) return [];
 
-      if (isGlobalAdmin) {
-        url =
-          statusPath !== null
-            ? `/companyModules/getByStatus/${statusPath}`
-            : "/companyModules/GetAll";
-      } else if (companyId) {
-        url = `/companyModules/getByCompanyId/${companyId}`;
+      const url = `/companyModules/getByCompanyId/${companyId}`;
+      const { data } = await api.get(url);
+
+      let modules = (data?.data ?? data ?? []) as CompanyModuleWithDetails[];
+
+
+      if (statusPath !== null) {
+        const isActive = statusPath === "true";
+        modules = modules.filter(m => {
+          const mStatus = (m as any).status ?? m.isActive;
+          const mActive = typeof mStatus === 'string' ? (mStatus === 'true' || mStatus === '1') : Boolean(mStatus);
+          return mActive === isActive;
+        });
       }
+      return modules;
+    },
+    enabled: isEnabled,
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+}
 
-      if (!url) return [];
+interface UseAllCompanyModulesOptions {
+  status?: string | boolean | null;
+  enabled?: boolean;
+}
+
+export function useAllCompanyModules(options: UseAllCompanyModulesOptions = {}) {
+  const { status, enabled = true } = options;
+  const statusPath = buildStatusPath(status);
+
+  return useQuery<CompanyModuleWithDetails[]>({
+    queryKey: ["all-company-modules", { status: statusPath }],
+    queryFn: async (): Promise<CompanyModuleWithDetails[]> => {
+      const url = statusPath !== null
+        ? `/companyModules/getByStatus/${statusPath}`
+        : "/companyModules/GetAll";
 
       const { data } = await api.get(url);
-      return (data?.data ?? data ?? []) as CompanyModuleWithDetails[];
+      return (data.data ?? data ?? []) as CompanyModuleWithDetails[];
     },
     enabled,
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

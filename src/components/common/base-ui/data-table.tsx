@@ -37,6 +37,7 @@ interface ActionButton<TData> {
   | "secondary"
   | "ghost"
   | "link";
+  render?: (row: TData, action: ActionButton<TData>) => React.ReactNode;
 }
 
 interface DataTableProps<TData extends RowData, TValue> {
@@ -305,21 +306,30 @@ export function createActionsColumn<TData extends RowData>(
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-48" >
-          {actions.map((action, index) => (
-            <DropdownMenuItem
-              key={index}
-              variant={action.variant === "destructive" ? "destructive" : "default"}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                action.onClick(row.original);
-              }}
-              className="cursor-pointer"
-            >
-              {action.icon && <span className="mr-2">{action.icon}</span>}
-              <span>{action.label}</span>
-            </DropdownMenuItem>
-          ))}
+          {actions.map((action, index) => {
+            if (action.render) {
+              return (
+                <React.Fragment key={index}>
+                  {action.render(row.original, action)}
+                </React.Fragment>
+              );
+            }
+            return (
+              <DropdownMenuItem
+                key={index}
+                variant={action.variant === "destructive" ? "destructive" : "default"}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  action.onClick(row.original);
+                }}
+                className="cursor-pointer"
+              >
+                {action.icon && <span className="mr-2">{action.icon}</span>}
+                <span>{action.label}</span>
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
     ),

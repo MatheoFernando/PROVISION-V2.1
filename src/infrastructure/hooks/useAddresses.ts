@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Address } from "../types/domain";
 
 interface ApiListResponse<T> {
@@ -54,22 +55,38 @@ export function useAddressById(id?: string) {
     queryFn: async (): Promise<Address | null> => {
       if (!id) return null;
 
-      const { data } = await api.get<ApiItemResponse<Address> | Address>(
-        `/address/getById/${id}`
-      );
+      try {
+        const { data } = await api.get<ApiItemResponse<Address> | Address>(
+          `/address/getById/${id}`
+        );
 
-      if (data && (data as ApiItemResponse<Address>).data) {
-        return (data as ApiItemResponse<Address>).data ?? null;
+        if (data && (data as ApiItemResponse<Address>).data) {
+          return (data as ApiItemResponse<Address>).data ?? null;
+        }
+
+        return (data as Address) ?? null;
+      } catch (error) {
+        const response = await api.get<ApiListResponse<Address[]>>(
+          "/address/getAll"
+        );
+        const payload = response.data;
+        let addresses: Address[] = [];
+        if (Array.isArray(payload)) {
+          addresses = payload;
+        } else {
+          addresses = (payload?.data ?? []) as Address[];
+        }
+        return addresses.find((a) => a.id === id) || null;
       }
-
-      return (data as Address) ?? null;
     },
     enabled: !!id,
+    retry: 1,
   });
 }
 
 export function useCreateAddress() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Addresses");
 
   return useMutation({
     mutationFn: async (
@@ -89,16 +106,17 @@ export function useCreateAddress() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Endereço criado com sucesso!");
+      toast.success(t("create.success"));
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao criar endereço");
+      toast.error(error.response?.data?.message || t("create.error"));
     },
   });
 }
 
 export function useUpdateAddress() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Addresses");
 
   return useMutation({
     mutationFn: async (
@@ -120,16 +138,17 @@ export function useUpdateAddress() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Endereço atualizado com sucesso!");
+      toast.success(t("update.success"));
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao atualizar endereço");
+      toast.error(error.response?.data?.message || t("update.error"));
     },
   });
 }
 
 export function useDeleteAddress() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Addresses");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
@@ -137,10 +156,10 @@ export function useDeleteAddress() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Endereço excluído com sucesso!");
+      toast.success(t("delete.success"));
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao excluir endereço");
+      toast.error(error.response?.data?.message || t("delete.error"));
     },
   });
 }

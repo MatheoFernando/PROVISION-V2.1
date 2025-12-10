@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -28,23 +27,34 @@ import {
 } from "@/infrastructure/hooks/useCustomers";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import type { Customer } from "@/infrastructure/types/domain";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type CustomerFormSchema = typeof createCustomerSchema;
 type CustomerFormInput = z.input<CustomerFormSchema>;
 type CustomerFormValues = z.output<CustomerFormSchema>;
 
-interface CustomersCreateFormProps {
-  customer?: Customer;
-  onSuccess?: (customer?: Customer) => void;
-  onCancel?: () => void;
+interface CustomerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  customerToEdit?: Customer;
 }
 
-export function CustomersCreateForm({
-  customer,
-  onSuccess,
-  onCancel,
-}: CustomersCreateFormProps) {
-  const router = useRouter();
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+
+export function CustomerDialog({
+  open,
+  onOpenChange,
+  customerToEdit,
+}: CustomerDialogProps) {
+  const t = useTranslations("Customers");
+  const tCommon = useTranslations("Common");
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const authCompanyId = useAuthStore((state) => state.companyId) || "";
@@ -70,45 +80,28 @@ export function CustomersCreateForm({
     defaultValues: buildDefaults(),
   });
 
-  const isEditing = Boolean(customer?.id);
+  const isEditing = Boolean(customerToEdit?.id);
   const isSaving = createCustomer.isPending || updateCustomer.isPending;
 
   useEffect(() => {
-    console.log("[CustomersCreateForm] customer prop recebida:", customer);
-
-    if (!customer) {
+    if (customerToEdit && open) {
+      form.reset(
+        buildDefaults({
+          cod: customerToEdit.cod ?? "",
+          name: customerToEdit.name ?? "",
+          taxName: customerToEdit.taxName ?? "",
+          nif: customerToEdit.nif ?? "",
+          contactId: customerToEdit.contactId ?? customerToEdit.contact?.id ?? "",
+          addressId: customerToEdit.addressId ?? customerToEdit.address?.id ?? "",
+          companyId: customerToEdit.companyId ?? authCompanyId,
+        })
+      );
+    } else if (open) {
       form.reset(buildDefaults());
-      return;
     }
-
-    form.reset(
-      buildDefaults({
-        cod: customer.cod ?? "",
-        name: customer.name ?? "",
-        taxName: customer.taxName ?? "",
-        nif: customer.nif ?? "",
-        contactId: customer.contactId ?? "",
-        addressId: customer.addressId ?? "",
-        companyId: customer.companyId ?? authCompanyId,
-      })
-    );
-  }, [customer, form, buildDefaults, authCompanyId]);
-
-  useEffect(() => {
-    const subscription = form.watch((values, info) => {
-      console.log("[CustomersCreateForm] alteração no formulário:", {
-        name: info.name,
-        type: info.type,
-        values,
-      });
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form]);
+  }, [customerToEdit, open, form, buildDefaults, authCompanyId]);
 
   const handleSubmit = async (data: CustomerFormInput) => {
-    console.log("[CustomersCreateForm] submissão (raw):", data);
-
     const parsed: CustomerFormValues = createCustomerSchema.parse({
       ...data,
       companyId: data.companyId || authCompanyId,
@@ -119,187 +112,184 @@ export function CustomersCreateForm({
       companyId: parsed.companyId || authCompanyId,
     };
 
-    console.log("[CustomersCreateForm] payload enviado:", payload);
-
     try {
-      let savedCustomer: Customer | undefined;
-      if (customer?.id) {
+      if (customerToEdit?.id) {
         const { ...updateOnly } = payload;
-        console.log(
-          "[CustomersCreateForm] chamando updateCustomer.mutateAsync com:",
-          {
-            id: customer.id,
-            data: updateOnly,
-          }
-        );
-        savedCustomer = await updateCustomer.mutateAsync({
-          id: customer.id,
-          data: updateOnly,
+        await updateCustomer.mutateAsync({
+          id: customerToEdit.id,
+          ...updateOnly,
         });
       } else {
-        console.log(
-          "[CustomersCreateForm] chamando createCustomer.mutateAsync com:",
-          payload
-        );
-        savedCustomer = await createCustomer.mutateAsync(payload);
-        form.reset(buildDefaults());
+        await createCustomer.mutateAsync(payload);
       }
-
-      if (onSuccess) onSuccess(savedCustomer);
-      else router.back();
+      onOpenChange(false);
+      if (customerToEdit?.id) {
+        toast.success(t("toasts.updateSuccess"));
+      } else {
+        toast.success(t("toasts.createSuccess"));
+      }
     } catch (error) {
-      console.error("[CustomersCreateForm] erro ao salvar cliente:", error);
+      console.error("[CustomerDialog] erro ao salvar cliente:", error);
+      toast.error(t("toasts.error"));
     }
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="flex flex-col gap-8"
-      >
-        <div className="grid gap-6 md:grid-cols-2">
-        <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Digite o nome"
-                    className="rounded-lg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden dark:bg-slate-950">
+        <DialogHeader className="pt-6 px-6 pb-2 border-b border-gray-100 bg-white dark:bg-slate-900/50">
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {isEditing ? t("title.edit") : t("title.create")}
+          </DialogTitle>
+        </DialogHeader>
 
-          <FormField
-            control={form.control}
-            name="cod"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Código *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Digite o código"
-                    className="rounded-lg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="taxName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome fiscal *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Digite o nome fiscal"
-                    className="rounded-lg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-         
-          <FormField
-            control={form.control}
-            name="nif"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>NIF *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Digite o NIF"
-                    className="rounded-lg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="contactId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contato *</FormLabel>
-                <FormControl>
-                  <ContactSelect
-                    value={field.value}
-                    onChange={(value) => field.onChange(value)}
-                    companyId={authCompanyId}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="addressId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Endereço *</FormLabel>
-                <FormControl>
-                  <AddressSelect
-                    value={field.value}
-                    onChange={(value) => field.onChange(value)}
-                    companyId={authCompanyId}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-       
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-6 ">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full sm:w-auto cursor-pointer"
-            onClick={() => {
-              if (onCancel) onCancel();
-              else router.back();
-            }}
-            disabled={isSaving}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="flex flex-col"
           >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto cursor-pointer"
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              (isEditing ? "Atualizar Cliente" : "Criar Cliente")
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+            <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6 ">
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.name")} *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={t("placeholders.name")}
+                          className="rounded-lg"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.cod")} *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={t("placeholders.cod")}
+                          className="rounded-lg"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="taxName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.taxName")} *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={t("placeholders.taxName")}
+                          className="rounded-lg"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="nif"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.nif")} *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={t("placeholders.nif")}
+                          className="rounded-lg"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="contactId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.contact")} *</FormLabel>
+                      <FormControl>
+                        <ContactSelect
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                          companyId={authCompanyId}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="addressId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.address")} *</FormLabel>
+                      <FormControl>
+                        <AddressSelect
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                          companyId={authCompanyId}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="p-4 border-t border-gray-100 bg-gray-50/50 dark:bg-slate-900/50">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={isSaving}
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
+              >
+                {tCommon("cancel")}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className="shadow-lg rounded-xl px-6"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {tCommon("save")}...
+                  </>
+                ) : (
+                  (isEditing ? tCommon("save") : tCommon("create"))
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

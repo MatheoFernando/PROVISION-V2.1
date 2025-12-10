@@ -6,6 +6,7 @@ import {
   type CreateGrossCustomerPayload,
 } from "../schema/schema-customers";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const CUSTOMERS_QUERY_KEY = ["customers"] as const;
 
@@ -33,8 +34,8 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       });
       return response.data.data;
     },
-    enabled: (options?.enabled ?? true) && !!companyId,      
-    staleTime: 0, 
+    enabled: (options?.enabled ?? true) && !!companyId,
+    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -44,6 +45,7 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
 
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Customers");
 
   return useMutation({
     mutationFn: async (data: CreateCustomerPayload): Promise<Customer> => {
@@ -57,7 +59,7 @@ export function useCreateCustomer() {
         queryKey: CUSTOMERS_QUERY_KEY,
         type: "active",
       });
-      toast.success("Cliente criado com sucesso!");
+      toast.success(t("create.success"));
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || error.message || "Erro desconhecido ao criar cliente";
@@ -68,6 +70,7 @@ export function useCreateCustomer() {
 
 export function useCreateGrossCustomer() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Customers");
 
   return useMutation({
     mutationFn: async (
@@ -83,7 +86,7 @@ export function useCreateGrossCustomer() {
         queryKey: CUSTOMERS_QUERY_KEY,
         type: "active",
       });
-      toast.success("Cliente importado com sucesso!");
+      toast.success(t("import.success"));
     },
     onError: (error: any) => {
       const message =
@@ -97,10 +100,15 @@ export function useCreateGrossCustomer() {
 
 export function useUpdateCustomer() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Customers");
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Customer> => {
-      const response = await api.put(`/customer`, { id, ...data });
+    mutationFn: async (
+      payload: Partial<Omit<Customer, "createdAt" | "updatedAt">> & {
+        id: string;
+      }
+    ): Promise<Customer> => {
+      const response = await api.put(`/customer`, payload);
       return response.data;
     },
     onSuccess: async () => {
@@ -109,7 +117,7 @@ export function useUpdateCustomer() {
         queryKey: CUSTOMERS_QUERY_KEY,
         type: "active",
       });
-      toast.success("Cliente atualizado com sucesso!");
+      toast.success(t("update.success"));
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || error.message || "Erro desconhecido ao atualizar cliente";
@@ -120,6 +128,7 @@ export function useUpdateCustomer() {
 
 export function useDeleteCustomer() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Customers");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
@@ -131,7 +140,7 @@ export function useDeleteCustomer() {
         queryKey: CUSTOMERS_QUERY_KEY,
         type: "active",
       });
-      toast.success("Cliente deletado com sucesso!");
+      toast.success(t("delete.success"));
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || error.message || "Erro desconhecido ao deletar cliente";

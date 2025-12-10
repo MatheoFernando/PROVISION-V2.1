@@ -24,7 +24,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const companyQuery = useCompanyByIdQuery(companyId ?? undefined)
 
   const navMain = React.useMemo(() => {
-    return getAllNavItems(isGlobalAdmin);
+    return getAllNavItems(isGlobalAdmin ?? false);
   }, [isGlobalAdmin])
 
   const sidebarData = React.useMemo(() => {
@@ -49,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [companyQuery.data, navMain])
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar" {...props} >
+    <Sidebar collapsible="icon" variant="sidebar" {...props} className="bg-white dark:bg-background text-sidebar-foreground border-r border-sidebar-border" >
       <SidebarHeader className="md:pt-8">
         <Link href="/dashboard" prefetch>
           <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto" />

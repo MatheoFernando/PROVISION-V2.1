@@ -11,6 +11,6 @@ export const zoneSchema = z.object({
 
 export const zonesSchema = z.array(zoneSchema);
 
-export interface ZoneEntity extends z.infer<typeof zoneSchema> {}
+export type ZoneEntity = z.infer<typeof zoneSchema>;
 
 

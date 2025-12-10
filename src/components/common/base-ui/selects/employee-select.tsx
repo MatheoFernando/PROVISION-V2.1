@@ -7,12 +7,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Loader2 } from "lucide-react";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import type { Employee } from "@/infrastructure/types/domain";
-import EmployeesCreatePage from "@/components/common/dashboard/employees/employee-create";
 
 interface EmployeeSelectProps {
   value?: string;
@@ -22,17 +19,12 @@ interface EmployeeSelectProps {
 
 export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectProps) {
   const [query, setQuery] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createdEmployees, setCreatedEmployees] = useState<
-    Array<Employee & { createdAt?: string }>
-  >([]);
 
   const { data: employees = [], isLoading, refetch } = useEmployees(companyId);
 
   const list: Array<Employee & { createdAt?: string }> = (() => {
     const baseList = Array.isArray(employees) ? employees : [];
     const merged: Array<Employee & { createdAt?: string }> = [
-      ...createdEmployees,
       ...baseList,
     ];
     const map = new Map<string, Employee & { createdAt?: string }>();
@@ -54,20 +46,17 @@ export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectPro
     });
   })();
 
+  const selectedEmployee = list.find((e) => e.id === value);
+
   const filtered = list.filter((e) =>
     String(e?.fullName ?? "")
+      .toLowerCase()
+      .includes(query.toLowerCase()) ||
+    String(e?.cod ?? "")
       .toLowerCase()
       .includes(query.toLowerCase())
   );
 
-  const handleCloseDrawer = () => {
-    setIsCreateOpen(false);
-  };
-
-  const handleCreateSuccess = () => {
-    handleCloseDrawer();
-    void refetch();
-  };
 
   return (
     <>
@@ -79,21 +68,37 @@ export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectPro
             disabled={isLoading}
           >
             <SelectTrigger className="w-full ">
-              <SelectValue placeholder="Selecione o funcionário" />
+              <SelectValue placeholder="Selecione o responsável">
+                {selectedEmployee ? (
+                  <span>
+                    <span>{selectedEmployee.cod || '---'}</span> - {selectedEmployee.fullName}
+                  </span>
+                ) : (
+                  "Selecione o responsável"
+                )}
+              </SelectValue>
             </SelectTrigger>
             {isLoading && (
               <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             )}
             <SelectContent className="w-[var(--radix-select-trigger-width)] ">
-              <div className="p-1 sticky top-0 bg-popover">
+              <div className="p-1 sticky top-0 bg-popover border-b">
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Filtrar funcionários..."
+                  placeholder="Filtrar responsáveis..."
                   className="w-full placeholder:text-xs"
                   disabled={isLoading || list.length === 0}
                 />
               </div>
+
+              <div className="pl-8 pr-2 bg-muted/50 border-b sticky top-10 z-10">
+                <div className="grid grid-cols-[100px_1fr] w-full">
+                  <div className="px-2 py-2 text-xs font-semibold border-r border-border/50">Código</div>
+                  <div className="px-2 py-2 text-xs font-semibold">Nome do Funcionário</div>
+                </div>
+              </div>
+
               {filtered.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-3 text-center">
                   Não há dados disponíveis.
@@ -101,8 +106,20 @@ export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectPro
               ) : (
                 <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
                   {filtered.map((e) => (
-                    <SelectItem key={e.id} value={e.id!} className="cursor-pointer">
-                      <span className="truncate">{e.fullName}</span>
+                    <SelectItem
+                      key={e.id}
+                      value={e.id!}
+                      textValue={`${e.cod || '---'} - ${e.fullName}`}
+                      className="cursor-pointer border-b last:border-b-0 hover:bg-accent"
+                    >
+                      <div className="grid grid-cols-[100px_1fr] w-full items-center">
+                        <span className="px-2 text-sm border-r border-border/50 truncate">
+                          {e.cod || '---'}
+                        </span>
+                        <span className="px-2 truncate">
+                          {e.fullName}
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </div>
@@ -110,52 +127,11 @@ export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectPro
             </SelectContent>
           </Select>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="shrink-0 cursor-pointer"
-          onClick={() => setIsCreateOpen(true)}
-          aria-label="Criar funcionário"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
+
       </div>
 
-      <Drawer
-        open={isCreateOpen}
-        onOpenChange={(open) => (open ? setIsCreateOpen(true) : handleCloseDrawer())}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    Novo Funcionário
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <EmployeesCreatePage
-                onSuccess={handleCreateSuccess}
-                onCancel={handleCloseDrawer}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+
     </>
   );
 }
+

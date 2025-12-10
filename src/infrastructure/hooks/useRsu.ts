@@ -4,6 +4,7 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/infrastructure/utils/api";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { Rsu } from "@/infrastructure/types/domain";
 
 const LIST_KEY = ["rsu"] as const;
@@ -103,6 +104,7 @@ export function useRsuDetailQuery(id?: string) {
 
 export function useCreateRsuMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Rsu");
 
   return useMutation({
     mutationFn: async (
@@ -114,7 +116,7 @@ export function useCreateRsuMutation() {
     onSuccess: (created) => {
       syncRsuLists(queryClient);
       setDetailCache(queryClient, created);
-      toast.success("RSU criado com sucesso");
+      toast.success(t("create.success"));
     },
     onError: (error: any) => {
       const message =
@@ -126,6 +128,7 @@ export function useCreateRsuMutation() {
 
 export function useUpdateRsuMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Rsu");
 
   return useMutation({
     mutationFn: async (payload: Rsu): Promise<Rsu> => {
@@ -135,7 +138,7 @@ export function useUpdateRsuMutation() {
     onSuccess: (updated) => {
       syncRsuLists(queryClient);
       setDetailCache(queryClient, updated);
-      toast.success("RSU atualizado com sucesso");
+      toast.success(t("update.success"));
     },
     onError: (error: any) => {
       const message =
@@ -147,6 +150,7 @@ export function useUpdateRsuMutation() {
 
 export function useDeleteRsuMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Rsu");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
@@ -155,7 +159,7 @@ export function useDeleteRsuMutation() {
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: DETAIL_KEY(id) });
       syncRsuLists(queryClient);
-      toast.success("RSU excluído com sucesso");
+      toast.success(t("delete.success"));
     },
     onError: (error: any) => {
       const message =

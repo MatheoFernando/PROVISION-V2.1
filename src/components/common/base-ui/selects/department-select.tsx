@@ -84,7 +84,7 @@ export function DepartmentSelect({
               if (prev.some((item) => item.id === created.id)) return prev;
               return [normalizedDepartment, ...prev];
             });
-   
+
             setTimeout(() => {
               setSelectedDepartmentId(created.id!);
               onChange(created.id!);
@@ -164,16 +164,12 @@ export function DepartmentSelect({
             setSelectedDepartmentId(selected);
             onChange(selected);
           }}
-          disabled={isLoadingOptions || isCompanyUnavailable}
+          disabled={isLoadingOptions}
           onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full " >
             <SelectValue
-              placeholder={
-                isCompanyUnavailable
-                  ? "Selecione uma empresa primeiro"
-                  : "Selecione o departamento"
-              }
+              placeholder="Selecione o departamento"
             />
           </SelectTrigger>
           {isLoadingOptions && (
@@ -189,11 +185,7 @@ export function DepartmentSelect({
                 disabled={isLoadingOptions || departmentsList.length === 0}
               />
             </div>
-            {isCompanyUnavailable ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">
-                Selecione uma empresa para listar departamentos.
-              </div>
-            ) : filtered.length === 0 ? (
+            {filtered.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 text-center">
                 Não há dados disponíveis.
               </div>
@@ -221,6 +213,7 @@ export function DepartmentSelect({
         }}
       >
         <PopoverTrigger asChild>
+
           <Button
             type="button"
             variant="outline"

@@ -23,7 +23,7 @@ export function ServicesMenu() {
   }
 
   const handleNavigation = (id: string) => {
-    router.push(`/dashboard/service?view=${id}`);
+    router.push(`/dashboard/modulos?view=${id}`);
   };
 
   const menuItems = [
@@ -50,7 +50,7 @@ export function ServicesMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <DotsNine className="h-6 w-6 text-gray-700 cursor-pointer" />
+        <DotsNine className="h-6 w-6 text-gray-700 cursor-pointer hover:text-primary transition-colors" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a]"
@@ -66,7 +66,7 @@ export function ServicesMenu() {
             <DropdownMenuItem
               key={index}
               onClick={() => handleNavigation(item.id)}
-              className="flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-muted/50 transition-all duration-200 rounded-lg border border-border/20 hover:border-border/40"
+              className="flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg border border-border/20 hover:border-primary/20"
             >
               <div className={`rounded-lg p-2 ${item.imageClass}`}>
                 <Image

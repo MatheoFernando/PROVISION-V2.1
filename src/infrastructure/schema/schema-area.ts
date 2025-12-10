@@ -10,6 +10,6 @@ export const areaSchema = z.object({
 
 export const areasSchema = z.array(areaSchema);
 
-export interface AreaEntity extends z.infer<typeof areaSchema> {}
+export type AreaEntity = z.infer<typeof areaSchema>;
 
 

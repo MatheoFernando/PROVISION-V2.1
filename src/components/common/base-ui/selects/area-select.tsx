@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useAreas, useCreateArea } from "@/infrastructure/hooks/useAreas";
+import { useAreas } from "@/infrastructure/hooks/useAreas";
 import {
   Select,
   SelectContent,
@@ -7,16 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { areaSchema } from "@/infrastructure/schema/schema-area";
 import { Area } from "@/infrastructure/types/domain";
-import { Label } from "@/components/ui/label";
-import { EmployeeSelect } from "./employee-select";
 
 type AreaForm = {
   name: string;
@@ -42,9 +38,7 @@ export function AreaSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
-  const [createdAreas, setCreatedAreas] = useState<Array<Area & { createdAt?: string }>>([]);
   const { data: areas = [], isLoading, isFetching, refetch } = useAreas();
-  const createArea = useCreateArea();
 
   const form = useForm<AreaForm>({
     resolver: zodResolver(
@@ -69,50 +63,10 @@ export function AreaSelect({
     form.reset({ name: "", companyId, employeeId: employeeId ?? "" });
   }, [companyId, employeeId, form, open]);
 
-  function handleSubmit(data: AreaForm) {
-    const effectiveEmployeeId = data.employeeId || employeeId;
-
-    const payload: Omit<Area, "id" | "createdAt" | "updatedAt"> = {
-      name: data.name,
-      companyId,
-      ...(effectiveEmployeeId ? { employeeId: effectiveEmployeeId } : {}),
-    };
-
-    createArea.mutate(
-      payload,
-      {
-        onSuccess: (created) => {
-          setOpen(false);
-          if (created?.id) {
-            const areaWithMeta = created as Area & { createdAt?: string };
-            const normalizedArea: Area & { createdAt?: string } = {
-              ...areaWithMeta,
-              id: created.id,
-              name: created?.name ?? "",
-              createdAt: areaWithMeta.createdAt ?? new Date().toISOString(),
-            };
-
-            setCreatedAreas((prev) => {
-              if (prev.some((item) => item.id === created.id)) return prev;
-              return [normalizedArea, ...prev];
-            });
-
-            setTimeout(() => {
-              setSelectedAreaId(created.id!);
-              onChange(created.id!);
-            }, 0);
-          }
-          form.reset({ name: "", companyId, employeeId });
-          void refetch();
-        },
-      }
-    );
-  }
-
+ 
   const areasList = useMemo<Area[]>(() => {
     const baseList = Array.isArray(areas) ? areas : [];
     const merged: Array<Area & { createdAt?: string }> = [
-      ...createdAreas,
       ...baseList,
     ];
     const map = new Map<string, Area & { createdAt?: string }>();
@@ -132,7 +86,7 @@ export function AreaSelect({
       const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bTime - aTime;
     });
-  }, [createdAreas, areas]);
+  }, [areas]);
 
   const filtered = useMemo(
     () =>
@@ -154,7 +108,6 @@ export function AreaSelect({
   }, [value, areasList]);
 
   const isLoadingOptions = isLoading || isFetching;
-  const isSaving = createArea.status === "pending";
 
   const displayValue = useMemo(() => {
     const normalizedValue = value && value.trim() !== '' ? value : undefined;
@@ -217,104 +170,7 @@ export function AreaSelect({
           </SelectContent>
         </Select>
       </div>
-      <Popover
-        open={open}
-        onOpenChange={(next) => {
-          if (isSaving) return;
-          setOpen(next);
-        }}
-      >
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="cursor-pointer shrink-0"
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="end"
-          sideOffset={8}
-          className="w-[26rem] p-4"
-          onInteractOutside={(e) => {
-            if (isSaving) e.preventDefault();
-          }}
-          onEscapeKeyDown={(e) => {
-            if (isSaving) e.preventDefault();
-          }}
-        >
-          <div className="font-medium mb-4 text-lg">Criar Área</div>
-          <form className="space-y-3 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name-area">Nome da área</Label>
-                <Input
-                  id="name-area"
-                  {...form.register("name")}
-                  placeholder="Nome da área"
-                  disabled={isSaving}
-                />
-                {form.formState.errors.name && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.name.message as string}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Funcionário *</Label>
-                <EmployeeSelect
-                  value={(form.watch("employeeId") as string) || ""}
-                  onChange={(v: string) =>
-                    form.setValue("employeeId", v, { shouldValidate: true })
-                  }
-                  companyId={companyId}
-                />
-                {form.formState.errors.employeeId && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.employeeId.message as string}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  if (isSaving) return;
-                  form.reset({ name: "", companyId, employeeId });
-                  setOpen(false);
-                }}
-                className="cursor-pointer"
-                disabled={isSaving}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                disabled={isSaving}
-                className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => form.handleSubmit(handleSubmit)()}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
-                  </>
-                ) : (
-                  "Salvar"
-                )}
-              </Button>
-            </div>
-          </form>
-        </PopoverContent>
-      </Popover>
+  
     </div>
   );
 }

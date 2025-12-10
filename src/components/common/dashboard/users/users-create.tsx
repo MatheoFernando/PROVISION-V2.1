@@ -16,16 +16,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import {
   Loader2,
-  Plus,
-  Eye,
-  EyeOff,
   Phone,
   Lock,
   Building2,
   UserCog,
   Users,
   ShieldCheck,
-  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
 import type { User } from "@/infrastructure/types/domain";
@@ -41,44 +39,33 @@ import type {
   UpdateUserPayload,
 } from "@/infrastructure/types/domain";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PhoneField } from "@/components/common/base-ui/inputs/phone-field";
+import { toast } from "sonner";
 
-interface CreateUserDialogProps {
-  children?: React.ReactNode;
-  user?: User | null;
-  isEdit?: boolean;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+interface UserDialogProps {
+  userToEdit?: User | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
+import { useTranslations } from "next-intl";
 
-function CreateUserDialog({
-  children,
-  user,
-  isEdit = false,
-  open: controlledOpen,
+export function UserDialog({
+  userToEdit,
+  open,
   onOpenChange,
-}: CreateUserDialogProps) {
-  const [internalOpen, setInternalOpen] = React.useState(false);
+  onSuccess,
+}: UserDialogProps) {
+  const t = useTranslations("Users");
+  const tCommon = useTranslations("Common");
   const [showPassword, setShowPassword] = React.useState(false);
-
-  const isControlled =
-    controlledOpen !== undefined && onOpenChange !== undefined;
-  const open = controlledOpen ?? internalOpen;
-  const isEditMode = Boolean(isEdit && user?.id);
-  const isPasswordDisabled = isEditMode;
-
-  const handleOpenChange = (next: boolean) => {
-    if (onOpenChange) onOpenChange(next);
-    if (!isControlled) setInternalOpen(next);
-  };
 
   const { createUser, updateUser, isCreating, isUpdating } = useUsers();
   const {
@@ -90,17 +77,17 @@ function CreateUserDialog({
 
   const defaultValues = React.useMemo(
     () => ({
-      id: user?.id,
-      phone: user?.phone ?? "",
+      id: userToEdit?.id,
+      phone: userToEdit?.phone ?? "",
       password: "",
-      isGlobalAdmin: user?.isGlobalAdmin ?? false,
-      status: user?.status ?? true,
-      companyId: user?.companyId ?? authCompanyId ?? "",
+      isGlobalAdmin: userToEdit?.isGlobalAdmin ?? false,
+      status: userToEdit?.status ?? true,
+      companyId: userToEdit?.companyId ?? authCompanyId ?? "",
       departmentId:
-        user?.departmentId ?? user?.employee?.departmentId ?? undefined,
-      roleId: user?.roleId ?? "",
+        userToEdit?.departmentId ?? userToEdit?.employee?.departmentId ?? undefined,
+      roleId: userToEdit?.roleId ?? "",
     }),
-    [user, authCompanyId]
+    [userToEdit, authCompanyId]
   );
 
   const form = useForm<UserFormSchema>({
@@ -109,8 +96,10 @@ function CreateUserDialog({
   });
 
   React.useEffect(() => {
-    form.reset(defaultValues);
-  }, [defaultValues, form]);
+    if (open) {
+      form.reset(defaultValues);
+    }
+  }, [defaultValues, form, open]);
 
   const onSubmit = async (data: UserFormSchema) => {
     const normalize = (value?: string | null) =>
@@ -121,9 +110,9 @@ function CreateUserDialog({
     const password = normalize(data.password);
 
     try {
-      if (isEditMode && user?.id) {
+      if (userToEdit?.id) {
         const updatePayload: UpdateUserPayload = {
-          id: user.id,
+          id: userToEdit.id,
           phone: data.phone,
           isGlobalAdmin: data.isGlobalAdmin,
           status: data.status,
@@ -133,17 +122,18 @@ function CreateUserDialog({
         if (department) updatePayload.departmentId = department;
         if (role) updatePayload.roleId = role;
 
-        const shouldUpdatePassword = !isPasswordDisabled && password;
+        const shouldUpdatePassword = password;
         if (shouldUpdatePassword) {
           updatePayload.password = password!;
         }
 
         await updateUser(updatePayload);
+        toast.success(t("toasts.updateSuccess"));
       } else {
         if (!password) {
           form.setError("password", {
             type: "manual",
-            message: "Senha é obrigatória para criar utilizador",
+            message: t("validation.passwordRequired"),
           });
           return;
         }
@@ -163,207 +153,215 @@ function CreateUserDialog({
         if (role) createPayload.roleId = role;
 
         await createUser(createPayload);
+        toast.success(t("toasts.createSuccess"));
       }
       form.reset();
-      closeDrawer();
+      onOpenChange(false);
+      onSuccess?.();
     } catch (error) {
+      toast.error(t("toasts.error"));
     }
   };
 
   const isLoading = isCreating || isUpdating;
   const selectedCompanyId = form.watch("companyId") || authCompanyId || "";
-  const closeDrawer = () => handleOpenChange(false);
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
-      {!isEdit && !isControlled && (
-        <DrawerTrigger asChild>
-          {children || (
-            <Button className="h-10 cursor-pointer shadow-sm transition-all hover:shadow-md">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Utilizador
-            </Button>
-          )}
-        </DrawerTrigger>
-      )}
-      <DrawerContent className="ml-auto flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-white p-0">
-        <DrawerHeader className="flex flex-row items-center justify-between border-b border-slate-200 px-6 py-5">
-          <div>
-            <DrawerTitle className="text-2xl font-bold text-slate-950">
-              {isEdit ? "Editar Utilizador" : "Novo Utilizador"}
-            </DrawerTitle>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-w-4xl p-0 overflow-hidden  dark:bg-slate-950">
+        <DialogHeader className="pt-6 px-6 pb-2 border-b border-gray-100 bg-white dark:bg-slate-900/50">
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {userToEdit ? t("title.edit") : t("title.create")}
+          </DialogTitle>
+        </DialogHeader>
 
-          </div>
-          <DrawerClose asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-slate-500 hover:text-slate-900"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </DrawerHeader>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex h-full flex-col"
+            className="flex flex-col"
           >
-            <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <Phone className="h-3.5 w-3.5" />
-                          Telefone
-                          <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <PhoneField
-                            value={field.value ?? ""}
-                            onChange={(value) => field.onChange(value ?? "")}
-                            onBlur={field.onBlur}
-                            disabled={isLoading}
-                            size="lg"
-                            maxLength={14}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
+            <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5" />
+                        {t("fields.phone")}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <PhoneField
+                          value={field.value ?? ""}
+                          onChange={(value) => field.onChange(value ?? "")}
+                          onBlur={field.onBlur}
+                          disabled={isLoading}
+                          size="lg"
+                          maxLength={14}
+                          className="rounded-xl border-gray-200 focus:ring-blue-500 transition-all bg-white"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    disabled={isPasswordDisabled}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <Lock className="h-3.5 w-3.5" />
-                          Senha
-                          {!isPasswordDisabled && <span className="text-red-500">*</span>}
-                        </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder={
-                                isPasswordDisabled
-                                  ? "Deixe vazio para manter"
-                                  : "Mínimo 6 caracteres"
-                              }
-                              disabled={isPasswordDisabled}
-                              className="h-11 pl-4 pr-11 transition-all focus:ring-2 focus:ring-blue-500/20"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors p-1"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </button>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <Lock className="h-3.5 w-3.5" />
+                        {t("fields.password")}
+                        {!userToEdit && <span className="text-red-500">*</span>}
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder={
+                              userToEdit
+                                ? t("placeholders.passwordEdit")
+                                : t("placeholders.passwordCreate")
+                            }
+                            className="rounded-xl border-gray-200 focus:ring-blue-500 transition-all bg-white pr-10"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="companyId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5" />
+                        {t("fields.company")}
+                      </FormLabel>
+                      <FormControl>
+                        <CompanySelect
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="departmentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5" />
+                        {t("fields.department")}
+                      </FormLabel>
+                      <FormControl>
+                        <DepartmentSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          companyId={selectedCompanyId}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="roleId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <UserCog className="h-3.5 w-3.5" />
+                        {t("fields.role")}
+                      </FormLabel>
+                      <FormControl>
+                        <RoleSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          companyId={selectedCompanyId}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex flex-row items-center justify-between rounded-xl bg-white p-4 border border-gray-200">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm font-semibold text-slate-900 cursor-pointer">
+                            {t("fields.status")}
+                          </FormLabel>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`h-2 w-2 rounded-full ${field.value ? "bg-green-500" : "bg-gray-300"
+                                }`}
+                            ></div>
+                            <span className="text-xs font-medium text-slate-500">
+                              {field.value ? t("fields.active") : t("fields.inactive")}
+                            </span>
                           </div>
-                        </FormControl>
-
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="companyId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <Building2 className="h-3.5 w-3.5" />
-                          Empresa
-                        </FormLabel>
+                        </div>
                         <FormControl>
-                          <CompanySelect
-                            value={field.value}
-                            onChange={field.onChange}
+                          <Switch
+                            checked={field.value}
+                            className="cursor-pointer"
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
+                {canGrantGlobalAdmin && (
                   <FormField
                     control={form.control}
-                    name="departmentId"
+                    name="isGlobalAdmin"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <Users className="h-3.5 w-3.5" />
-                          Departamento
-                        </FormLabel>
-                        <FormControl>
-                          <DepartmentSelect
-                            value={field.value}
-                            onChange={field.onChange}
-                            companyId={selectedCompanyId}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="roleId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <UserCog className="h-3.5 w-3.5" />
-                          Função
-                        </FormLabel>
-                        <FormControl>
-                          <RoleSelect
-                            value={field.value}
-                            onChange={field.onChange}
-                            companyId={selectedCompanyId}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex flex-row items-center justify-between rounded-xl dark:hover:border-blue-800 bg-card">
-                          <div className="space-y-1">
-                            <FormLabel className="text-sm font-semibold text-foreground cursor-pointer">
-                              Estado do Utilizador
+                        <div className="flex flex-row items-center justify-between rounded-xl bg-white p-4 border border-gray-200">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              {t("fields.isGlobalAdmin")}
                             </FormLabel>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`h-2 w-2 rounded-full ${field.value ? "bg-green-500" : "bg-gray-400"
-                                  }`}
-                              ></div>
-                              <span className="text-xs font-medium text-muted-foreground">
-                                {field.value ? "Activo" : "Inactivo"}
-                              </span>
-                            </div>
+                            <p className="text-xs font-medium text-slate-500">
+                              {t("fields.isGlobalAdminDesc")}
+                            </p>
                           </div>
                           <FormControl>
                             <Switch
+                              className="cursor-pointer"
                               checked={field.value}
-                              className="cursor-pointer data-[state=checked]:bg-green-600"
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
@@ -371,68 +369,39 @@ function CreateUserDialog({
                       </FormItem>
                     )}
                   />
-                  {canGrantGlobalAdmin && (
-                    <FormField
-                      control={form.control}
-                      name="isGlobalAdmin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex flex-row items-center justify-between rounded-xl bg-card">
-                            <div className="space-y-1">
-                              <FormLabel className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                <ShieldCheck className="h-3.5 w-3.5" />
-                                Super Administrador
-                              </FormLabel>
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Controla acesso global
-                              </p>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                className="cursor-pointer data-[state=checked]:bg-green-600"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+            <DialogFooter className=" p-4 border-t border-gray-100 bg-gray-50/50 dark:bg-slate-900/50">
               <Button
                 type="button"
-                variant="outline"
-                onClick={closeDrawer}
-                className="px-6 cursor-pointer"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
                 disabled={isLoading}
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
               >
-                Cancelar
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="px-8 bg-blue-500 hover:bg-blue-600 cursor-pointer text-white shadow-sm hover:shadow-md transition-all"
+                className="shadow-lg rounded-xl px-6"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />A
-                    guardar...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {tCommon("save")}...
                   </>
                 ) : (
-                  <>{isEdit ? "Atualizar Utilizador" : "Criar Utilizador"}</>
+                  userToEdit ? tCommon("save") : tCommon("create")
                 )}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export default CreateUserDialog;

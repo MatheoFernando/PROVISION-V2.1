@@ -14,28 +14,29 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import type { DateRange } from "react-day-picker"
-import { SupervisionCreate } from "./supervision-create"
+import { SupervisionDialog } from "./supervision-create"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"
 import { useEmployees } from "@/infrastructure/hooks/useEmployees"
 import { useEquipment } from "@/infrastructure/hooks/useEquipment"
 import { useSites } from "@/infrastructure/hooks/useSites"
 import { useDepartments } from "@/infrastructure/hooks/useDepartments"
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies"
 import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
 import { SupervisionDrawer } from "./supervision-view"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+
 interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
   onEdit?: (supervision: Supervision) => void
+  customerId?: string
 }
 
-function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
+function ActionsButtons({ supervision, onEdit, customerId }: ActionsButtonsProps) {
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
+  const [isViewOpen, setIsViewOpen] = React.useState(false)
   const deleteMutation = useDeleteSupervisionMutation()
+
   const handleConfirmDelete = () => {
     deleteMutation.mutate(supervision.id!, {
       onSuccess: () => setIsDeleteOpen(false),
@@ -55,7 +56,10 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsDialogOpen(true)}>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => setIsViewOpen(true)}
+          >
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
@@ -81,10 +85,9 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
 
       <SupervisionDrawer
         supervision={supervision}
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isViewOpen}
+        onOpenChange={setIsViewOpen}
       />
-
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -126,6 +129,7 @@ const createSupervisionColumns = (
     companyById?: Record<string, string>
     isGlobalAdmin?: boolean
     onEdit?: (supervision: Supervision) => void
+    sites?: any[]
   }
 ): ColumnDef<Supervision>[] => [
   {
@@ -133,7 +137,7 @@ const createSupervisionColumns = (
     header: "Código",
     size: 50,
     cell: ({ row }: CellContext<Supervision, unknown>) => (
-      <div className="font-medium">{row.original.cod}</div>
+      <div>{row.original.cod}</div>
     ),
   },
   {
@@ -236,13 +240,17 @@ const createSupervisionColumns = (
     id: "actions",
     header: "Ações",
     size: 50,
-    cell: ({ row }: CellContext<Supervision, unknown>) => (
-      <ActionsButtons
-        supervision={row.original}
-        equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
-        onEdit={maps.onEdit}
-      />
-    ),
+    cell: ({ row }: CellContext<Supervision, unknown>) => {
+      const site = maps.sites?.find((s: any) => s.id === row.original.siteId)
+      return (
+        <ActionsButtons
+          supervision={row.original}
+          equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
+          onEdit={maps.onEdit}
+          customerId={site?.customerId}
+        />
+      )
+    },
   },
 ].filter(Boolean) as ColumnDef<Supervision>[]
 
@@ -323,7 +331,9 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
           siteById,
           departmentById,
           onEdit: handleEdit,
+          sites: sites as any[]
         })}
+
         searchKey="cod"
         placeholder="Pesquisar..."
         isLoading={isLoading}
@@ -335,38 +345,17 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
         }}
       />
 
-      <Drawer open={isFormOpen} onOpenChange={(open) => (open ? setIsFormOpen(true) : handleCloseForm())} direction="right">
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedSupervision ? "Editar Supervisão" : "Nova Supervisão"}
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <SupervisionCreate
-                id={selectedSupervision?.id}
-                initialData={selectedSupervision ?? undefined}
-                onSuccess={handleCloseForm}
-                onCancel={handleCloseForm}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <SupervisionDialog
+        open={isFormOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseForm()
+          } else {
+            setIsFormOpen(true)
+          }
+        }}
+        supervisionToEdit={selectedSupervision ?? undefined}
+      />
     </div>
   )
 }

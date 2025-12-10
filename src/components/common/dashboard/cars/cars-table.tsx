@@ -9,14 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { CarsCreate } from "./cars-create";
+import { CarDialog } from "./cars-create";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
 import { createGrossCarSchema } from "@/infrastructure/schema/schema-cars";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
@@ -125,8 +118,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
           label: "Importar viaturas",
           onClick: () => setIsBulkOpen(true),
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+
         rowActions={[
 
           {
@@ -144,49 +136,18 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
 
 
 
-      <Drawer
+      <CarDialog
         open={isCreateOpen}
         onOpenChange={(open) => {
-          if (open) {
+          if (!open) {
+            setIsCreateOpen(false);
+            setSelectedCar(undefined);
+          } else {
             setIsCreateOpen(true);
-            return;
           }
-          setIsCreateOpen(false);
-          setSelectedCar(undefined);
         }}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedCar ? "Editar Veículo" : "Novo Veículo"}
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <CarsCreate
-                id={selectedCar?.id}
-                initialData={selectedCar as any}
-                onSuccess={() => { setIsCreateOpen(false); setSelectedCar(undefined); }}
-                onCancel={() => { setIsCreateOpen(false); setSelectedCar(undefined); }}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        carToEdit={selectedCar ?? undefined}
+      />
 
       <DeleteModal
         isOpen={isDeleteOpen}

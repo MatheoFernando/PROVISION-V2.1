@@ -9,23 +9,24 @@ import { Edit, Trash2 } from "lucide-react";
 import {
   useDeleteCompanyModuleMutation,
 } from "@/infrastructure/hooks/useCompanies";
-import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import type { CompanyModuleWithDetails } from "@/infrastructure/schema/schema-company-module";
 import {
   CompanyModuleDialog,
   type CompanyModuleDialogState,
-} from "./company-module-dialog";
+} from "./company-module-create";
 
 interface ListServicesProps {
   services: CompanyModuleWithDetails[];
   isLoading?: boolean;
+  readOnly?: boolean;
+  showCompanyColumn?: boolean;
 }
 
 interface CompanyModuleRow extends CompanyModuleWithDetails {
   status?: string | boolean;
 }
 
-export function ListServices({ services, isLoading }: ListServicesProps) {
+export function ListServices({ services, isLoading, readOnly = false, showCompanyColumn = false }: ListServicesProps) {
   const [deleteTarget, setDeleteTarget] =
     useState<CompanyModuleWithDetails | null>(null);
   const deleteCompanyModuleMutation = useDeleteCompanyModuleMutation();
@@ -34,7 +35,6 @@ export function ListServices({ services, isLoading }: ListServicesProps) {
   );
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { isGlobalAdmin } = useAuthStore();
 
   const handleDeleteClick = useCallback(
     (service: CompanyModuleWithDetails) => {
@@ -65,45 +65,49 @@ export function ListServices({ services, isLoading }: ListServicesProps) {
   }, []);
 
   const columns = useMemo<ColumnDef<CompanyModuleRow>[]>(
-    () => [
-      {
-        accessorKey: "module.name",
-        header: "Serviço",
-        cell: ({ row }) => (
-          <div className="font-medium">{row.original.module?.name ?? "-"}</div>
-        ),
-      },
-      {
-        accessorKey: "module.description",
-        header: "Descrição",
-        cell: ({ row }) => (
-          <div className="truncate">
-            {row.original.module?.description || "-"}
-          </div>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Estado",
-        cell: ({ row }) => {
-          const isActive = getAssociationStatus(row.original);
-          return (
-            <Badge
-              className={`${
-                isActive
+    () => {
+      const cols: ColumnDef<CompanyModuleRow>[] = [];
+
+      cols.push(
+        {
+          accessorKey: "module.name",
+          header: "Serviço",
+          cell: ({ row }) => (
+            <div className="font-medium">{row.original.module?.name ?? "N/D"}</div>
+          ),
+        },
+        {
+          accessorKey: "module.description",
+          header: "Descrição",
+          cell: ({ row }) => (
+            <div className="truncate">
+              {row.original.module?.description || "-"}
+            </div>
+          ),
+        },
+        {
+          accessorKey: "status",
+          header: "Estado",
+          cell: ({ row }) => {
+            const isActive = getAssociationStatus(row.original);
+            return (
+              <Badge
+                className={`${isActive
                   ? "bg-transparent text-green-600"
                   : "bg-orange-200 text-red-600"
-              } `}
-              variant={isActive ? "default" : "destructive"}
-            >
-              {isActive ? "Ativo" : "Inativo"}
-            </Badge>
-          );
-        },
-      }
-     
-    ],
-    [getAssociationStatus]
+                  } `}
+                variant={isActive ? "default" : "destructive"}
+              >
+                {isActive ? "Ativo" : "Inativo"}
+              </Badge>
+            );
+          },
+        }
+      );
+
+      return cols;
+    },
+    [getAssociationStatus, showCompanyColumn]
   );
 
   const filteredServices = useMemo(() => services, [services]);
@@ -122,7 +126,7 @@ export function ListServices({ services, isLoading }: ListServicesProps) {
   );
 
   const rowActions = useMemo(() => {
-    if (!isGlobalAdmin) return [];
+    if (readOnly) return [];
     return [
       {
         label: "Editar",
@@ -136,7 +140,7 @@ export function ListServices({ services, isLoading }: ListServicesProps) {
         variant: "ghost" as const,
       },
     ];
-  }, [handleDeleteClick, isGlobalAdmin, openAssociationDialog]);
+  }, [handleDeleteClick, openAssociationDialog, readOnly]);
 
   return (
     <div>
@@ -149,15 +153,15 @@ export function ListServices({ services, isLoading }: ListServicesProps) {
           placeholder="Pesquisar serviços..."
           rowActions={rowActions as any}
           actionButton={
-            isGlobalAdmin
+            !readOnly
               ? {
-                  label: "Associação de serviços",
-                  onClick: () =>
-                    setDialogState({
-                      associationId: null,
-                      defaultStatus: true,
-                    }),
-                }
+                label: "Associação de serviços",
+                onClick: () =>
+                  setDialogState({
+                    associationId: null,
+                    defaultStatus: true,
+                  }),
+              }
               : undefined
           }
         />
@@ -172,18 +176,18 @@ export function ListServices({ services, isLoading }: ListServicesProps) {
         message={`Tem certeza que deseja eliminar o serviço ${deleteTarget?.module?.name} ? Esta ação não pode ser desfeita.`}
       />
 
-      {isGlobalAdmin && (
-        <CompanyModuleDialog
-          open={Boolean(dialogState)}
-          onOpenChange={(open) => {
-            if (!open) setDialogState(null);
-          }}
-          associationId={dialogState?.associationId}
-          defaultCompanyId={dialogState?.defaultCompanyId}
-          defaultModuleId={dialogState?.defaultModuleId}
-          defaultStatus={dialogState?.defaultStatus}
-        />
-      )}
+
+      <CompanyModuleDialog
+        open={Boolean(dialogState)}
+        onOpenChange={(open) => {
+          if (!open) setDialogState(null);
+        }}
+        associationId={dialogState?.associationId}
+        defaultCompanyId={dialogState?.defaultCompanyId}
+        defaultModuleId={dialogState?.defaultModuleId}
+        defaultStatus={dialogState?.defaultStatus}
+      />
+
     </div>
   );
 }

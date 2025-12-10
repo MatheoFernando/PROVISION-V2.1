@@ -5,7 +5,6 @@ import * as React from "react";
 import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
-  useCreateEquipment,
   useCreateGrossEquipment,
   useDeleteEquipment,
   useEquipment,
@@ -14,16 +13,8 @@ import { Equipment } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { EquipmentView } from "./equipment-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import EquipmentCreatePage from "./equipment-create";
+import { EquipmentDialog } from "./equipment-create";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
 import {
   type CreateGrossEquipmentPayload,
@@ -135,7 +126,7 @@ export function EquipmentTable({
   const equipment = React.useMemo(() => {
     if (data) return data;
     if (!customerId) return allEquipment;
-  
+
     return allEquipment;
   }, [data, allEquipment, customerId]);
   const deleteEquipment = useDeleteEquipment();
@@ -221,7 +212,7 @@ export function EquipmentTable({
           label: "Importar equipamentos",
           onClick: () => setIsBulkOpen(true),
         }}
-      
+
         dateKey="createdAt"
         rowActions={[
           {
@@ -248,45 +239,13 @@ export function EquipmentTable({
         onClose={() => setIsViewOpen(false)}
       />
 
-      <Drawer
+      <EquipmentDialog
         open={isCreateOpen}
         onOpenChange={handleCreateDialogChange}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedEquipment
-                      ? "Editar Equipamento"
-                      : "Novo Equipamento"}
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <EquipmentCreatePage
-                id={selectedEquipment?.id}
-                initialData={selectedEquipment as any}
-                customerId={customerId}
-                onSuccess={handleCreateSuccess}
-                onCancel={handleCreateCancel}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        equipmentToEdit={selectedEquipment}
+        customerId={customerId}
+        onSuccess={handleCreateSuccess}
+      />
 
       <DeleteModal
         isOpen={isDeleteOpen}

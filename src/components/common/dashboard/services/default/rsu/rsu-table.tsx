@@ -21,22 +21,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { useCars } from "@/infrastructure/hooks/useCars";
 import { useContainers } from "@/infrastructure/hooks/useContainers";
 import type { Rsu } from "@/infrastructure/types/domain";
-import { RsuCreate } from "./rsu-create";
+import { RsuDialog } from "./rsu-create";
 import { RsuDrawer } from "./rsu-view";
 import { useDeleteRsuMutation } from "@/infrastructure/hooks/useRsu";
 
-const STATUS_OPTIONS = [
-  { value: "Pendente", label: "Pendente" },
-  { value: "Em andamento", label: "Em andamento" },
-  { value: "Finalizado", label: "Finalizado" },
-] as const;
+
 
 interface ActionsButtonsProps {
   rsu: Rsu;
@@ -114,74 +109,74 @@ const createColumns = (maps: {
   containerById: Record<string, string>;
   onEdit?: (rsu: Rsu) => void;
 }): ColumnDef<Rsu>[] => [
-  {
-    accessorKey: "cod",
-    header: "Código",
-    cell: ({ row }) => <span className="font-medium">{row.getValue("cod")}</span>,
-  },
-  {
-    accessorKey: "quantity",
-    header: "Quantidade",
-    size: 60,
-    cell: ({ row }) => <span>{row.getValue("quantity")}</span>,
-  },
-  {
-    id: "container",
-    header: "Contentor",
-    cell: ({ row }) => (
-      <span>{maps.containerById[row.original.containerId || ""] || "—"}</span>
-    ),
-  },
-  {
-    id: "car",
-    header: "Viatura",
-    cell: ({ row }) => (
-      <span>{maps.carById[row.original.carId || ""] || "—"}</span>
-    ),
-  },
-  {
-    id: "employee",
-    header: "Funcionário",
-    cell: ({ row }) => (
-      <span>{maps.employeeById[row.original.employeeId || ""] || "—"}</span>
-    ),
-  },
-  {
-    id: "site",
-    header: "Site",
-    cell: ({ row }) => (
-      <span>{maps.siteById[row.original.siteId || ""] || "—"}</span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Estado",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      const isDone = status === "Finalizado";
-      return (
-        <Badge
-          variant={isDone ? "default" : "secondary"}
-          className={isDone ? "bg-emerald-500" : "bg-amber-100 text-amber-800"}
-        >
-          {status}
-        </Badge>
-      );
+    {
+      accessorKey: "cod",
+      header: "Código",
+      cell: ({ row }) => <span>{row.getValue("cod")}</span>,
     },
-  },
+    {
+      accessorKey: "quantity",
+      header: "Quantidade",
+      size: 60,
+      cell: ({ row }) => <span>{row.getValue("quantity")}</span>,
+    },
+    {
+      id: "container",
+      header: "Contentor",
+      cell: ({ row }) => (
+        <span>{maps.containerById[row.original.containerId || ""] || "—"}</span>
+      ),
+    },
+    {
+      id: "car",
+      header: "Viatura",
+      cell: ({ row }) => (
+        <span>{maps.carById[row.original.carId || ""] || "—"}</span>
+      ),
+    },
+    {
+      id: "employee",
+      header: "Funcionário",
+      cell: ({ row }) => (
+        <span>{maps.employeeById[row.original.employeeId || ""] || "—"}</span>
+      ),
+    },
+    {
+      id: "site",
+      header: "Site",
+      cell: ({ row }) => (
+        <span>{maps.siteById[row.original.siteId || ""] || "—"}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Estado",
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string;
+        const isDone = status === "Finalizado";
+        return (
+          <Badge
+            variant={isDone ? "default" : "secondary"}
+            className={isDone ? "bg-emerald-500" : "bg-amber-100 text-amber-800"}
+          >
+            {status}
+          </Badge>
+        );
+      },
+    },
 
-  {
-    id: "actions",
-    header: "Ações",
-    size: 48,
-    cell: ({ row }) => (
-      <ActionsButtons
-        rsu={row.original}
-        onEdit={maps.onEdit}
-      />
-    ),
-  },
-];
+    {
+      id: "actions",
+      header: "Ações",
+      size: 48,
+      cell: ({ row }) => (
+        <ActionsButtons
+          rsu={row.original}
+          onEdit={maps.onEdit}
+        />
+      ),
+    },
+  ];
 
 interface RsuTableProps {
   data: Rsu[];
@@ -268,7 +263,7 @@ export function RsuTable({
 
   return (
     <div className="space-y-4">
-      
+
       <DataTableGeneric
         data={data}
         columns={columns}
@@ -283,39 +278,12 @@ export function RsuTable({
         }}
       />
 
-      <Drawer open={isFormOpen} onOpenChange={(open) => (open ? setIsFormOpen(true) : handleCloseForm())} direction="right">
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedRsu ? "Editar RSU" : "Novo RSU"}
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                    onClick={() => setIsFormOpen(false)}
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <RsuCreate
-                id={selectedRsu?.id}
-                initialData={selectedRsu ?? undefined}
-                onSuccess={handleCloseForm}
-                onCancel={handleCloseForm}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <RsuDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        rsuToEdit={selectedRsu ?? undefined}
+        onSuccess={handleCloseForm}
+      />
     </div>
   );
 }

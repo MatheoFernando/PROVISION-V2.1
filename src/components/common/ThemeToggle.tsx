@@ -12,20 +12,20 @@ export default function ThemeToggle() {
     const idx = Math.max(0, order.indexOf((theme as any) ?? 'dark'));
     const next = order[(idx + 1) % order.length];
     setTheme(next);
-    try { localStorage.setItem('theme', next); } catch {}
+    try { localStorage.setItem('theme', next); } catch { }
   };
 
   const getIcon = () => {
     return theme === 'dark' ? <Sun className='size-4' /> : <Moon className='size-4' />;
   };
   return (
-    <div   onClick={cycle} className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 border rounded-full dark:hover:text-gray-300 transition-colors duration-300 p-2  hover:bg-gray-200 dark:hover:bg-gray-800">
+    <div onClick={cycle} className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 border rounded-full transition-colors duration-300 p-2 hover:bg-primary/10 hover:text-primary">
       <AnimatePresence mode="wait" initial={false}>
-        <motion.span 
-          key={theme} 
-          initial={{ opacity: 0, rotate: -90 }} 
-          animate={{ opacity: 1, rotate: 0 }} 
-          exit={{ opacity: 0, rotate: 90 }} 
+        <motion.span
+          key={theme}
+          initial={{ opacity: 0, rotate: -90 }}
+          animate={{ opacity: 1, rotate: 0 }}
+          exit={{ opacity: 0, rotate: 90 }}
           transition={{ duration: 0.15 }}
         >
           {getIcon()}

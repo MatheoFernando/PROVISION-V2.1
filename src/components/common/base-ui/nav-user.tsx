@@ -48,6 +48,10 @@ interface UserData {
   avatarIcon?: Icon
 }
 
+import { useTranslations } from "next-intl"
+
+// ... imports
+
 export function NavUser({
   user,
 }: {
@@ -58,6 +62,7 @@ export function NavUser({
   const AvatarIcon = user.avatarIcon || Buildings
   const logout = useAuthStore((state) => state.logout)
   const router = useRouter()
+  const t = useTranslations()
 
   const handleLogout = () => {
     logout()
@@ -110,9 +115,9 @@ export function NavUser({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem className="cursor-pointer hover:bg-blue-100 hover:text-blue-500" onClick={() => router.push('/dashboard/profile')}>
-                  <Gear className="hover:bg-blue-100 hover:text-blue-500" />
-                  Configurações
+                <DropdownMenuItem className="cursor-pointer hover:bg-primary/10 hover:text-primary" onClick={() => router.push('/dashboard/perfil')}>
+                  <Gear className="hover:bg-primary/10 hover:text-primary" />
+                  {t('NavUser.settings')}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -121,7 +126,7 @@ export function NavUser({
                 onClick={() => setIsLogoutOpen(true)}
               >
                 <SignOut />
-                Logout
+                {t('NavUser.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -131,15 +136,15 @@ export function NavUser({
       <AlertDialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sair da conta</AlertDialogTitle>
+            <AlertDialogTitle>{t('NavUser.logoutDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja sair da sua conta?
+              {t('NavUser.logoutDialog.description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex gap-3 justify-end">
-            <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">{t('NavUser.logoutDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleLogout} className="bg-red-500 hover:bg-red-600 cursor-pointer">
-              Sair
+              {t('NavUser.logoutDialog.confirm')}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>

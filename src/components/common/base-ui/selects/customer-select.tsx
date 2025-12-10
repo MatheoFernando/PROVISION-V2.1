@@ -1,4 +1,4 @@
-// src/components/common/base-ui/selects/customer-select.tsx
+
 import * as React from "react";
 import {
   Select,
@@ -7,19 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, Loader2, X } from "lucide-react";
+import {  Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useCustomers } from "@/infrastructure/hooks/useCustomers";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { useCustomersByCompanyId } from "@/infrastructure/hooks/useCustomers";
 import type { Customer } from "@/infrastructure/types/domain";
-import { CustomersCreateForm } from "@/components/common/dashboard/customers/customer-create";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 interface CustomerSelectProps {
   value?: string;
@@ -28,19 +20,20 @@ interface CustomerSelectProps {
   disabled?: boolean;
 }
 
-export function CustomerSelect({ value, onChange, disabled }: CustomerSelectProps) {
-  const { data: customers = [], isLoading, refetch } = useCustomers();
+export function CustomerSelect({ value, onChange, disabled, companyId: propCompanyId }: CustomerSelectProps) {
+  const storeCompanyId = useAuthStore((state) => state.companyId);
+  const companyId = propCompanyId || storeCompanyId;
+
+  const { data: customers = [], isLoading } = useCustomersByCompanyId(
+    companyId || "",
+    { enabled: !!companyId }
+  );
   const [search, setSearch] = React.useState("");
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-  const [createdCustomers, setCreatedCustomers] = React.useState<
-    Array<Customer & { createdAt?: string }>
-  >([]);
 
   const customersList = React.useMemo<Customer[]>(() => {
     const baseList = Array.isArray(customers) ? customers : [];
 
     const merged: Array<Customer & { createdAt?: string }> = [
-      ...createdCustomers,
       ...baseList,
     ];
 
@@ -62,42 +55,21 @@ export function CustomerSelect({ value, onChange, disabled }: CustomerSelectProp
       const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bTime - aTime;
     });
-  }, [customers, createdCustomers]);
+  }, [customers]);
+
+  const selectedCustomer = React.useMemo(() =>
+    customersList.find((c) => c.id === value),
+    [customersList, value]);
 
   const filtered = React.useMemo(() => {
     const keyword = search.toLowerCase();
     return customersList.filter((customer) =>
-      customer.name?.toLowerCase().includes(keyword)
+      customer.name?.toLowerCase().includes(keyword) ||
+      customer.cod?.toLowerCase().includes(keyword)
     );
   }, [customersList, search]);
 
-  const handleCloseDrawer = () => {
-    setIsCreateOpen(false);
-  };
 
-  const handleCreateSuccess = (customer?: Customer) => {
-    handleCloseDrawer();
-
-    if (customer?.id) {
-      const customerWithMeta = customer as Customer & { createdAt?: string };
-      const normalizedCustomer: Customer & { createdAt?: string } = {
-        ...customerWithMeta,
-        id: customer.id,
-        name: customer.name ?? "",
-        createdAt: customerWithMeta.createdAt ?? new Date().toISOString(),
-      };
-
-      setCreatedCustomers((prev) => {
-        if (prev.some((item) => item.id === customer.id)) return prev;
-        return [normalizedCustomer, ...prev];
-      });
-
-      onChange(customer.id);
-      void refetch();
-    } else {
-      void refetch();
-    }
-  };
 
   return (
     <>
@@ -109,13 +81,21 @@ export function CustomerSelect({ value, onChange, disabled }: CustomerSelectProp
             disabled={isLoading || disabled}
           >
             <SelectTrigger className="w-full ">
-              <SelectValue placeholder="Selecione um cliente" />
+              <SelectValue placeholder="Selecione um cliente">
+                {selectedCustomer ? (
+                  <span>
+                    <span>{selectedCustomer.cod || '---'}</span> - {selectedCustomer.name}
+                  </span>
+                ) : (
+                  "Selecione um cliente"
+                )}
+              </SelectValue>
             </SelectTrigger>
             {isLoading && (
               <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             )}
             <SelectContent className="w-[var(--radix-select-trigger-width)]">
-              <div className="p-2 sticky top-0 bg-popover">
+              <div className="p-2 sticky top-0 bg-popover border-b">
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
@@ -124,6 +104,14 @@ export function CustomerSelect({ value, onChange, disabled }: CustomerSelectProp
                   disabled={isLoading || customersList.length === 0}
                 />
               </div>
+
+              <div className="pl-8 pr-2 bg-muted/50 border-b sticky top-10 z-10">
+                <div className="grid grid-cols-[100px_1fr] w-full">
+                  <div className="px-2 py-2 text-xs font-semibold border-r border-border/50">Código</div>
+                  <div className="px-2 py-2 text-xs font-semibold">Nome do Cliente</div>
+                </div>
+              </div>
+
               {filtered.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-3 text-center">
                   Não há dados disponíveis.
@@ -142,9 +130,17 @@ export function CustomerSelect({ value, onChange, disabled }: CustomerSelectProp
                       <SelectItem
                         key={customer.id}
                         value={customer.id}
-                        className="cursor-pointer"
+                        textValue={`${customer.cod || '---'} - ${customer.name}`}
+                        className="cursor-pointer border-b last:border-b-0 hover:bg-accent"
                       >
-                        {customer.name}
+                        <div className="grid grid-cols-[100px_1fr] w-full items-center">
+                          <span className="px-2 text-sm border-r border-border/50 truncate">
+                            {customer.cod || '---'}
+                          </span>
+                          <span className="px-2 truncate">
+                            {customer.name}
+                          </span>
+                        </div>
                       </SelectItem>
                     );
                   })}
@@ -153,54 +149,10 @@ export function CustomerSelect({ value, onChange, disabled }: CustomerSelectProp
             </SelectContent>
           </Select>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={() => setIsCreateOpen(true)}
-          className="cursor-pointer shrink-0"
-          aria-label="Criar cliente"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
+      
       </div>
 
-      <Drawer
-        open={isCreateOpen}
-        onOpenChange={(open) =>
-          open ? setIsCreateOpen(true) : handleCloseDrawer()
-        }
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    Novo Cliente
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <CustomersCreateForm
-                onSuccess={handleCreateSuccess}
-                onCancel={handleCloseDrawer}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+      
     </>
   );
 }

@@ -1,5 +1,5 @@
-"use client";
-
+import { Loader2 } from "lucide-react";
+import type { Site } from "@/infrastructure/types/domain";
 import * as React from "react";
 import {
   Select,
@@ -10,32 +10,18 @@ import {
 } from "@/components/ui/select";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Loader2, Plus, X } from "lucide-react";
-import type { Site } from "@/infrastructure/types/domain";
-import SitesCreatePage from "@/components/common/dashboard/sites/site-create";
 
 interface SiteSelectProps {
   value?: string;
   onChange: (value: string) => void;
   companyId?: string;
   customerId?: string;
+  disabled?: boolean;
 }
 
-export function SiteSelect({ value, onChange, customerId }: SiteSelectProps) {
+export function SiteSelect({ value, onChange, customerId, disabled }: SiteSelectProps) {
   const [query, setQuery] = React.useState("");
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-  const [createdSites, setCreatedSites] = React.useState<
-    Array<Site & { createdAt?: string }>
-  >([]);
-  const { data: sitesData, isLoading, refetch } = useSites(customerId);
+  const { data: sitesData, isLoading} = useSites(customerId);
 
   const sitesList = React.useMemo<Site[]>(() => {
     const baseList = (() => {
@@ -47,7 +33,6 @@ export function SiteSelect({ value, onChange, customerId }: SiteSelectProps) {
       return [];
     })();
     const merged: Array<Site & { createdAt?: string }> = [
-      ...createdSites,
       ...baseList,
     ];
     const map = new Map<string, Site & { createdAt?: string }>();
@@ -67,37 +52,17 @@ export function SiteSelect({ value, onChange, customerId }: SiteSelectProps) {
       const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bTime - aTime;
     });
-  }, [createdSites, sitesData]);
+  }, [sitesData]);
 
   const filtered = React.useMemo(() => {
     const keyword = query.toLowerCase();
-    return sitesList.filter((site) => site.name?.toLowerCase().includes(keyword));
+    return sitesList.filter((site) =>
+      site.name?.toLowerCase().includes(keyword) ||
+      site.cod?.toLowerCase().includes(keyword)
+    );
   }, [sitesList, query]);
 
-  const handleCloseDrawer = () => {
-    setIsCreateOpen(false);
-  };
 
-  const handleCreateSuccess = (site?: Site) => {
-    handleCloseDrawer();
-    if (site?.id) {
-      const siteWithMeta = site as Site & { createdAt?: string };
-      const normalizedSite: Site & { createdAt?: string } = {
-        ...siteWithMeta,
-        id: site.id,
-        name: site?.name ?? "",
-        createdAt: siteWithMeta.createdAt ?? new Date().toISOString(),
-      };
-      setCreatedSites((prev) => {
-        if (prev.some((item) => item.id === site.id)) return prev;
-        return [normalizedSite, ...prev];
-      });
-      onChange(site.id);
-      void refetch();
-    } else {
-      void refetch();
-    }
-  };
 
   return (
     <>
@@ -106,81 +71,72 @@ export function SiteSelect({ value, onChange, customerId }: SiteSelectProps) {
           <Select
             value={value ? value : undefined}
             onValueChange={(selected) => onChange(selected)}
-            disabled={isLoading}
+            disabled={isLoading || disabled}
           >
             <SelectTrigger className="w-full ">
-            <SelectValue placeholder="Selecione o site" />
-          </SelectTrigger>
-          {isLoading && (
-            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          )}
-          <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-2 sticky top-0 bg-popover">
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Filtrar sites..."
-                className="w-full"
-                disabled={isLoading || sitesList.length === 0}
-              />
-            </div>
-            {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">Nenhum dado</div>
-            ) : (
-              <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
-                {filtered.map((site) => {
-                  if (!site?.id) return null;
-                  return (
-                    <SelectItem key={site.id} value={site.id} className="cursor-pointer">
-                      {site.name}
-                  </SelectItem>
-                  );
-                })}
-              </div>
+              <SelectValue placeholder="Selecione o site">
+                {filtered.find(s => s.id === value) ? (
+                  <span>
+                    <span>{filtered.find(s => s.id === value)?.cod || '---'}</span> - {filtered.find(s => s.id === value)?.name}
+                  </span>
+                ) : (
+                  "Selecione o site"
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            {isLoading && (
+              <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             )}
-          </SelectContent>
-        </Select>
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="shrink-0 cursor-pointer"
-        onClick={() => setIsCreateOpen(true)}
-        aria-label="Criar site"
-      >
-        <Plus className="w-4 h-4" />
-      </Button>
-    </div>
-      <Drawer
-        open={isCreateOpen}
-        onOpenChange={(open) => (open ? setIsCreateOpen(true) : handleCloseDrawer())}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">Novo site</DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </DrawerClose>
+            <SelectContent className="w-[var(--radix-select-trigger-width)]">
+              <div className="p-2 sticky top-0 bg-popover border-b">
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Filtrar sites..."
+                  className="w-full"
+                  disabled={isLoading || sitesList.length === 0}
+                />
               </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <SitesCreatePage onSuccess={handleCreateSuccess} onCancel={handleCloseDrawer} />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+
+              <div className="pl-2 pr-2 bg-muted/50 border-b sticky top-10 z-10">
+                <div className="grid grid-cols-[100px_1fr] w-full">
+                  <div className="py-2 text-xs font-semibold border-r border-border/50">Código</div>
+                  <div className="py-2 text-xs font-semibold">Nome </div>
+                </div>
+              </div>
+
+              {filtered.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-3 text-center">Nenhum dado</div>
+              ) : (
+                <div className={filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"}>
+                  {filtered.map((site) => {
+                    if (!site?.id) return null;
+                    return (
+                      <SelectItem
+                        key={site.id}
+                        value={site.id}
+                        textValue={`${site.cod || '---'} - ${site.name}`}
+                        className="cursor-pointer border-b last:border-b-0 hover:bg-accent"
+                      >
+                        <div className="grid grid-cols-[100px_1fr] w-full items-center">
+                          <span className="px-2 text-sm border-r border-border/50 ">
+                            {site.cod || '---'}
+                          </span>
+                          <span className="px-2 truncate">
+                           {site.name.slice(0, 15)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+      </div>
+
     </>
   );
 }

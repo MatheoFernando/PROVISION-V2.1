@@ -155,7 +155,7 @@ export function MakeEmployeeUserDrawer({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-8 bg-blue-500 hover:bg-blue-600 cursor-pointer text-white shadow-sm hover:shadow-md transition-all"
+              className="px-8 cursor-pointer shadow-sm hover:shadow-md transition-all"
             >
               {isSubmitting ? "Salvando..." : "Salvar associação"}
             </Button>

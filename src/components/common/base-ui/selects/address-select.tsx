@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -8,7 +9,6 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
-  useAddresses,
   useAddressById,
   useCreateAddress,
 } from "@/infrastructure/hooks/useAddresses";
@@ -44,22 +44,10 @@ export function AddressSelect({
   const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
 
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [createdAddresses, setCreatedAddresses] = useState<Array<Address & { createdAt?: string }>>([]);
-
   const authCompanyId = useAuthStore((s) => s.companyId);
   const effectiveCompanyId = companyId ?? authCompanyId ?? undefined;
 
-  const {
-    data: addresses = [],
-    isLoading,
-    isFetching,
-    refetch,
-  } = useAddresses(effectiveCompanyId);
-
-  // Carrega o endereço pelo ID quando estamos a editar (getById)
-  const { data: addressById } = useAddressById(value);
+  const { data: addressById, isLoading } = useAddressById(value);
 
   const createAddress = useCreateAddress();
   const form = useForm<AddressForm>({
@@ -100,186 +88,52 @@ export function AddressSelect({
 
   const communes = selectedMunicipality?.communes ?? [];
 
-  useEffect(() => {
-    if (value) {
-      setSelectedAddressId(value);
-    } else {
-      setSelectedAddressId(null);
-    }
-  }, [value]);
 
   useEffect(() => {
-    form.reset({
-      houseHold: "",
-      commune: "",
-      municipality: "",
-      province: "",
-      country: "Angola",
-      companyId: effectiveCompanyId || undefined,
-    });
+    if (open) {
+      form.reset({
+        houseHold: "",
+        commune: "",
+        municipality: "",
+        province: "",
+        country: "Angola",
+        companyId: effectiveCompanyId || undefined,
+      });
+    }
   }, [effectiveCompanyId, form, open]);
+
+  const queryClient = useQueryClient();
 
   function handleSubmit(data: AddressForm) {
     createAddress.mutate(data, {
       onSuccess: (created: Address) => {
         setOpen(false);
         if (created?.id) {
-          const addressWithMeta = created as Address & { createdAt?: string };
-          const normalizedAddress: Address & { createdAt?: string } = {
-            ...addressWithMeta,
-            id: created.id,
-            houseHold: created?.houseHold ?? "",
-            commune: created?.commune ?? "",
-            municipality: created?.municipality ?? "",
-            province: created?.province ?? "",
-            country: created?.country ?? "",
-            companyId: created?.companyId ?? effectiveCompanyId,
-            createdAt: addressWithMeta.createdAt ?? new Date().toISOString(),
-          };
-
-          setCreatedAddresses((prev) => {
-            if (prev.some((item) => item.id === created.id)) return prev;
-            return [normalizedAddress, ...prev];
-          });
-
-          setTimeout(() => {
-            setSelectedAddressId(created.id!);
-            onChange(created.id!);
-          }, 0);
+          onChange(created.id);
+          queryClient.setQueryData(["address", created.id], created);
         }
         form.reset();
-        void refetch();
       },
     });
   }
 
-  const addressesList = useMemo(() => {
-    const baseList = Array.isArray(addresses) ? addresses : [];
-
-    const merged: Array<Address & { createdAt?: string }> = [
-      ...createdAddresses,
-      ...baseList,
-    ];
-
-    // Quando estamos a editar e o endereço não veio no getAll,
-    // garantimos que o resultado do getById também entra na lista.
-    if (addressById && addressById.id) {
-      merged.push({
-        ...(addressById as Address & { createdAt?: string }),
-        id: addressById.id,
-        houseHold: addressById.houseHold ?? "",
-        commune: addressById.commune ?? "",
-        municipality: addressById.municipality ?? "",
-        province: addressById.province ?? "",
-        country: addressById.country ?? "",
-      });
-    }
-    const map = new Map<string, Address & { createdAt?: string }>();
-    merged.forEach((address) => {
-      if (!address?.id) return;
-      map.set(address.id, {
-        ...address,
-        id: address.id,
-        houseHold: address.houseHold ?? "",
-        createdAt:
-          (address as Address & { createdAt?: string }).createdAt ??
-          new Date().toISOString(),
-      });
-    });
-    return Array.from(map.values()).sort((a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
-    });
-  }, [createdAddresses, addresses]);
-
-  const filtered = useMemo(
-    () =>
-      addressesList.filter((a: Address) =>
-        [a.houseHold, a.commune, a.municipality, a.province, a.country]
-          .join(" ")
-          .toLowerCase()
-          .includes(query.toLowerCase())
-      ),
-    [addressesList, query]
-  );
-
-  useEffect(() => {
-    if (value && addressesList.length > 0) {
-      const addressExists = addressesList.some(addr => addr.id === value);
-      if (addressExists) {
-        setSelectedAddressId(value);
-      }
-    }
-  }, [value, addressesList]);
-
-  const isLoadingOptions = isLoading || isFetching;
   const isSaving = createAddress.status === "pending";
 
-  const displayValue = useMemo(() => {
-    const normalizedValue = value && value.trim() !== '' ? value : undefined;
-
-    if (!normalizedValue) {
-      return undefined;
-    }
-
-    const exists = addressesList.some(addr => addr.id === normalizedValue);
-    return exists ? normalizedValue : undefined;
-  }, [value, addressesList]);
+  const displayAddress = addressById?.houseHold ?? "";
 
   return (
     <div className="flex items-stretch gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select
-          value={displayValue}
-          onValueChange={(val) => {
-            setSelectedAddressId(val);
-            onChange(val);
-          }}
-          disabled={isLoadingOptions}
-          onOpenChange={() => refetch()}
-        >
-          <SelectTrigger className="w-full ">
-            <SelectValue placeholder="Selecione um endereço" />
-          </SelectTrigger>
-          {isLoadingOptions && (
-            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          )}
-          <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-1 sticky top-0 bg-popover">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filtrar endereços..."
-                className="w-full placeholder:text-xs"
-                disabled={isLoadingOptions || addressesList.length === 0}
-              />
-            </div>
-            {filtered.length === 0 && (
-              <div className="text-center text-muted-foreground py-2 text-sm">
-                Não há dados disponíveis
-              </div>
-            )}
-            <div
-              className={
-                filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
-              }
-            >
-              {filtered.map(
-                (a: Address) =>
-                  a.id && (
-                    <SelectItem
-                      key={a.id}
-                      value={a.id}
-                      className="cursor-pointer"
-                    >
-                      {a.houseHold || "-"}
-                    </SelectItem>
-                  )
-              )}
-            </div>
-          </SelectContent>
-        </Select>
+        <Input
+          readOnly
+          value={displayAddress}
+          placeholder="Nenhum endereço "
+          disabled={isLoading}
+          className="w-full"
+        />
+        {isLoading && (
+          <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        )}
       </div>
       <Popover
         open={open}

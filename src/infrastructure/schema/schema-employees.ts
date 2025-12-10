@@ -14,7 +14,7 @@ export const createEmployeeSchema = z.object({
 });
 
 const grossContactSchema = z.object({
-  companyId: z.string().min(1, "Empresa do contato é obrigatória"),
+  companyId: z.string().optional(),
   email: z.string().optional(),
   phoneNumbers: z
     .array(

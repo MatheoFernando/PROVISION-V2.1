@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { TypeEquipment } from "../types/domain";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const QUERY_KEY = ["type-equipment"] as const;
 
@@ -31,6 +32,7 @@ export function useTypeEquipmentById(id?: string) {
 
 export function useCreateTypeEquipment() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeEquipment");
 
   return useMutation({
     mutationFn: async (data: Omit<TypeEquipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<TypeEquipment> => {
@@ -43,16 +45,17 @@ export function useCreateTypeEquipment() {
         return [created, ...current];
       });
       queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
-      toast.success("Tipo de equipamento criado com sucesso!");
+      toast.success(t("create.success"));
     },
     onError: () => {
-      toast.error("Erro ao criar tipo de equipamento");
+      toast.error(t("create.error"));
     },
   });
 }
 
 export function useUpdateTypeEquipment() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeEquipment");
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<TypeEquipment, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<TypeEquipment> => {
@@ -65,16 +68,17 @@ export function useUpdateTypeEquipment() {
         return old.map((item) => (item.id === updated.id ? { ...item, ...updated } : item));
       });
       queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
-      toast.success("Tipo de equipamento atualizado com sucesso!");
+      toast.success(t("update.success"));
     },
     onError: () => {
-      toast.error("Erro ao atualizar tipo de equipamento");
+      toast.error(t("update.error"));
     },
   });
 }
 
 export function useDeleteTypeEquipment() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeEquipment");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
@@ -86,10 +90,10 @@ export function useDeleteTypeEquipment() {
         return old.filter((item) => item.id !== id);
       });
       queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
-      toast.success("Tipo de equipamento removido com sucesso");
+      toast.success(t("delete.success"));
     },
     onError: () => {
-      toast.error("Erro ao remover tipo de equipamento");
+      toast.error(t("delete.error"));
     },
   });
 }

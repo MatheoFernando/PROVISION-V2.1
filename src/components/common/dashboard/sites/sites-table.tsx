@@ -10,22 +10,22 @@ import {
   useCreateGrossSite,
   useSitesByCompanyAndCustomer,
 } from "@/infrastructure/hooks/useSites";
+import { useEmployees } from "@/infrastructure/hooks/useEmployees";
+import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { Site } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { SitesView } from "./sites-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import SitesCreatePage from "./site-create";
+import { SiteDialog } from "./site-create";
 import { useRouter } from "next/navigation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   createGrossSiteSchema,
   type CreateGrossSitePayload,
@@ -52,14 +52,6 @@ const columns: ColumnDef<Site>[] = [
   },
 
   {
-    accessorKey: "numberWorkersContract",
-    header: "Trabalhadores",
-    cell: ({ row }) => {
-      const numberWorkersContract = row.getValue("numberWorkersContract") as number;
-      return <div>{numberWorkersContract}</div>;
-    },
-  },
-  {
     accessorKey: "customerId",
     header: "Cliente",
     cell: ({ row }) => {
@@ -68,18 +60,6 @@ const columns: ColumnDef<Site>[] = [
         ? original.customers.find((c) => c && (c as any).name)
         : (original.customers as any) || (original as any).customer;
       const name = customer?.name ?? "-";
-      return <div>{name}</div>;
-    },
-  },
-  {
-    accessorKey: "zoneId",
-    header: "Zona",
-    cell: ({ row }) => {
-      const original = row.original as Site;
-      const zone = Array.isArray(original.zones)
-        ? original.zones.find((z) => z && (z as any).name)
-        : (original.zones as any) || (original as any).zone;
-      const name = zone?.name ?? "-";
       return <div>{name}</div>;
     },
   },
@@ -95,6 +75,19 @@ const columns: ColumnDef<Site>[] = [
       return <div>{name}</div>;
     },
   },
+  {
+    accessorKey: "zoneId",
+    header: "Zona",
+    cell: ({ row }) => {
+      const original = row.original as Site;
+      const zone = Array.isArray(original.zones)
+        ? original.zones.find((z) => z && (z as any).name)
+        : (original.zones as any) || (original as any).zone;
+      const name = zone?.name ?? "-";
+      return <div>{name}</div>;
+    },
+  },
+
   {
     accessorKey: "sectorId",
     header: "Setor",
@@ -115,11 +108,29 @@ const columns: ColumnDef<Site>[] = [
       const contact = Array.isArray(original.contacts)
         ? original.contacts.find((c) => c && ((c as any).email || (c as any).phoneNumbers?.length))
         : (original.contacts as any) || (original as any).contact;
-      const display = contact?.email ?? contact?.phoneNumbers?.[0]?.phone ?? "-";
-      return <div>{display}</div>;
+
+      const email = contact?.email || "";
+      const phone = contact?.phoneNumbers?.[0]?.phone || "";
+
+      if (!email && !phone) return <div className="text-muted-foreground">-</div>;
+
+      return (
+        <div className="flex flex-col">
+          {email && <span className="truncate max-w-[200px]" title={email}>{email}</span>}
+          {phone && <span className="text-xs text-muted-foreground">{phone}</span>}
+        </div>
+      );
     },
   },
 
+  {
+    accessorKey: "numberWorkersContract",
+    header: "Trabalhadores",
+    cell: ({ row }) => {
+      const numberWorkersContract = row.getValue("numberWorkersContract") as number;
+      return <div>{numberWorkersContract}</div>;
+    },
+  },
 
 ];
 
@@ -127,6 +138,7 @@ interface SitesTableProps {
   openCreateOnLoad?: boolean;
   shouldNavigateBack?: boolean;
   customerId?: string;
+  companyId?: string;
   data?: Site[];
   isLoadingOverride?: boolean;
 }
@@ -143,12 +155,14 @@ export function SitesTable({
   openCreateOnLoad = false,
   shouldNavigateBack = false,
   customerId,
+  companyId: companyIdProp,
   data,
   isLoadingOverride,
 }: SitesTableProps = {}) {
   const router = useRouter();
   const shouldFetch = !data;
-  const companyId = useAuthStore((state) => state.companyId) || "";
+  const authCompanyId = useAuthStore((state) => state.companyId);
+  const companyId = companyIdProp || authCompanyId || "";
   const deleteSite = useDeleteSite();
   const createGrossSite = useCreateGrossSite();
 
@@ -164,7 +178,7 @@ export function SitesTable({
 
   const finalSites = (companyId && customerId) ? sitesByCompanyAndCustomer : sites;
   const finalIsLoading = (companyId && customerId) ? isLoadingByCompanyAndCustomer : isLoading;
-  const [isViewOpen, setIsViewOpen] = useState(false);
+  // const [isViewOpen, setIsViewOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
@@ -198,8 +212,9 @@ export function SitesTable({
   };
 
   const handleView = (site: Site) => {
-    setSelectedSite(site);
-    setIsViewOpen(true);
+    if (site.id) {
+      router.push(`/dashboard/sites/${site.id}`);
+    }
   };
 
   const handleEdit = (site: Site) => {
@@ -227,6 +242,17 @@ export function SitesTable({
 
   const resolvedData = data ?? finalSites;
   const resolvedIsLoading = isLoadingOverride ?? finalIsLoading;
+
+
+  const { data: allEmployees = [] } = useEmployees(undefined, {
+    enabled: true,
+  });
+  const { data: allEquipment = [] } = useEquipment(undefined, {
+    enabled: true,
+  });
+
+  const sitesWithEmployees = new Set(allEmployees.map((emp) => emp.siteId).filter(Boolean));
+  const sitesWithEquipment = new Set(allEquipment.map((eq) => eq.siteId).filter(Boolean));
 
   return (
     <div className="space-y-4">
@@ -263,56 +289,68 @@ export function SitesTable({
             label: "Excluir",
             icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (site) => handleDelete(site),
+            render: (site, action) => {
+              const hasEmployees = sitesWithEmployees.has(site.id as string);
+              const hasEquipment = sitesWithEquipment.has(site.id as string);
+              const isDisabled = hasEmployees || hasEquipment;
+
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="w-full outline-none">
+                        <DropdownMenuItem
+                          className={`w-full cursor-pointer ${isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          onClick={(e) => {
+                            if (isDisabled) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              action.onClick(site);
+                            }
+                          }}
+                        >
+                          {action.icon && <span className="mr-2">{action.icon}</span>}
+                          {action.label}
+                        </DropdownMenuItem>
+                      </span>
+                    </TooltipTrigger>
+                    {isDisabled && (
+                      <TooltipContent>
+                        <p>
+                          {hasEmployees && hasEquipment
+                            ? "Não pode excluir site com funcionários e equipamentos associados"
+                            : hasEmployees
+                              ? "Não pode excluir site com funcionários associados"
+                              : "Não pode excluir site com equipamentos associados"}
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            },
           },
         ]}
       />
 
-      <SitesView
-        site={selectedSite}
-        isOpen={isViewOpen}
-        onClose={() => {
-          setIsViewOpen(false);
-          setSelectedSite(undefined);
-        }}
-      />
 
-      <Drawer
+
+      <SiteDialog
         open={isCreateOpen}
-        onOpenChange={handleCreateDialogChange}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    {selectedSite ? "Editar Site" : "Novo Site"}
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <SitesCreatePage
-                id={selectedSite?.id}
-                initialData={selectedSite as any}
-                customerId={customerId}
-                onSuccess={handleCreateSuccess}
-                onCancel={handleCreateCancel}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateOpen(false);
+            setSelectedSite(undefined);
+          } else {
+            setIsCreateOpen(true);
+          }
+        }}
+        siteToEdit={selectedSite ?? undefined}
+        customerId={customerId}
+        companyId={companyId}
+      />
 
       <DeleteModal
         isOpen={isDeleteOpen}

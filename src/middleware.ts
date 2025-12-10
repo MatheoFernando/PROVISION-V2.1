@@ -34,7 +34,7 @@ export default function middleware(request: NextRequest) {
 
     if (isProtectedAdminPath(pathname)) {
       const isGlobalAdmin = request.cookies.get('isGlobalAdmin')?.value === 'true';
-      if (!isGlobalAdmin) return NextResponse.redirect(new URL('/dashboard/access-denied', request.url));
+      if (!isGlobalAdmin) return NextResponse.redirect(new URL('/dashboard/acesso-negado', request.url));
     }
   }
 

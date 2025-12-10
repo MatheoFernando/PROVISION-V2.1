@@ -18,24 +18,13 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { RoleSelect } from '@/components/common/base-ui/selects/role-select'
 import { DepartmentSelect } from '@/components/common/base-ui/selects/department-select'
 
+import { PermissionsMatrix } from './permissions-matrix'
+
 interface ChangePermissionsDrawerProps {
     user: User | null
     open: boolean
     onOpenChange: (open: boolean) => void
 }
-
-const PERMISSION_GROUPS = [
-    {
-       
-        permissions: [
-            { id: 'users.view', label: 'Ver' },
-            { id: 'users.create', label: 'Criar' },
-            { id: 'users.edit', label: 'Editar' },
-            { id: 'users.delete', label: 'Excluir' },
-        ],
-    },
-   
-]
 
 export function ChangePermissionsDrawer({
     user,
@@ -80,7 +69,7 @@ export function ChangePermissionsDrawer({
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-            <DrawerContent className="flex flex-col h-full">
+            <DrawerContent className="flex flex-col h-full w-[85vw] max-w-[1000px] sm:w-full">
                 <DrawerHeader className="border-b border-gray-200 pb-4">
                     <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -108,6 +97,7 @@ export function ChangePermissionsDrawer({
                                     value={selectedRole}
                                     onChange={setSelectedRole}
                                     companyId={user?.companyId}
+                                    disabled={isLoading}
                                 />
                             </div>
                             <div className="space-y-3">
@@ -118,58 +108,38 @@ export function ChangePermissionsDrawer({
                                     value={selectedDepartmentId}
                                     onChange={(value) => setSelectedDepartmentId(value)}
                                     companyId={user?.companyId}
+                                    disabled={isLoading}
                                 />
                             </div>
                         </div>
 
-            
-                        <div>
-                            <Label className="text-sm font-semibold text-gray-700 mb-4 block">
-                                Permissões
-                            </Label>
-                            <div className="space-y-4">
-                                {PERMISSION_GROUPS.map((group) => (
-                                    <div key={group.permissions[0].id} className="bg-gray-50 rounded-lg p-4">
-                                  
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {group.permissions.map((permission) => (
-                                                <label
-                                                    key={permission.id}
-                                                    className="flex items-center gap-2 cursor-pointer hover:bg-white px-2 py-1 rounded transition-colors"
-                                                >
-                                                    <Checkbox
-                                                        checked={selectedPermissions.includes(
-                                                            permission.id
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            handlePermissionToggle(permission.id)
-                                                        }
-                                                    />
-                                                    <span className="text-sm text-gray-700">
-                                                        {permission.label}
-                                                    </span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
 
-                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                            <p className="text-sm text-blue-700 font-medium">
-                                {selectedPermissions.length} permissão(ões) selecionada(s)
-                            </p>
+                        <div>
+                            <div className="mb-4 flex items-center justify-between">
+                                <Label className="text-sm font-semibold text-gray-700 block">
+                                    Matriz de Permissões
+                                </Label>
+                                <div className="bg-primary/10 rounded-full px-3 py-1 border border-primary/20">
+                                    <p className="text-xs text-primary font-medium">
+                                        {selectedPermissions.length} selecionadas
+                                    </p>
+                                </div>
+                            </div>
+
+                            <PermissionsMatrix
+                                selectedPermissions={selectedPermissions}
+                                onToggle={handlePermissionToggle}
+                            />
                         </div>
                     </div>
                 </ScrollArea>
 
-              
+
                 <div className="flex justify-end gap-2 w-full  space-y-2 p-6">
                     <Button
                         onClick={handleSave}
                         disabled={isLoading}
-                        className="w-fit h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                        className="w-fit h-10 font-medium rounded-lg transition-colors"
                     >
                         {isLoading ? 'Salvando...' : 'Salvar Alterações'}
                     </Button>

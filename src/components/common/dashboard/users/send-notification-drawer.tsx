@@ -86,7 +86,7 @@ export function SendNotificationDrawer({
                 </DrawerHeader>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                  
+
                     <div>
                         <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                             Assunto
@@ -115,7 +115,7 @@ export function SendNotificationDrawer({
                         </p>
                     </div>
 
-                   
+
                     <div>
                         <Label className="text-sm font-semibold text-gray-700 mb-3 block">
                             Enviar via
@@ -147,12 +147,12 @@ export function SendNotificationDrawer({
                     </div>
                 </div>
 
-               
+
                 <div className="border-t border-gray-200 p-6 bg-gray-50 space-y-2">
                     <Button
                         onClick={handleSend}
                         disabled={isLoading}
-                        className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                        className="w-full h-10 font-medium rounded-lg transition-colors disabled:opacity-50"
                     >
                         {isLoading ? 'Enviando...' : 'Enviar'}
                     </Button>

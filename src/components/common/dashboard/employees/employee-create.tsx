@@ -12,25 +12,46 @@ import {
   useCreateEmployee,
   useUpdateEmployee,
 } from "@/infrastructure/hooks/useEmployees";
+import { useSiteById } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { ContactSelect } from "@/components/common/base-ui/selects/contact-select";
 import { DepartmentSelect } from "@/components/common/base-ui/selects/department-select";
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select";
 import { AddressSelect } from "@/components/common/base-ui/selects/address-select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import type { Employee } from "@/infrastructure/types/domain";
 
 type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
-interface EmployeesCreatePageProps {
-  id?: string;
-  initialData?: Partial<CreateEmployeeInput> & { id?: string };
+interface EmployeeDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  employeeToEdit?: Employee;
   onSuccess?: () => void;
-  onCancel?: () => void;
+  siteId?: string;
+  isSiteLocked?: boolean;
 }
 
-export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
-  const router = useRouter();
+import { useTranslations } from "next-intl";
+
+export function EmployeeDialog({
+  open,
+  onOpenChange,
+  employeeToEdit,
+  onSuccess,
+  siteId,
+  isSiteLocked,
+}: EmployeeDialogProps) {
+  const t = useTranslations("Employees");
+  const tCommon = useTranslations("Common");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const companyId = useAuthStore((s) => s.companyId) ?? "";
   const createEmployee = useCreateEmployee();
@@ -44,208 +65,259 @@ export default function EmployeesCreatePage(props: EmployeesCreatePageProps) {
       photo: "",
       contactId: "",
       addressId: "",
-      siteId: undefined,
+      siteId: siteId || undefined,
       departmentId: "",
       cod: "",
       function: "",
     },
   });
 
-  React.useEffect(() => {
-    const d = props.initialData;
-    if (!d) return;
-    form.reset({
-      companyId: d.companyId || companyId,
-      fullName: d.fullName || "",
-      photo: d.photo || "",
-      contactId: d.contactId || "",
-      addressId: d.addressId || "",
-      siteId: (d as any).siteId ?? undefined,
-      departmentId: d.departmentId || "",
-      cod: d.cod || "",
-      function: (d as any).function || "",
-    });
-  }, [props.initialData, form, companyId]);
+  const selectedSiteId = form.watch("siteId");
+  const { data: selectedSite } = useSiteById(selectedSiteId, { enabled: !!selectedSiteId });
 
+  const isLimitReached = React.useMemo(() => {
+    if (!selectedSite || !selectedSite.numberWorkersContract) return false;
+    const currentWorkers = selectedSite.employees?.length || 0;
+
+    const isEditingInSameSite = employeeToEdit?.id && employeeToEdit?.siteId === selectedSiteId;
+    const adjustCount = isEditingInSameSite ? -1 : 0;
+
+    return (currentWorkers + adjustCount) >= selectedSite.numberWorkersContract;
+  }, [selectedSite, employeeToEdit, selectedSiteId]);
+
+  React.useEffect(() => {
+    if (open) {
+      if (employeeToEdit) {
+        form.reset({
+          companyId: employeeToEdit.companyId || companyId,
+          fullName: employeeToEdit.fullName || "",
+          photo: employeeToEdit.photo || "",
+          contactId: employeeToEdit.contactId || "",
+          addressId: employeeToEdit.addressId || "",
+          siteId: employeeToEdit.siteId ?? siteId ?? undefined,
+          departmentId: employeeToEdit.departmentId || "",
+          cod: employeeToEdit.cod || "",
+          function: employeeToEdit.function || "",
+        });
+      } else {
+        form.reset({
+          companyId: companyId,
+          fullName: "",
+          photo: "",
+          contactId: "",
+          addressId: "",
+          siteId: siteId || undefined,
+          departmentId: "",
+          cod: "",
+          function: "",
+        });
+      }
+    }
+  }, [employeeToEdit, form, companyId, open, siteId]);
 
   const onSubmit = async (data: CreateEmployeeInput) => {
     try {
+      if (isLimitReached) {
+        toast.error(t("toasts.limitReached"));
+        return;
+      }
       setIsSubmitting(true);
-      if (props.id) {
+      if (employeeToEdit?.id) {
         const { companyId: _omit, ...updateOnly } = (data as any) || {};
-        await updateEmployee.mutateAsync({        
+        await updateEmployee.mutateAsync({
+          id: employeeToEdit.id,
           ...updateOnly,
         });
-        toast.success("Funcionário atualizado com sucesso!");
+        toast.success(t("toasts.updateSuccess"));
       } else {
-        const createPayload: any = { ...data, companyId: (data as any).companyId || companyId };
-        await (createEmployee.mutateAsync as (vars: CreateEmployeeInput) => Promise<unknown>)(createPayload);
-        toast.success("Funcionário criado com sucesso!");
+        const currentCompanyId = companyId || useAuthStore.getState().companyId || "";
+        const createPayload: any = {
+          ...data,
+          companyId: (data as any).companyId || currentCompanyId,
+        };
+        await createEmployee.mutateAsync(createPayload);
+        toast.success(t("toasts.createSuccess"));
       }
-      if (props.onSuccess) props.onSuccess();
-      else form.reset();
+      form.reset();
+      onOpenChange(false);
+      onSuccess?.();
     } catch (error) {
-      toast.error("Erro ao salvar funcionário");
+      toast.error(t("toasts.error"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isPending = isSubmitting || createEmployee.isPending || updateEmployee.isPending;
+
   return (
-    <div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden dark:bg-slate-950">
+        <DialogHeader className="pt-6 px-6 pb-2 border-b border-gray-100 bg-white dark:bg-slate-900/50">
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {employeeToEdit ? t("title.edit") : t("title.create")}
+          </DialogTitle>
+        </DialogHeader>
 
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="py-4 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="fullName" className="text-slate-700">
-                Nome Completo *
-              </Label>
-              <Input
-                id="fullName"
-                {...form.register("fullName")}
-                placeholder="Digite o nome completo"
-                className="rounded-lg"
-              />
-              {form.formState.errors.fullName && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.fullName.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-slate-700">
-                Código *
-              </Label>
-              <Input
-                id="cod"
-                {...form.register("cod")}
-                placeholder="Digite o código"
-                className="rounded-lg"
-              />
-              {form.formState.errors.cod && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.cod.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contactId" className="text-slate-700">
-                Contato *
-              </Label>
-              <ContactSelect
-                value={form.watch("contactId")}
-                onChange={(v) => form.setValue("contactId", v)}
-                companyId={companyId}
-              />
-              {form.formState.errors.contactId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.contactId.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="siteId" className="text-slate-700">
-                Site *
-              </Label>
-              <div className="flex gap-2">
-                <SiteSelect
-                  value={form.watch("siteId")}
-                  onChange={(value) => form.setValue("siteId", value)}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
+          <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="fullName" className="text-slate-700 font-medium">
+                  {t("fields.fullName")} *
+                </Label>
+                <Input
+                  id="fullName"
+                  {...form.register("fullName")}
+                  placeholder={t("placeholders.fullName")}
+                  className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                 />
+                {form.formState.errors.fullName && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.fullName.message}
+                  </p>
+                )}
               </div>
-              {form.formState.errors.siteId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.siteId.message}
-                </p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="cod" className="text-slate-700 font-medium">
+                  {t("fields.cod")} *
+                </Label>
+                <Input
+                  id="cod"
+                  {...form.register("cod")}
+                  placeholder={t("placeholders.cod")}
+                  className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                />
+                {form.formState.errors.cod && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.cod.message}
+                  </p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="departmentId" className="text-slate-700">
-                Departamento *
-              </Label>
-              <div className="flex gap-2">
-                <DepartmentSelect
-                  value={form.watch("departmentId")}
-                  onChange={(value) => form.setValue("departmentId", value)}
+              <div className="space-y-2">
+                <Label htmlFor="contactId" className="text-slate-700 font-medium">
+                  {t("fields.contact")} *
+                </Label>
+                <ContactSelect
+                  value={form.watch("contactId")}
+                  onChange={(v) => form.setValue("contactId", v)}
                   companyId={companyId}
                 />
+                {form.formState.errors.contactId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.contactId.message}
+                  </p>
+                )}
               </div>
-              {form.formState.errors.departmentId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.departmentId.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="departmentId" className="text-slate-700">
-                Endereço *
-              </Label>
-              <div className="flex gap-2">
-                <AddressSelect
-                  value={form.watch("addressId")}
-                  onChange={(value) => form.setValue("addressId", value)}
-                  companyId={companyId}
+ <div className="space-y-2">
+                <Label htmlFor="function" className="text-slate-700 font-medium">
+                  {t("fields.function")} *
+                </Label>
+                <Input
+                  id="function"
+                  {...form.register("function")}
+                  placeholder={t("placeholders.function")}
+                  className="rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                 />
+                {form.formState.errors.roleId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.roleId.message}
+                  </p>
+                )}
               </div>
-              {form.formState.errors.addressId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.addressId.message}
-                </p>
+              <div className="space-y-2">
+                <Label htmlFor="siteId" className="text-slate-700 font-medium">
+                  {t("fields.site")} *
+                </Label>
+                <div className="flex gap-2">
+                  <SiteSelect
+                    value={form.watch("siteId")}
+                    onChange={(value) => form.setValue("siteId", value)}
+                    disabled={isSiteLocked}
+                  />
+                </div>
+                {form.formState.errors.siteId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.siteId.message}
+                  </p>
+                )}
+              </div>
+
+              {isLimitReached && (
+                <div className="md:col-span-2">
+                  <div className="p-3 text-sm text-amber-600 bg-amber-50 rounded-lg border border-amber-200 w-full">
+                    {t("limitReachedWarning", { limit: selectedSite?.numberWorkersContract || 0 })}
+                  </div>
+                </div>
               )}
+              <div className="space-y-2">
+                <Label htmlFor="departmentId" className="text-slate-700 font-medium">
+                  {t("fields.department")} *
+                </Label>
+                <div className="flex gap-2">
+                  <DepartmentSelect
+                    value={form.watch("departmentId")}
+                    onChange={(value) => form.setValue("departmentId", value)}
+                    companyId={companyId}
+                  />
+                </div>
+                {form.formState.errors.departmentId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.departmentId.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="addressId" className="text-slate-700 font-medium">
+                  {t("fields.address")} *
+                </Label>
+                <div className="flex gap-2">
+                  <AddressSelect
+                    value={form.watch("addressId")}
+                    onChange={(value) => form.setValue("addressId", value)}
+                    companyId={companyId}
+                  />
+                </div>
+                {form.formState.errors.addressId && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {form.formState.errors.addressId.message}
+                  </p>
+                )}
+              </div>
+             
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="function" className="text-slate-700">
-                Função *
-              </Label>
-              <Input
-                id="function"
-                {...form.register("function")}
-                placeholder="Digite a função"
-                className="rounded-lg"
-              />
-              {form.formState.errors.roleId && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.roleId.message}
-                </p>
-              )}
-            </div>
+
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          <DialogFooter className="mr-6 p-4 border-t border-gray-100 bg-gray-50/50 dark:bg-slate-900/50">
             <Button
               type="button"
-              variant="outline"
-              onClick={() =>
-                props.onCancel ? props.onCancel() : router.back()
-              }
-              className="rounded-lg px-6 cursor-pointer"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
             >
-              Cancelar
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting ||
-                createEmployee.isPending ||
-                updateEmployee.isPending
-              }
-              className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg px-6"
+              disabled={isPending}
+              className="shadow-lg rounded-xl px-6"
             >
-              {isSubmitting ||
-                createEmployee.isPending ||
-                updateEmployee.isPending
-                ? "Salvando..."
-                : props.id
-                  ? "Atualizar Funcionário"
-                  : "Criar Funcionário"}
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {tCommon("save")}...
+                </>
+              ) : employeeToEdit ? (
+                tCommon("save")
+              ) : (
+                tCommon("create")
+              )}
             </Button>
-          </div>
-        </div>
-      </form>
-    </div>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog >
   );
 }

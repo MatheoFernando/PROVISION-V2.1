@@ -3,14 +3,15 @@ import { z } from 'zod'
 const optionalNonNegativeNumber = z
   .preprocess((value) => {
     if (value === '' || value === null || value === undefined) return undefined
-    if (typeof value === 'number') return value
+    if (typeof value === 'number') {
+      return Number.isNaN(value) ? undefined : value
+    }
     if (typeof value === 'string') {
       const parsedValue = Number(value)
-      return Number.isNaN(parsedValue) ? value : parsedValue
+      return Number.isNaN(parsedValue) ? undefined : parsedValue
     }
     return value
-  }, z.number().min(0, 'Número não pode ser negativo'))
-  .optional()
+  }, z.number().min(0, 'Número não pode ser negativo').optional())
 
 export const supervisionSchema = z.object({
   id: z.string().optional(),

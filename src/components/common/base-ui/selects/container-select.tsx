@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useContainers, useCreateContainer } from "@/infrastructure/hooks/useContainers";
+import { useContainer, useCreateContainer } from "@/infrastructure/hooks/useContainers";
 import {
   Select,
   SelectContent,
@@ -33,8 +33,7 @@ export function ContainerSelect({
   companyId,
 }: ContainerSelectProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const { data: containers = [], isLoading, isFetching } = useContainers();
+  const { data: selectedContainer, isLoading } = useContainer(value);
   const createContainer = useCreateContainer();
   const { companyId: storeCompanyId } = useAuthStore();
   const normalizedCompanyId = companyId ?? storeCompanyId ?? "";
@@ -56,7 +55,7 @@ export function ContainerSelect({
       cod: "",
       capacity: 0,
       companyId: normalizedCompanyId,
-    });
+    }, { keepDefaultValues: true });
   }, [normalizedCompanyId, form, open]);
 
   function handleSubmit(data: ContainerForm) {
@@ -68,86 +67,34 @@ export function ContainerSelect({
         onSuccess: (created: Container) => {
           setOpen(false);
           onChange(created.id!);
-          form.reset({
-            name: "",
-            cod: "",
-            capacity: 0,
-            companyId: normalizedCompanyId,
-          });
+          form.reset();
         },
       }
     );
   }
 
-  const filtered = useMemo(
-    () =>
-      containers.filter((container: Container) => {
-        const searchString = `${container?.cod ?? ""} ${container?.cod ?? ""}`.toLowerCase();
-        return searchString.includes(query.toLowerCase());
-      }),
-    [containers, query]
-  );
-
   const isSaving = createContainer.status === "pending";
-  const isLoadingOptions = isLoading || isFetching;
+  const displayValue = selectedContainer
+    ? `${selectedContainer.cod} - ${selectedContainer.name}`
+    : "";
 
   return (
     <div className="flex items-end gap-2 w-full">
       <div className="flex-1 min-w-0 relative">
-        <Select
-          value={value}
-          onValueChange={onChange}
-
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue
-              placeholder={
-                isCompanyUnavailable
-                  ? "Selecione uma empresa primeiro"
-                  : "Selecione o container"
-              }
-            />
-          </SelectTrigger>
-          {isLoadingOptions && (
-            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          )}
-          <SelectContent className="w-[var(--radix-select-trigger-width)]">
-            <div className="p-1 sticky top-0 bg-popover">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filtrar containers..."
-                className="w-full placeholder:text-xs"
-                disabled={isLoadingOptions || containers.length === 0}
-              />
-            </div>
-            {isCompanyUnavailable ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">
-                Selecione uma empresa para listar containers.
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-3 text-center">
-                Não há dados disponíveis.
-              </div>
-            ) : (
-              <div
-                className={
-                  filtered.length > 7 ? "max-h-60 overflow-y-auto" : "max-h-full"
-                }
-              >
-                {filtered.map((container: Container) => (
-                  <SelectItem
-                    key={container.id}
-                    value={container.id!}
-                    className="cursor-pointer"
-                  >
-                    {container.name} 
-                  </SelectItem>
-                ))}
-              </div>
-            )}
-          </SelectContent>
-        </Select>
+        <Input
+          readOnly
+          value={displayValue}
+          placeholder={
+            isCompanyUnavailable
+              ? "Selecione uma empresa primeiro"
+              : "Nenhum container selecionado"
+          }
+          disabled={isLoading || isCompanyUnavailable}
+          className="w-full"
+        />
+        {isLoading && (
+          <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        )}
       </div>
       <Popover
         open={open}
@@ -162,7 +109,7 @@ export function ContainerSelect({
             variant="outline"
             size="icon"
             className="cursor-pointer shrink-0"
-
+            disabled={isCompanyUnavailable || isSaving}
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -185,58 +132,58 @@ export function ContainerSelect({
           <div className="space-y-3">
             <h3 className="font-semibold">Adicionar container</h3>
 
-         <div className="grid grid-cols-2 gap-4 mt-4">
-         <div className="space-y-2">
-              <Label htmlFor="cod" className="block">
-                Código
-              </Label>
-              <Input
-                id="cod"
-                {...form.register("cod")}
-                className="w-full"
-                placeholder="Código do container"
-                disabled={isSaving}
-              />
-              {form.formState.errors.cod && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.cod.message}
-                </span>
-              )}
-            </div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="cod" className="block">
+                  Código
+                </Label>
+                <Input
+                  id="cod"
+                  {...form.register("cod")}
+                  className="w-full"
+                  placeholder="Código do container"
+                  disabled={isSaving}
+                />
+                {form.formState.errors.cod && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.cod.message}
+                  </span>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name" className="block">
-                Nome
-              </Label>
-              <Input
-                id="name"
-                {...form.register("name")}
-                className="w-full"
-                placeholder="Nome do container"
-                disabled={isSaving}
-              />
-              {form.formState.errors.name && (
-                <span className="text-red-500 text-xs">
-                  {form.formState.errors.name.message}
-                </span>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="block">
+                  Nome
+                </Label>
+                <Input
+                  id="name"
+                  {...form.register("name")}
+                  className="w-full"
+                  placeholder="Nome do container"
+                  disabled={isSaving}
+                />
+                {form.formState.errors.name && (
+                  <span className="text-red-500 text-xs">
+                    {form.formState.errors.name.message}
+                  </span>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="capacity" className="block">
-                Capacidade
-              </Label>
-              <Input
-                id="capacity"
-                {...form.register("capacity")}
-                className="w-full"
-                placeholder="Capacidade do container"
-                disabled={isSaving}
-                type="number"
-              />
-            
+              <div className="space-y-2">
+                <Label htmlFor="capacity" className="block">
+                  Capacidade
+                </Label>
+                <Input
+                  id="capacity"
+                  {...form.register("capacity")}
+                  className="w-full"
+                  placeholder="Capacidade do container"
+                  disabled={isSaving}
+                  type="number"
+                />
+
+              </div>
             </div>
-         </div>
 
 
             <div className="flex justify-end gap-2 pt-2">
@@ -245,12 +192,7 @@ export function ContainerSelect({
                 variant="outline"
                 onClick={() => {
                   if (isSaving) return;
-                  form.reset({
-                    name: "",
-                    cod: "",
-                    capacity: 0,
-                    companyId: normalizedCompanyId,
-                  });
+                  form.reset();
                   setOpen(false);
                 }}
                 className="cursor-pointer"

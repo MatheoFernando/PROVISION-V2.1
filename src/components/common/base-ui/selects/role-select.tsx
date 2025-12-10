@@ -30,10 +30,10 @@ interface RoleSelectProps {
   value?: string;
   onChange: (value: string) => void;
   companyId?: string | null;
+  disabled?: boolean;
 }
 
-export function RoleSelect({ value: valueProp, onChange, companyId }: RoleSelectProps) {
-  // Normaliza o value: converte string vazia para undefined
+export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: RoleSelectProps) {
   const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
 
   const [open, setOpen] = useState(false);
@@ -51,7 +51,6 @@ export function RoleSelect({ value: valueProp, onChange, companyId }: RoleSelect
     defaultValues: { name: "", description: "", companyId: normalizedCompanyId },
   });
 
-  // Sincroniza o valor externo com o estado local
   useEffect(() => {
     if (value) {
       setSelectedRoleId(value);
@@ -172,7 +171,7 @@ export function RoleSelect({ value: valueProp, onChange, companyId }: RoleSelect
             setSelectedRoleId(selected);
             onChange(selected);
           }}
-          disabled={isLoadingOptions}
+          disabled={disabled || isLoadingOptions}
           onOpenChange={() => refetch()}
         >
           <SelectTrigger className="w-full shadow-sm">

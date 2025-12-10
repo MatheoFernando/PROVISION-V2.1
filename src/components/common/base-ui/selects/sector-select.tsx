@@ -1,8 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,13 +6,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2 } from "lucide-react";
-import { useCreateSector, useSectors } from "@/infrastructure/hooks/useSectors";
+import {  Loader2 } from "lucide-react";
+import {useSectors } from "@/infrastructure/hooks/useSectors";
 import { Sector } from "@/infrastructure/types/domain";
-import { sectorSchema, type SectorEntity } from "@/infrastructure/schema/schema-sector";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
 
 interface SectorSelectProps {
   value?: string;
@@ -37,12 +30,6 @@ export function SectorSelect({
   const [query, setQuery] = useState("");
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
   const { data: sectors = [], isLoading , refetch } = useSectors();
-  const createSector = useCreateSector();
-  const form = useForm<SectorEntity>({
-    resolver: zodResolver(sectorSchema),
-    defaultValues: { name: "", employeeId, zoneId, companyId },
-  });
-
   
   useEffect(() => {
     if (value) {
@@ -50,41 +37,7 @@ export function SectorSelect({
     }
   }, [value]);
 
-  function handleSubmit(data: SectorEntity) {
-    const effectiveEmployeeId = employeeId || data.employeeId;
-
-    if (!zoneId) {
-      return;
-    }
-
-    const basePayload: Omit<Sector, "id" | "createdAt" | "updatedAt"> = {
-      name: data.name,
-      zoneId,
-      companyId,
-      ...(effectiveEmployeeId ? { employeeId: effectiveEmployeeId } : {}),
-    };
-
-    createSector.mutate(
-      basePayload,
-      {
-        onSuccess: (created: Sector) => {
-          setOpen(false);
-          if (created?.id) {
-            // Auto-seleciona o novo item
-            setSelectedSectorId(created.id);
-            onChange(created.id);
-          }
-          form.reset({
-            name: "",
-            employeeId,
-            zoneId: zoneId ?? "",
-            companyId,
-          });
-        },
-      }
-    );
-  }
-
+ 
   const hasZone = Boolean(zoneId);
   const list = useMemo(() => {
     return Array.isArray(sectors)
@@ -169,90 +122,7 @@ export function SectorSelect({
           </SelectContent>
         </Select>
       </div>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="cursor-pointer shrink-0"
-            disabled={createSector.status === "pending" || !hasZone}
-            onClick={() => {
-              if (!zoneId) return;
-              form.setValue("zoneId", zoneId, { shouldValidate: true });
-            }}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="end"
-          sideOffset={8}
-          className="w-[26rem] p-4"
-          onInteractOutside={(e) => {
-            if (createSector.status === "pending") e.preventDefault();
-          }}
-          onEscapeKeyDown={(e) => {
-            if (createSector.status === "pending") e.preventDefault();
-          }}
-        >
-          <div className="font-medium mb-4 text-lg">Criar Setor</div>
-          <form className="space-y-3 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name-sector">Nome do setor</Label>
-                <Input
-                  id="name-sector"
-                  {...form.register("name")}
-                  placeholder="Nome do setor"
-                />
-                {form.formState.errors.name && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.name.message as string}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Funcionário *</Label>
-                <EmployeeSelect
-                  value={(form.watch("employeeId") as string) || ""}
-                  onChange={(v) =>
-                    form.setValue("employeeId", v, { shouldValidate: true })
-                  }
-                  companyId={companyId}
-                />
-                {form.formState.errors.employeeId && (
-                  <span className="text-red-500 text-xs">
-                    {form.formState.errors.employeeId.message as string}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-4">
-              <Button
-                type="button"
-                className="px-6 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-                disabled={createSector.status === "pending" || !hasZone}
-                onClick={() => {
-                  if (!zoneId) return;
-                  form.setValue("zoneId", zoneId, { shouldValidate: true });
-                  form.handleSubmit(handleSubmit)();
-                }}
-              >
-                {createSector.status === "pending" ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar"
-                )}
-              </Button>
-            </div>
-          </form>
-        </PopoverContent>
-      </Popover>
+    
     </div>
   );
 }

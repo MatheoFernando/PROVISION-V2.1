@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/infrastructure/utils/api'
 import type { User, CreateUserPayload, UpdateUserPayload } from '@/infrastructure/types/domain'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 
 export function useUsersQuery(companyId?: string) {
   return useQuery<User[]>({
@@ -24,6 +25,7 @@ export function useUsersQuery(companyId?: string) {
 
 export function useCreateUser() {
   const queryClient = useQueryClient()
+  const t = useTranslations("Hooks.Users");
 
   return useMutation<{ message: string; data?: User }, unknown, CreateUserPayload>({
     mutationKey: ['user-create'],
@@ -34,16 +36,17 @@ export function useCreateUser() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['users'] })
       await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
-      toast.success('Utilizador criado com sucesso')
+      toast.success(t('create.success'))
     },
     onError: () => {
-      toast.error('Erro ao criar utilizador')
+      toast.error(t('create.error'))
     },
   })
 }
 
 export function useUpdateUser() {
   const queryClient = useQueryClient()
+  const t = useTranslations("Hooks.Users");
 
   return useMutation<{ message: string; data?: User }, unknown, UpdateUserPayload>({
     mutationKey: ['user-update'],
@@ -54,16 +57,17 @@ export function useUpdateUser() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['users'] })
       await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
-      toast.success('Utilizador atualizado com sucesso')
+      toast.success(t('update.success'))
     },
     onError: () => {
-      toast.error('Erro ao atualizar utilizador')
+      toast.error(t('update.error'))
     },
   })
 }
 
 export function useDeleteUser() {
   const queryClient = useQueryClient()
+  const t = useTranslations("Hooks.Users");
 
   return useMutation<{ message: string }, unknown, string>({
     mutationKey: ['user-delete'],
@@ -74,10 +78,10 @@ export function useDeleteUser() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['users'] })
       await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
-      toast.success('Utilizador eliminado com sucesso')
+      toast.success(t('delete.success'))
     },
     onError: () => {
-      toast.error('Erro ao deletar utilizador')
+      toast.error(t('delete.error'))
     },
   })
 }

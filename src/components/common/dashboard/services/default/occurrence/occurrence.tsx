@@ -9,14 +9,14 @@ export default function Occurrence() {
   const { data: occurrences, isLoading } = useOccurrences()
 
   return (
-    <div className="py-6">
-      <OccurrenceTable
-        data={occurrences}
-        isLoading={isLoading}
-        onCreateClick={() => setIsCreateModalOpen(true)}
-      />
 
-    
-    </div>
+    <OccurrenceTable
+      data={(occurrences as any) ?? []}
+      isLoading={isLoading}
+      onCreateClick={() => setIsCreateModalOpen(true)}
+    />
+
+
+
   )
 }

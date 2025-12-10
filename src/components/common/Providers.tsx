@@ -4,6 +4,8 @@ import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 
+import { SystemSettingsProvider } from '@/contexts/system-settings-context';
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -13,21 +15,23 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         refetchOnMount: "always",
         refetchOnReconnect: true,
         staleTime: 0,
-        
+
       },
     },
   });
   return (
-    <ThemeProvider 
-      attribute="class" 
-      defaultTheme="light" 
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
       enableSystem={false}
       disableTransitionOnChange={false}
     >
-      <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster position="bottom-right" richColors  />
-      </QueryClientProvider>
+      <SystemSettingsProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <Toaster position="bottom-right" richColors />
+        </QueryClientProvider>
+      </SystemSettingsProvider>
     </ThemeProvider>
   );
 }

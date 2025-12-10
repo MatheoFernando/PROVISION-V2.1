@@ -1,23 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, Loader2, Trash } from "lucide-react";
 import {
-  useContacts,
+  useContactById,
   useCreateContact,
 } from "@/infrastructure/hooks/useContacts";
 import type { Contact } from "@/infrastructure/types/domain";
@@ -43,9 +37,9 @@ export function ContactSelect({
 }: ContactSelectProps) {
   const maxPhoneNumbers = 3;
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const [selectedPhone, setSelectedPhone] = useState<string>("");
-  const { data: contacts = [], isLoading } = useContacts(companyId);
+
+  const { data: selectedContact, isLoading } = useContactById(value);
   const createContact = useCreateContact();
 
   const form = useForm<ContactForm>({
@@ -62,148 +56,56 @@ export function ContactSelect({
     name: "phoneNumbers",
   });
 
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (selectedContact) {
+      const phones = Array.isArray(selectedContact.phoneNumbers)
+        ? selectedContact.phoneNumbers
+          .map((p: any) => p.phone)
+          .filter((p: string) => (p ?? "").trim() !== "")
+        : [];
+
+      const firstPhone = phones[0] ?? "";
+      setSelectedPhone(firstPhone);
+      if (firstPhone) onPhoneChange?.(firstPhone);
+    } else {
+      setSelectedPhone("");
+    }
+  }, [selectedContact, onPhoneChange]);
+
   function handleSubmit(data: ContactForm) {
     createContact.mutate(data, {
       onSuccess: (created: Contact) => {
         onChange(created.id!);
-        // tenta pré-selecionar e propagar o primeiro telefone válido
-        const createdPhones = Array.isArray(created?.phoneNumbers)
-          ? created.phoneNumbers
-            .map((p: { phone: string }) => p?.phone ?? "")
-            .filter((p: string) => (p ?? "").trim() !== "")
-          : [];
-        const firstPhone =
-          createdPhones[0] ??
-          (Array.isArray(data?.phoneNumbers)
-            ? data.phoneNumbers
-              .map((p) => p?.phone ?? "")
-              .find((p) => (p ?? "").trim() !== "") ?? ""
-            : "");
-        setSelectedPhone(firstPhone);
-        if (firstPhone) onPhoneChange?.(firstPhone);
+
         form.reset();
         setOpen(false);
       },
     });
   }
 
-  const list = Array.isArray(contacts) ? contacts : [];
-  const selectedContact = list.find((c) => c.id === value);
-  const phoneOptions = Array.isArray(selectedContact?.phoneNumbers)
-    ? selectedContact!.phoneNumbers
+  const displayPhones = selectedContact
+    ? (Array.isArray(selectedContact.phoneNumbers) ? selectedContact.phoneNumbers : [])
       .map((p: { phone: string }) => p.phone)
-      .filter((p) => (p ?? "").trim() !== "")
-    : [];
-  const filtered = list.filter((c: Contact) => {
-    const phones = (Array.isArray(c.phoneNumbers) ? c.phoneNumbers : [])
-      .map((p: { phone: string }) => p.phone)
-      .join(", ");
-    return (
-      String(c.email ?? "")
-        .toLowerCase()
-        .includes(query.toLowerCase()) ||
-      phones.toLowerCase().includes(query.toLowerCase())
-    );
-  });
+      .join(", ")
+    : "";
 
   return (
     <div className="w-full">
       <div className="flex items-end gap-2 mb-2">
         <div className="flex-1 relative min-w-0">
-          <Select
-            value={value || undefined}
-            onValueChange={(val) => {
-              const selected = (Array.isArray(contacts) ? contacts : []).find(
-                (c: Contact) => c.id === val
-              );
-              const firstPhone = Array.isArray(selected?.phoneNumbers)
-                ? selected!.phoneNumbers.find(
-                  (p: { phone: string }) => (p?.phone ?? "").trim() !== ""
-                )?.phone ?? ""
-                : "";
-              setSelectedPhone(firstPhone);
-              if (firstPhone) {
-                console.log("Telefone pré-selecionado:", firstPhone);
-                onPhoneChange?.(firstPhone);
-              } else {
-                onPhoneChange?.("");
-              }
-              onChange(val);
-            }}
+          <Input
+            readOnly
+            value={displayPhones}
+            placeholder="Nenhum contato "
             disabled={isLoading}
-          >
-            <SelectTrigger id="contact_id" className="w-full ">
-              <SelectValue placeholder="Selecione um contato" />
-            </SelectTrigger>
-            {isLoading && (
-              <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            )}
-            <SelectContent className="w-[var(--radix-select-trigger-width)]">
-              <div className="p-1 sticky top-0 bg-popover">
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Filtrar contatos..."
-                  className="w-full placeholder:text-xs"
-                />
-              </div>
-              {filtered.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-3 text-center">
-                  Não há dados disponíveis.
-                </div>
-              ) : (
-                <div
-                  className={
-                    filtered.length > 7
-                      ? "max-h-60 overflow-y-auto"
-                      : "max-h-full"
-                  }
-                >
-                  {filtered.map((c: Contact) => (
-                    <SelectItem key={c.id} value={c.id!}>
-                      {(Array.isArray(c.phoneNumbers) ? c.phoneNumbers : [])
-                        .map((p: { phone: string }) => p.phone)
-                        .join(", ")}
-                      {c.email ? ` ${c.email}` : ""}
-                    </SelectItem>
-                  ))}
-                </div>
-              )}
-            </SelectContent>
-          </Select>
+            className="w-full"
+          />
+          {isLoading && (
+            <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          )}
         </div>
-        {selectedContact && phoneOptions.length > 0 && (
-          <div className="flex-1 relative min-w-0">
-            <Select
-              value={selectedPhone}
-              onValueChange={(phone) => {
-                setSelectedPhone(phone);
-                console.log("Telefone selecionado:", phone);
-                onPhoneChange?.(phone);
-              }}
-              disabled={isLoading}
-            >
-              <SelectTrigger className="w-full ">
-                <SelectValue placeholder="Selecione um telefone" />
-              </SelectTrigger>
-              <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                <div
-                  className={
-                    phoneOptions.length > 7
-                      ? "max-h-60 overflow-y-auto"
-                      : "max-h-full"
-                  }
-                >
-                  {phoneOptions.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </div>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
         <Popover
           open={open}
           onOpenChange={(next) => {
@@ -361,3 +263,4 @@ export function ContactSelect({
     </div>
   );
 }
+

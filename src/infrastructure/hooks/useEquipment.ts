@@ -60,7 +60,7 @@ export function useEquipment(
 
       return allEquipment;
     },
-   
+
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -223,6 +223,7 @@ export function useDeleteEquipment() {
         return old.filter((e) => e.id !== id);
       });
       await queryClient.invalidateQueries({ queryKey: QUERY_KEY, refetchType: "active" });
+      await queryClient.invalidateQueries({ queryKey: ["site"] });
       await queryClient.refetchQueries({ queryKey: QUERY_KEY, type: "active" });
       toast.success("Equipamento excluído com sucesso!");
     },

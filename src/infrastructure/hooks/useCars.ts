@@ -20,9 +20,8 @@ export function useCars(options?: CarsQueryOptions) {
       try {
         const response = await api.get("/car/getAll");
         const data = response.data as unknown;
-        const list = Array.isArray(data)
-          ? (data as Car[])
-          : ((data as any)?.items ?? (data as any)?.data ?? []);
+        const payload = data as { items?: Car[]; data?: Car[] } | Car[];
+        const list = Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? []);
         return list as Car[];
       } catch (err) {
         toast.error("Falha ao carregar viaturas");
@@ -35,6 +34,37 @@ export function useCars(options?: CarsQueryOptions) {
     refetchOnReconnect: true,
     retry: 1,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCarById(id?: string) {
+  return useQuery({
+    queryKey: ["car", id],
+    enabled: !!id,
+    queryFn: async (): Promise<Car | null> => {
+      if (!id) return null;
+      try {
+        const response = await api.get(`/car/getById/${id}`);
+        const data = response.data;
+        return (data?.data ?? data) as Car | null;
+      } catch {
+        try {
+          const response = await api.get("/car/getAll");
+          const data = response.data as unknown;
+          let list: Car[] = [];
+          if (Array.isArray(data)) {
+            list = data as Car[];
+          } else {
+            const payload = data as { items?: Car[]; data?: Car[] };
+            list = payload.items ?? payload.data ?? [];
+          }
+          return list.find((c) => c.id === id) || null;
+        } catch {
+          return null;
+        }
+      }
+    },
+    retry: 1,
   });
 }
 
@@ -51,7 +81,7 @@ export function useCreateCar() {
             : null,
       } as CreateCarInput;
       const response = await api.post("/car/create", payload);
-      return response.data;
+      return response.data?.data || response.data;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["cars"] });

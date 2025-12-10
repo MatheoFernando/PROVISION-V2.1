@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ColumnDef } from "@tanstack/react-table";
-import { Eye, Edit, Trash2, MoreHorizontal, X } from "lucide-react";
+import { CellContext, ColumnDef } from "@tanstack/react-table";
+import { Eye, Edit, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
-import { OccurrenceDialog } from "./occurrence-view";
-import { OccurrenceCreate } from "./occurrence-create";
+import { OccurrenceViewDrawer } from "./occurrence-view";
+import { OccurrenceDialog } from "./occurrence-create";
 import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
 import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
@@ -22,13 +22,7 @@ import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Trash } from "phosphor-react";
 
 function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -65,7 +59,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
             onClick={() => setIsEditOpen(true)}
             className="cursor-pointer"
           >
-            <Edit className="size-4 mr-2 text-blue-600" />
+            <Edit className="size-4 mr-2 " />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -75,54 +69,23 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
             onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
-            <Trash2 className="size-4 mr-2" />
+            <Trash className="size-4 mr-2" />
             Excluir
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <OccurrenceDialog
+      <OccurrenceViewDrawer
         occurrence={occurrence}
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />
 
-      <Drawer
+      <OccurrenceDialog
         open={isEditOpen}
         onOpenChange={(open) => setIsEditOpen(open)}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    Editar Ocorrência
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <OccurrenceCreate
-                id={occurrence.id}
-                initialData={occurrence as any}
-                onSuccess={() => setIsEditOpen(false)}
-                onCancel={() => setIsEditOpen(false)}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        occurrenceToEdit={occurrence}
+      />
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -154,29 +117,34 @@ const formatHour = (value?: string) => {
     .replace(".", ":");
 };
 
-const createOccurrenceColumns = (): ColumnDef<Occurrence>[] => [
+type OccurrenceWithNames = Occurrence & {
+  employeeName?: string;
+  equipmentName?: string;
+  siteName?: string;
+};
+
+const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
   {
     accessorKey: "cod",
     header: "Código",
     size: 40,
-    cell: ({ row }) => <div className="font-medium">{row.original.cod}</div>,
+    cell: ({ row }) => <div>{row.original.cod}</div>,
   },
 
   {
-    accessorKey: "equipmentId",
+    accessorKey: "equipmentName",
     header: "Equipamento",
-    cell: ({ row }) => <div>{row.getValue<string>("equipmentId")}</div>,
+    cell: ({ row }) => <div>{row.original.equipmentName || "—"}</div>,
   },
   {
-    accessorKey: "employeeId",
+    accessorKey: "employeeName",
     header: "Funcionário",
-    cell: ({ row }) => <div>{row.getValue<string>("employeeId")}</div>,
+    cell: ({ row }) => <div>{row.original.employeeName || "—"}</div>,
   },
   {
-    accessorKey: "siteId",
+    accessorKey: "siteName",
     header: "Site",
-    size: 120,
-    cell: ({ row }) => <div>{row.getValue<string>("siteId")}</div>,
+    cell: ({ row }) => <div>{row.original.siteName || "—"}</div>,
   },
 
   {
@@ -200,8 +168,8 @@ const createOccurrenceColumns = (): ColumnDef<Occurrence>[] => [
         gravity === "Alta"
           ? "destructive"
           : gravity === "Média"
-          ? "default"
-          : "secondary";
+            ? "default"
+            : "secondary";
       return (
         <Badge
           variant={variant}
@@ -209,10 +177,10 @@ const createOccurrenceColumns = (): ColumnDef<Occurrence>[] => [
             variant === "destructive"
               ? "bg-red-500 text-white"
               : variant === "default"
-              ? "bg-orange-200 text-red-500"
-              : variant === "secondary"
-              ? " bg-green-500 text-white"
-              : "bg-gray-200 text-gray-500"
+                ? "bg-orange-200 text-red-500"
+                : variant === "secondary"
+                  ? " bg-green-500 text-white"
+                  : "bg-gray-200 text-gray-500"
           }
         >
           {gravity}
@@ -268,7 +236,7 @@ export function OccurrenceTable({
   const { data: employees = [] } = useEmployees(companyId);
   const { data: equipments = [] } = useEquipment();
   const { data: sites = [] } = useSites();
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 
   const employeeById = React.useMemo(() => {
     const map: Record<string, string> = {};
@@ -297,9 +265,12 @@ export function OccurrenceTable({
   const resolvedData = React.useMemo(() => {
     return (data || []).map((o) => ({
       ...o,
-      employeeId: employeeById[o.employeeId || ""] || o.employeeId,
-      equipmentId: equipmentById[o.equipmentId || ""] || o.equipmentId,
-      siteId: siteById[o.siteId || ""] || o.siteId,
+      employeeId: o.employeeId,
+      equipmentId: o.equipmentId,
+      siteId: o.siteId,
+      employeeName: employeeById[o.employeeId || ""] || "—",
+      equipmentName: equipmentById[o.equipmentId || ""] || "—",
+      siteName: siteById[o.siteId || ""] || "—",
     }));
   }, [data, employeeById, equipmentById, siteById]);
 
@@ -317,40 +288,12 @@ export function OccurrenceTable({
           onClick: () => setIsCreateOpen(true),
         }}
       />
-      <Drawer
+
+      <OccurrenceDialog
         open={isCreateOpen}
-        onOpenChange={(open) => setIsCreateOpen(open)}
-        direction="right"
-      >
-        <DrawerContent className="h-full w-full sm:max-w-xl">
-          <div className="flex h-full flex-col">
-            <DrawerHeader className="border-b border-border px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DrawerTitle className="text-2xl font-bold text-foreground">
-                    Nova Ocorrência
-                  </DrawerTitle>
-                </div>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <OccurrenceCreate
-                onSuccess={() => setIsCreateOpen(false)}
-                onCancel={() => setIsCreateOpen(false)}
-              />
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        onOpenChange={setIsCreateOpen}
+        occurrenceToEdit={undefined}
+      />
     </div>
   );
 }

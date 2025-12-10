@@ -5,86 +5,176 @@ import { usePathname } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { allNavItems } from "./nav-items";
-import { ChevronRight } from "lucide-react";
+import { getAllNavItems } from "./nav-items";
 import type { LucideIcon } from "lucide-react";
+
+import { useTranslations } from "next-intl";
+
+import { useSiteById } from "@/infrastructure/hooks/useSites";
+import { useCustomerById } from "@/infrastructure/hooks/useCustomers";
+import { useEmployeeById } from "@/infrastructure/hooks/useEmployees";
 
 export function BreadcrumbClient(): React.ReactElement {
   const pathname = usePathname();
+  const t = useTranslations();
+
   const parts = pathname.split("/").filter(Boolean);
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin);
-  const customerIdFromPath = React.useMemo(() => {
-    const customersIndex = parts.findIndex(
-      (segment) => segment === "customers"
-    );
-    if (customersIndex === -1) return undefined;
-    const candidate = parts[customersIndex + 1];
-    const isLikelyId =
-      candidate && candidate.length > 8 && candidate.includes("-");
-    return isLikelyId ? candidate : undefined;
+
+  const siteIdFromPath = React.useMemo(() => {
+    const sitesIndex = parts.indexOf("sites");
+    if (sitesIndex !== -1 && parts[sitesIndex + 1]) {
+      const candidate = parts[sitesIndex + 1];
+      if (candidate.length > 20 && candidate !== "create") return candidate;
+    }
+    return undefined;
   }, [parts]);
+
+  const customerIdFromPath = React.useMemo(() => {
+    const clientsIndex = parts.indexOf("clientes");
+    if (clientsIndex !== -1 && parts[clientsIndex + 1]) {
+      const candidate = parts[clientsIndex + 1];
+      if (candidate.length > 20 && candidate !== "create") return candidate;
+    }
+    return undefined;
+  }, [parts]);
+
+  const employeeIdFromPath = React.useMemo(() => {
+    const employeesIndex = parts.indexOf("funcionarios");
+    if (employeesIndex !== -1 && parts[employeesIndex + 1]) {
+      const candidate = parts[employeesIndex + 1];
+      if (candidate.length > 20 && candidate !== "create") return candidate;
+    }
+    return undefined;
+  }, [parts]);
+
+  const { data: site, isLoading: isLoadingSite } = useSiteById(siteIdFromPath || "");
+  const { data: customer, isLoading: isLoadingCustomer } = useCustomerById(customerIdFromPath);
+  const companyId = useAuthStore((state) => state.companyId) ?? "";
+  const { data: employee, isLoading: isLoadingEmployee } = useEmployeeById(employeeIdFromPath, companyId);
 
 
   const mapTitle = React.useMemo(() => {
     const m = new Map<string, { label: string; icon?: LucideIcon }>();
+    const navItems = getAllNavItems(isGlobalAdmin ?? false);
+
     const addItem = (item: {
       title: string;
       url?: string;
       requiresGlobalAdmin?: boolean;
       icon?: LucideIcon;
-      children?: typeof allNavItems;
+      items?: typeof navItems;
     }) => {
       if (item.requiresGlobalAdmin && !isGlobalAdmin) return;
+
       if (item.url) m.set(item.url, { label: item.title, icon: item.icon });
-      if (item.children && item.children.length) item.children.forEach(addItem);
+      if (item.items && item.items.length) item.items.forEach(addItem);
     };
-    allNavItems.forEach(addItem);
+
+    navItems.forEach(addItem);
     return m;
   }, [isGlobalAdmin]);
 
+  const client = React.useMemo(() => {
+    if (!site) return undefined;
+    const c = site.customer ?? (Array.isArray(site.customers) ? site.customers[0] : site.customers);
+    return c;
+  }, [site]);
+
   const items = React.useMemo(() => {
-    const acc: { href: string; label: string; Icon?: LucideIcon }[] = [];
+    const acc: { href: string; label: string; Icon?: LucideIcon; isLoading?: boolean }[] = [];
     let current = "";
-    parts.forEach((p) => {
+
+    parts.forEach((p, index) => {
       current += `/${p}`;
       const meta = mapTitle.get(current);
-    
-      const label =  meta?.label ?? p;
-      acc.push({ href: current, label, Icon: meta?.icon });
+      let label = meta?.label;
+      let isLoading = false;
+
+      if (label) {
+
+        if (label.includes('.')) {
+          try {
+            label = t(label);
+          } catch (e) {
+
+          }
+        }
+      } else {
+        if (p === 'create') {
+          label = t('Common.create') || 'Create';
+        } else if (p === siteIdFromPath) {
+          if (isLoadingSite) {
+            isLoading = true;
+            label = "";
+          } else {
+            if (client && site) {
+              label = `${client.cod} - ${client.name} - ${site.name}`;
+            } else {
+              label = site?.name || p;
+            }
+          }
+        } else if (p === customerIdFromPath) {
+          if (isLoadingCustomer) {
+            isLoading = true;
+            label = "";
+          } else {
+            if (customer) {
+              label = `${customer.cod} - ${customer.name}`;
+            } else {
+              label = p;
+            }
+          }
+        } else if (p === employeeIdFromPath) {
+          if (isLoadingEmployee) {
+            isLoading = true;
+            label = "";
+          } else {
+            if (employee) {
+              label = `${employee.cod} - ${employee.fullName}`;
+            } else {
+              label = p;
+            }
+          }
+        } else {
+          if (p.length > 20 && p.includes('-')) {
+            label = p.substring(0, 8) + '...';
+          } else {
+            label = p.charAt(0).toUpperCase() + p.slice(1);
+          }
+        }
+      }
+
+
+      acc.push({ href: current, label: label || p, Icon: meta?.icon, isLoading });
     });
     return acc;
-  }, [parts, mapTitle, customerIdFromPath]);
+  }, [parts, mapTitle, siteIdFromPath, site, client, isLoadingSite, t, customerIdFromPath, customer, isLoadingCustomer, employeeIdFromPath, employee, isLoadingEmployee]);
+
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="mx-4 items-end">
+      <BreadcrumbList className="mx-4 ">
         {items.map((c, idx) => (
           <React.Fragment key={c.href}>
             {idx < items.length - 1 ? (
               <>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink
-                    href={c.href}
-                    className="font-medium text-muted-foreground hover:text-primary underline-offset-4 text-base transition-colors duration-200"
-                  >
-                    {c.Icon ? <c.Icon className="h-5 w-5" /> : null}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <span className="hidden md:block text-muted-foreground">
-                  {" "}
-                  <ChevronRight />{" "}
-                </span>
+
               </>
             ) : (
               <BreadcrumbItem>
-                <BreadcrumbPage className="  font-medium  hover:text-primary underline-offset-4  transition-colors duration-200 underline text-base text-blue-500">
-                  {c.label}
+                <BreadcrumbPage className="text-primary text-xl font-semibold flex items-center gap-2">
+                  {c.isLoading ? (
+                    <Skeleton className="h-6 w-32 rounded-lg" />
+                  ) : (
+                    c.label
+                  )}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             )}

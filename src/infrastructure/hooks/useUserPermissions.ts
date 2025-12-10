@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/infrastructure/utils/api"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 interface UserPermissionsParams {
   userId?: string
@@ -47,6 +48,7 @@ export function useUserPermissionsQuery({ userId, companyId, enabled = true }: U
 
 export function useUpdateUserPermissionsMutation() {
   const queryClient = useQueryClient()
+  const t = useTranslations("Hooks.UserPermissions");
 
   return useMutation<unknown, unknown, UpdateUserPermissionsPayload>({
     mutationKey: ["user-permissions-update"],
@@ -58,10 +60,11 @@ export function useUpdateUserPermissionsMutation() {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["user-permissions", variables.userId, variables.companyId] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
-      toast.success("Permissões atualizadas com sucesso")
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success(t("update.success"))
     },
     onError: () => {
-      toast.error("Não foi possível atualizar as permissões")
+      toast.error(t("update.error"))
     },
   })
 }

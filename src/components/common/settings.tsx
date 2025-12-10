@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import CreateUserDialog from "@/components/common/dashboard/users/users-create";
+import { UserDialog } from "@/components/common/dashboard/users/users-create";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useCompanyByIdQuery } from "@/infrastructure/hooks/useCompanies";
@@ -48,7 +48,7 @@ const passwordSchema = z.object({
 
 type PasswordSchema = z.infer<typeof passwordSchema>;
 
-interface PasswordFormValues extends PasswordSchema {}
+interface PasswordFormValues extends PasswordSchema { }
 
 export function Settings(): React.ReactElement {
   const router = useRouter();
@@ -113,7 +113,7 @@ export function Settings(): React.ReactElement {
 
   const handleNavigateToCompanyEdit = React.useCallback(() => {
     if (!canEditCompany) return;
-    router.push("/dashboard/companies");
+    router.push("/dashboard/empresa");
   }, [canEditCompany, router]);
 
 
@@ -186,7 +186,7 @@ export function Settings(): React.ReactElement {
                   <span className="text-sm text-gray-900 dark:text-gray-100">
                     {displayPhone}
                   </span>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -198,10 +198,9 @@ export function Settings(): React.ReactElement {
                       Editar
                     </Button>
                     {isUserDialogOpen && currentUser ? (
-                      <CreateUserDialog
+                      <UserDialog
                         key={currentUser.id}
-                        isEdit
-                        user={currentUser}
+                        userToEdit={currentUser}
                         open={isUserDialogOpen}
                         onOpenChange={setIsUserDialogOpen}
                       />
@@ -378,10 +377,10 @@ export function Settings(): React.ReactElement {
             <h3 className="text-base font-semibold">Precisa de suporte?</h3>
           </div>
 
-            <Link href="/dashboard/help" className="inline-flex items-center gap-2 text-primary hover:text-primary cursor-pointer">
-              Central de ajuda ↗
-            </Link>
-         
+          <Link href="/dashboard/help" className="inline-flex items-center gap-2 text-primary hover:text-primary cursor-pointer">
+            Central de ajuda ↗
+          </Link>
+
         </section>
       </div>
 

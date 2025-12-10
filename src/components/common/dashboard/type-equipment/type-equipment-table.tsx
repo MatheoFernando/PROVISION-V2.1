@@ -8,7 +8,7 @@ import { TypeEquipment } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TypeEquipmentCreate } from "./type-equipment-create";
+import { TypeEquipmentDialog } from "./type-equipment-create";
 import { useDeleteTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
 import { DeleteModal } from "@/components/ui/delete-modal";
 
@@ -132,10 +132,10 @@ export function TypeEquipmentTable() {
         ]}
       />
 
-      <TypeEquipmentCreate
-        typeEquipment={selectedTypeEquipment}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+      <TypeEquipmentDialog
+        typeEquipmentToEdit={selectedTypeEquipment}
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
       />
       <DeleteModal
         isOpen={isDeleteOpen}

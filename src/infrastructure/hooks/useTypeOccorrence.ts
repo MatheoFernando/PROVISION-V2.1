@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { TypeOccorrence } from "../types/domain";
 
 export function useTypeOccorrence() {
@@ -27,6 +28,7 @@ export function useTypeOccorrenceById(id?: string) {
 
 export function useCreateTypeOccorrence() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeOccurrence");
   return useMutation({
     mutationFn: async (payload: Omit<TypeOccorrence, 'id' | 'createdAt' | 'updatedAt'>): Promise<TypeOccorrence> => {
       const { data } = await api.post("/typeOccorrence/create", payload);
@@ -34,16 +36,17 @@ export function useCreateTypeOccorrence() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["type-occorrence"] });
-      toast.success("Tipo de ocorrência criado!");
+      toast.success(t("create.success"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao criar tipo de ocorrência");
+      toast.error(error?.response?.data?.message || t("create.error"));
     },
   });
 }
 
 export function useUpdateTypeOccorrence() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeOccurrence");
   return useMutation({
     mutationFn: async (payload: Partial<Omit<TypeOccorrence, 'createdAt' | 'updatedAt'>> & { id: string }): Promise<TypeOccorrence> => {
       const { data } = await api.put("/typeOccorrence", payload);
@@ -51,26 +54,27 @@ export function useUpdateTypeOccorrence() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["type-occorrence"] });
-      toast.success("Tipo de ocorrência atualizado!");
+      toast.success(t("update.success"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao atualizar tipo de ocorrência");
+      toast.error(error?.response?.data?.message || t("update.error"));
     },
   });
 }
 
 export function useDeleteTypeOccorrence() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeOccurrence");
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/typeOccorrence/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["type-occorrence"] });
-      toast.success("Tipo de ocorrência excluído!");
+      toast.success(t("delete.success"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir tipo de ocorrência");
+      toast.error(error?.response?.data?.message || t("delete.error"));
     },
   });
 }

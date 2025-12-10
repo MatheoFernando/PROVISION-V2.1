@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Area } from "../types/domain";
 
 export function useAreas() {
@@ -27,6 +28,7 @@ export function useAreaById(id?: string) {
 
 export function useCreateArea() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Areas");
   return useMutation({
     mutationFn: async (payload: Omit<Area, 'id' | 'createdAt' | 'updatedAt'>): Promise<Area> => {
       const { data } = await api.post("/area/create", payload);
@@ -37,16 +39,17 @@ export function useCreateArea() {
         const filtered = old.filter(a => a.id !== created.id);
         return [created, ...filtered];
       });
-      toast.success("Área criada com sucesso!");
+      toast.success(t("create.success"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao criar área");
+      toast.error(error?.response?.data?.message || t("create.error"));
     },
   });
 }
 
 export function useUpdateArea() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Areas");
   return useMutation({
     mutationFn: async (payload: Partial<Omit<Area, 'createdAt' | 'updatedAt'>> & { id: string }): Promise<Area> => {
       const { data } = await api.put("/area", payload);
@@ -56,26 +59,27 @@ export function useUpdateArea() {
       queryClient.setQueryData(["areas"], (old: Area[] = []) => {
         return old.map(a => a.id === updated.id ? updated : a);
       });
-      toast.success("Área atualizada com sucesso!");
+      toast.success(t("update.success"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao atualizar área");
+      toast.error(error?.response?.data?.message || t("update.error"));
     },
   });
 }
 
 export function useDeleteArea() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Areas");
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/area/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["areas"] });
-      toast.success("Área excluída com sucesso!");
+      toast.success(t("delete.success"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir área");
+      toast.error(error?.response?.data?.message || t("delete.error"));
     },
   });
 }

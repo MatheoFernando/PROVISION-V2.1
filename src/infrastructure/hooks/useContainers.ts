@@ -14,9 +14,8 @@ export function useContainers() {
       try {
         const response = await api.get("/container/getAll");
         const data = response.data as unknown;
-        const list = Array.isArray(data)
-          ? (data as Container[])
-          : ((data as any)?.items ?? (data as any)?.data ?? []);
+        const payload = data as { items?: Container[]; data?: Container[] } | Container[];
+        const list = Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? []);
         return list as Container[];
       } catch (err) {
         toast.error("Falha ao carregar containers");
@@ -34,28 +33,37 @@ export function useContainers() {
 export function useContainer(id?: string) {
   return useQuery({
     queryKey: ["container", id ?? "unknown"],
-    queryFn: async (): Promise<Container> => {
-      if (!id) throw new Error("missing id");
+    queryFn: async (): Promise<Container | null> => {
+      if (!id) return null;
       try {
         const response = await api.get(`/container/${id}`);
-        return response.data;
-      } catch (err) {
-        toast.error("Falha ao carregar container");
-        throw err as unknown;
+        return response.data?.data || response.data;
+      } catch {
+        try {
+          const response = await api.get("/container/getAll");
+          const data = response.data as unknown;
+          let list: Container[] = [];
+          if (Array.isArray(data)) {
+            list = data as Container[];
+          } else {
+            const payload = data as { items?: Container[]; data?: Container[] };
+            list = payload.items ?? payload.data ?? [];
+          }
+          return list.find((c) => c.id === id) || null;
+        } catch {
+          return null;
+        }
       }
     },
     enabled: !!id,
     staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
     retry: 1,
   });
 }
 
 export function useCreateContainer() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<Container, unknown, CreateContainerInput>({
     mutationFn: async (data: CreateContainerInput): Promise<Container> => {
       const payload = {
@@ -65,7 +73,7 @@ export function useCreateContainer() {
         companyId: data.companyId,
       };
       const response = await api.post("/container/create", payload);
-      return response.data;
+      return response.data?.data || response.data;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["containers"] });
@@ -80,7 +88,7 @@ export function useCreateContainer() {
 
 export function useUpdateContainer() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Container, 'id' | 'createdAt' | 'updatedAt'>> }): Promise<Container> => {
       const response = await api.put(`/container`, { id, ...data });
@@ -99,7 +107,7 @@ export function useUpdateContainer() {
 
 export function useDeleteContainer() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/container/${id}`);
