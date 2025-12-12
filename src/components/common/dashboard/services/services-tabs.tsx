@@ -26,6 +26,7 @@ import {
   CompanyModuleDialog,
   type CompanyModuleDialogState,
 } from "./company-module-create";
+import { useTranslations } from "next-intl";
 
 interface AdminServicesTabsProps {
   companyModules: CompanyModuleWithDetails[];
@@ -41,6 +42,7 @@ export function AdminServicesTabs({
   onStatusFilterChange,
   isLoading,
 }: AdminServicesTabsProps) {
+  const t = useTranslations("ServicesManagement");
   const {
     data: modules = [],
     isLoading: isLoadingModules,
@@ -56,14 +58,14 @@ export function AdminServicesTabs({
     () => [
       {
         accessorKey: "name",
-        header: "Serviço",
+        header: t("fields.service"),
         cell: ({ row }) => (
           <div className="font-medium">{row.getValue("name") || "N/D"}</div>
         ),
       },
       {
         accessorKey: "description",
-        header: "Descrição",
+        header: t("fields.description"),
         cell: ({ row }) => (
           <div className="truncate">
             {row.getValue("description") || "N/D"}
@@ -72,7 +74,7 @@ export function AdminServicesTabs({
       },
       {
         accessorKey: "status",
-        header: "Estado",
+        header: t("fields.status"),
         cell: ({ row }) => {
           const rawStatus = row.getValue("status") as unknown;
           const isActive =
@@ -88,13 +90,13 @@ export function AdminServicesTabs({
                 } `}
               variant={isActive ? "default" : "destructive"}
             >
-              {isActive ? "Ativo" : "Inativo"}
+              {isActive ? t("fields.active") : t("fields.inactive")}
             </Badge>
           );
         },
       },
     ],
-    [],
+    [t],
   );
 
   function handleConfirmDelete() {
@@ -111,8 +113,8 @@ export function AdminServicesTabs({
   return (
     <Tabs defaultValue="modules" className="space-y-4">
       <TabsList>
-        <TabsTrigger value="modules" className="cursor-pointer">Módulo</TabsTrigger>
-        <TabsTrigger value="company-modules" className="cursor-pointer">Módulo por empresa</TabsTrigger>
+        <TabsTrigger value="modules" className="cursor-pointer">{t("tabs.module")}</TabsTrigger>
+        <TabsTrigger value="company-modules" className="cursor-pointer">{t("tabs.companyModules")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="modules" className="space-y-4">
@@ -123,21 +125,21 @@ export function AdminServicesTabs({
           searchKey="name"
           dateKey="createdAt"
           isLoading={isLoadingModules}
-          placeholder="Pesquisar Módulo..."
+          placeholder={t("placeholders.searchModule")}
           actionButton={{
-            label: "Criar Módulo",
+            label: t("buttons.createModule"),
             component: <CreateService />,
           }}
           rowActions={[
             {
-              label: "Editar",
+              label: t("buttons.edit"),
               icon: <PencilSimple className="h-4 w-4 mr-2" />,
               onClick: (module: ModuleSchema) => {
                 setEditingModule(module);
               },
             },
             {
-              label: "Associar",
+              label: t("buttons.associate"),
               icon: <Link2 className="h-4 w-4 mr-2" />,
               onClick: (module: ModuleSchema) => {
                 if (!module.id) return;
@@ -149,7 +151,7 @@ export function AdminServicesTabs({
               },
             },
             {
-              label: "Eliminar",
+              label: t("buttons.delete"),
               icon: <Trash className="h-4 w-4 mr-2" />,
               onClick: (module: ModuleSchema) => {
                 setDeleteTarget(module);
@@ -173,10 +175,10 @@ export function AdminServicesTabs({
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleConfirmDelete}
           isLoading={isProcessingDelete}
-          title="Eliminar serviço"
+          title={t("titles.deleteService")}
           message={deleteTarget?.name
-            ? `Tem certeza que deseja eliminar o serviço ${deleteTarget.name}? Esta ação não pode ser desfeita.`
-            : "Tem certeza que deseja eliminar este serviço? Esta ação não pode ser desfeita."}
+            ? `${t("deleteModal.message")} ${deleteTarget.name}? ${t("deleteModal.permanentAction")}`
+            : `${t("deleteModal.message")}? ${t("deleteModal.permanentAction")}`}
         />
       </TabsContent>
 
@@ -184,7 +186,7 @@ export function AdminServicesTabs({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
             <Label className="text-xs font-medium text-muted-foreground">
-              Filtro por status
+              {t("filters.statusFilter")}
             </Label>
             <Select
               value={statusFilter ?? "all"}
@@ -192,13 +194,13 @@ export function AdminServicesTabs({
                 onStatusFilterChange(value === "all" ? null : value)
               }
             >
-              <SelectTrigger className="w-40 h-9 text-sm">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-40 h-9 text-sm cursor-pointer">
+                <SelectValue placeholder={t("placeholders.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="true">Ativo</SelectItem>
-                <SelectItem value="false">Inativo</SelectItem>
+                <SelectItem value="all" className="cursor-pointer">{t("filters.all")}</SelectItem>
+                <SelectItem value="true" className="cursor-pointer">{t("fields.active")}</SelectItem>
+                <SelectItem value="false" className="cursor-pointer">{t("fields.inactive")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

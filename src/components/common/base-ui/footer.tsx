@@ -8,7 +8,7 @@ export function Footer() {
     const { data: company } = useCompanyByIdQuery(companyId || undefined);
 
     return (
-        <footer className="bg-background p-3 border-t border-slate-200 dark:border-border/50">
+        <footer className="bg-background p-1.5 border-t border-slate-200 dark:border-border/50">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                     {company ? (
@@ -17,7 +17,7 @@ export function Footer() {
                                 {company.cod}
                             </span>
                             -
-                            <span className="text-base font-medium text-foreground">{company.businessName}</span>
+                            <span className="text-base font-medium text-foreground">{company.taxName}</span>
                         </>
                     ) : (
                         <div className="flex items-center gap-2 animate-pulse">
@@ -27,7 +27,7 @@ export function Footer() {
                     )}
                 </div>
                 <div className="text-base font-medium">
-                    &copy; {new Date().getFullYear()} Provision
+                  &copy;  Provision {new Date().getFullYear()} 
                 </div>
             </div>
         </footer>

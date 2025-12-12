@@ -370,7 +370,6 @@ function CompanyFormPage() {
                     <FormField
                       control={form.control}
                       name="nif"
-                      disabled={isEditing}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-medium text-slate-700">

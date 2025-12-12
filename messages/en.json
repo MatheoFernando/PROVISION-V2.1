@@ -709,5 +709,78 @@
             "title": "Start New Patrol",
             "description": "Fill in the initial data to start a new patrol."
         }
+    },
+    "ServicesManagement": {
+        "fields": {
+            "company": "Company",
+            "module": "Module / Service",
+            "service": "Service",
+            "description": "Description",
+            "status": "Status",
+            "serviceName": "Service Name",
+            "moduleName": "Module Name",
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "placeholders": {
+            "selectService": "Select a service",
+            "searchService": "Search service...",
+            "searchServices": "Search services...",
+            "searchModule": "Search Module...",
+            "enterModuleName": "Enter module name",
+            "enterServiceName": "Enter service name",
+            "enterDescription": "Enter service description",
+            "status": "Status"
+        },
+        "messages": {
+            "noDataFiltered": "No data filtered.",
+            "noServiceFound": "No service found.",
+            "serviceAvailable": "The service will be available for use"
+        },
+        "buttons": {
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveChanges": "Save changes",
+            "associate": "Associate",
+            "edit": "Edit",
+            "dissociate": "Dissociate",
+            "delete": "Delete",
+            "processing": "Processing...",
+            "createService": "Create Service",
+            "createModule": "Create Module",
+            "updating": "Updating...",
+            "updateService": "Update Service",
+            "associateServices": "Associate Services",
+            "close": "Close",
+            "viewOthers": "View others"
+        },
+        "titles": {
+            "editAssociation": "Edit association",
+            "associateServiceToCompany": "Associate service to company",
+            "createModule": "Create Module",
+            "editService": "Edit Service",
+            "deleteService": "Delete service",
+            "services": "Services"
+        },
+        "descriptions": {
+            "updateServiceInfo": "Update service information.",
+            "selectModuleAccess": "Select the module you want to access"
+        },
+        "tabs": {
+            "module": "Module",
+            "companyModules": "Company Modules"
+        },
+        "filters": {
+            "statusFilter": "Filter by status",
+            "all": "All"
+        },
+        "deleteModal": {
+            "message": "Are you sure you want to delete the service",
+            "permanentAction": "This action cannot be undone."
+        },
+        "dynamic": {
+            "moduleTitle": "Module:",
+            "moduleContent": "The content of this module will be loaded here."
+        }
     }
 }

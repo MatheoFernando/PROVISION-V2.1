@@ -11,7 +11,7 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select"
 import { SiteSelect } from "@/components/common/base-ui/selects/site-select"
 import { EquipmentSelect } from "@/components/common/base-ui/selects/equipment-select"
-import { useCreateOccurrenceMutation, useOccurrence, useUpdateOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences"
+import { useCreateOccurrenceMutation, useUpdateOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences"
 import { Label } from "@/components/ui/label"
 import { Loader2, Clock2Icon } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -131,8 +131,8 @@ export function OccurrenceDialog({
         siteId: basePayload.siteId,
         time: basePayload.time,
         correctiveAction: basePayload.correctiveAction ?? "",
-        gravity: (basePayload.gravity as any) ?? "Baixa",
-        status: (basePayload.status as any) ?? "Ativo",
+        gravity: (basePayload.gravity ) ?? "Baixa",
+        status: (basePayload.status ) ?? "Ativo",
       };
 
       updateMutation.mutate(updatePayload, {
@@ -337,14 +337,14 @@ export function OccurrenceDialog({
               variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={isPending}
-              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl cursor-pointer"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="shadow-lg rounded-xl px-6"
+              className="shadow-lg rounded-xl px-6 cursor-pointer"
             >
               {isPending ? (
                 <>

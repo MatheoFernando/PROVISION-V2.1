@@ -6,6 +6,7 @@ import {
   useCompaniesQuery,
   useDeleteCompanyMutation,
 } from "@/infrastructure/hooks/useCompanies";
+import { getFileUrl } from "@/infrastructure/utils/file-utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Company } from "@/infrastructure/types/domain";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,7 +34,7 @@ const columns: ColumnDef<Company, unknown>[] = [
         <div className="flex items-center gap-3 py-1">
           <Avatar className="h-8 w-8 rounded-sm">
             <AvatarImage
-              src={company.photo || undefined}
+              src={getFileUrl(company.photo)}
               alt={company.businessName}
               className="rounded-sm"
             />

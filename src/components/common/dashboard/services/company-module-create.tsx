@@ -26,6 +26,7 @@ import {
   useUpdateCompanyModuleMutation,
 } from "@/infrastructure/hooks/useCompanies";
 import { useModules } from "@/infrastructure/hooks/useModules";
+import { useTranslations } from "next-intl";
 
 export interface CompanyModuleDialogState {
   associationId?: string | null;
@@ -47,6 +48,7 @@ export function CompanyModuleDialog({
   defaultModuleId,
   defaultStatus = true,
 }: CompanyModuleDialogProps) {
+  const t = useTranslations("ServicesManagement");
   const createAssociation = useCreateCompanyModuleMutation();
   const updateAssociation = useUpdateCompanyModuleMutation();
   const { data: associationDetails, isFetching: isFetchingAssociation } =
@@ -133,8 +135,8 @@ export function CompanyModuleDialog({
   }
 
   const dialogTitle = associationId
-    ? "Editar associação"
-    : "Associar serviço à empresa";
+    ? t("titles.editAssociation")
+    : t("titles.associateServiceToCompany");
 
   return (
     <Dialog
@@ -150,37 +152,37 @@ export function CompanyModuleDialog({
         <div className="grid grid-cols-2 gap-6 py-4">
           <div className="space-y-2 ">
             <Label className="text-xs font-medium text-muted-foreground">
-              Empresa
+              {t("fields.company")}
             </Label>
             <CompanySelect value={companyId} onChange={setCompanyId} />
           </div>
           <div className="space-y-2 ">
             <Label className="text-xs font-medium text-muted-foreground">
-              Módulo /   Serviço
+              {t("fields.module")}
             </Label>
             <Select value={moduleId} onValueChange={setModuleId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione um serviço" />
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder={t("placeholders.selectService")} />
               </SelectTrigger>
               <SelectContent>
                 <div className="px-3 pt-2 pb-1 border-b bg-background sticky top-0 z-10">
                   <Input
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Pesquisar serviço..."
+                    placeholder={t("placeholders.searchService")}
                     className="h-8 text-sm placeholder:font-normal"
                     autoFocus
                   />
                 </div>
                 {filteredModules.length === 0 ? (
                   <div className="p-3 text-sm text-muted-foreground">
-                    {searchTerm ? "Nenhum dado filtrado." : "Nenhum serviço encontrado."}
+                    {searchTerm ? t("messages.noDataFiltered") : t("messages.noServiceFound")}
                   </div>
                 ) : (
                   filteredModules.map(
                     (module) =>
                       module.id && (
-                        <SelectItem key={module.id} value={module.id}>
+                        <SelectItem key={module.id} value={module.id} className="cursor-pointer">
                           {module.name}
                         </SelectItem>
                       ),
@@ -191,7 +193,7 @@ export function CompanyModuleDialog({
           </div>
           <div className="flex items-center justify-between border rounded-lg p-3 col-span-2">
             <Label htmlFor="dialog-status" className="mr-4">
-              Ativo
+              {t("fields.active")}
             </Label>
             <Switch
               id="dialog-status"
@@ -208,7 +210,7 @@ export function CompanyModuleDialog({
             className="cursor-pointer"
             disabled={isSubmitting || isFetchingAssociation}
           >
-            Cancelar
+            {t("buttons.cancel")}
           </Button>
           <Button
             type="button"
@@ -221,7 +223,7 @@ export function CompanyModuleDialog({
             }
             onClick={handleSubmit}
           >
-            {isSubmitting ? "A guardar..." : associationId ? "Salvar mudanças" : "Associar"}
+            {isSubmitting ? t("buttons.saving") : associationId ? t("buttons.saveChanges") : t("buttons.associate")}
           </Button>
         </DialogFooter>
       </DialogContent>

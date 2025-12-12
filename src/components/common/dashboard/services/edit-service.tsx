@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { moduleSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
 import { useUpdateModule } from "@/infrastructure/hooks/useModules";
+import { useTranslations } from "next-intl";
 
 interface EditServiceProps {
   service: ModuleSchema;
@@ -32,6 +33,7 @@ interface EditServiceProps {
 }
 
 export function EditService({ service, open, onOpenChange }: EditServiceProps) {
+  const t = useTranslations("ServicesManagement");
   const updateModuleMutation = useUpdateModule();
 
   const form = useForm<Partial<ModuleSchema>>({
@@ -75,9 +77,9 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar Serviço</DialogTitle>
+          <DialogTitle>{t("titles.editService")}</DialogTitle>
           <DialogDescription>
-            Atualize as informações do serviço.
+            {t("descriptions.updateServiceInfo")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -87,9 +89,9 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Serviço</FormLabel>
+                  <FormLabel>{t("fields.serviceName")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite o nome do serviço" {...field} />
+                    <Input placeholder={t("placeholders.enterServiceName")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -100,11 +102,11 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>{t("fields.description")}</FormLabel>
                   <FormControl>
                     <Textarea
                       className="resize-none"
-                      placeholder="Digite a descrição do serviço"
+                      placeholder={t("placeholders.enterDescription")}
                       {...field}
                     />
                   </FormControl>
@@ -118,9 +120,9 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Serviço Ativo</FormLabel>
+                    <FormLabel>{t("fields.active")}</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      O serviço estará disponível para uso
+                      {t("messages.serviceAvailable")}
                     </div>
                   </div>
                   <FormControl>
@@ -144,12 +146,12 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                 onClick={() => onOpenChange(false)}
                 className="cursor-pointer"
               >
-                Cancelar
+                {t("buttons.cancel")}
               </Button>
               <Button type="submit" disabled={updateModuleMutation.isPending} className="cursor-pointer">
                 {updateModuleMutation.isPending
-                  ? "Atualizando..."
-                  : "Atualizar Serviço"}
+                  ? t("buttons.updating")
+                  : t("buttons.updateService")}
               </Button>
             </div>
           </form>

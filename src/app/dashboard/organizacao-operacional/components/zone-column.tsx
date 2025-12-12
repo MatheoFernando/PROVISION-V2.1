@@ -12,6 +12,7 @@ interface ZoneColumnProps {
     onSelect: (id: string) => void;
     onAdd: () => void;
     onEdit: (zone: any) => void;
+    onDelete: (e: React.MouseEvent, id: string, name: string) => void;
     getMetrics: (zoneId: string) => { sectors: number; sites: number };
 }
 
@@ -23,6 +24,7 @@ export function ZoneColumn({
     onSelect,
     onAdd,
     onEdit,
+    onDelete,
     getMetrics
 }: ZoneColumnProps) {
     const t = useTranslations("OrganizationalStructure");
@@ -77,13 +79,21 @@ export function ZoneColumn({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary rounded-lg"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary rounded-lg -mr-1"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onEdit(zone);
                                     }}
                                 >
                                     <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive rounded-lg -mr-1"
+                                    onClick={(e) => onDelete(e, zone.id!, zone.name)}
+                                >
+                                    <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
                         </header>

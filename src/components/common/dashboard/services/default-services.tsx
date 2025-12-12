@@ -259,15 +259,15 @@ export function DefaultServices() {
               <div className="h-8 w-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
                 <span className="text-lg font-medium text-muted-foreground">+</span>
               </div>
-              <span className="text-[11px] font-medium text-muted-foreground text-center leading-tight">Ver<br />outros</span>
+              <span className="text-[11px] font-medium text-muted-foreground text-center leading-tight">{t("buttons.viewOthers")}</span>
             </div>
           </DrawerTrigger>
           <DrawerContent className="bg-white dark:bg-zinc-950 rounded-t-[32px] border-none shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
             <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-zinc-300 dark:bg-zinc-800 mt-4 mb-2" />
             <DrawerHeader className="text-center pb-2">
-              <DrawerTitle className="text-xl font-bold tracking-tight">Serviços</DrawerTitle>
+              <DrawerTitle className="text-xl font-bold tracking-tight">{t("titles.services")}</DrawerTitle>
               <DrawerDescription className="text-muted-foreground/80">
-                Selecione o módulo que deseja acessar
+                {t("descriptions.selectModuleAccess")}
               </DrawerDescription>
             </DrawerHeader>
             <div className="p-6 grid gap-3 max-h-[70vh] overflow-y-auto">
@@ -316,8 +316,8 @@ export function DefaultServices() {
             </div>
             <div className="p-6 pt-2 pb-8">
               <DrawerClose asChild>
-                <button className="w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground py-3 bg-gray-100 dark:bg-zinc-900 rounded-2xl transition-colors">
-                  Fechar
+                <button className="w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground py-3 bg-gray-100 dark:bg-zinc-900 rounded-2xl transition-colors cursor-pointer">
+                  {t("buttons.close")}
                 </button>
               </DrawerClose>
             </div>
@@ -341,8 +341,8 @@ export function DefaultServices() {
 
       {!baseServices.some(s => s.id === selectedService) && selectedService && (
         <div className="p-8 text-center text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
-          <h3 className="text-lg font-medium text-foreground mb-2">Módulo: {services.find(s => s.id === selectedService)?.name}</h3>
-          <p>O conteúdo deste módulo será carregado aqui.</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">{t("dynamic.moduleTitle")} {services.find(s => s.id === selectedService)?.name}</h3>
+          <p>{t("dynamic.moduleContent")}</p>
         </div>
       )}
     </div>

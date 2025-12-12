@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Layers, Pencil, Trash2, User } from "lucide-react";
+import {  Layers, Pencil, Trash2, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { OrgColumn } from "./org-column";
 
@@ -11,6 +11,7 @@ interface AreaColumnProps {
     onSelect: (id: string) => void;
     onAdd: () => void;
     onEdit: (area: any) => void;
+    onDelete: (e: React.MouseEvent, id: string, name: string) => void;
     getMetrics: (areaId: string, employeeId?: string) => { zones: number; sectors: number; sites: number; responsible: string };
 }
 
@@ -21,6 +22,7 @@ export function AreaColumn({
     onSelect,
     onAdd,
     onEdit,
+    onDelete,
     getMetrics
 }: AreaColumnProps) {
     const t = useTranslations("OrganizationalStructure");
@@ -58,7 +60,7 @@ export function AreaColumn({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary rounded-lg"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary rounded-lg -mr-1"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onEdit(area);
@@ -66,10 +68,15 @@ export function AreaColumn({
                                 >
                                     <Pencil className="h-3 w-3" />
                                 </Button>
-                                <ChevronRight className={cn(
-                                    "h-4 w-4 transition-transform duration-200",
-                                    isSelected ? "text-primary translate-x-1" : "text-muted-foreground"
-                                )} />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive rounded-lg -mr-1"
+                                    onClick={(e) => onDelete(e, area.id!, area.name)}
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </Button>
+                             
                             </div>
                         </header>
 

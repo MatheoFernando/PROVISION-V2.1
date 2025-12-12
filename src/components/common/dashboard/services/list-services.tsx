@@ -14,6 +14,7 @@ import {
   CompanyModuleDialog,
   type CompanyModuleDialogState,
 } from "./company-module-create";
+import { useTranslations } from "next-intl";
 
 interface ListServicesProps {
   services: CompanyModuleWithDetails[];
@@ -27,6 +28,7 @@ interface CompanyModuleRow extends CompanyModuleWithDetails {
 }
 
 export function ListServices({ services, isLoading, readOnly = false, showCompanyColumn = false }: ListServicesProps) {
+  const t = useTranslations("ServicesManagement");
   const [deleteTarget, setDeleteTarget] =
     useState<CompanyModuleWithDetails | null>(null);
   const deleteCompanyModuleMutation = useDeleteCompanyModuleMutation();
@@ -71,14 +73,14 @@ export function ListServices({ services, isLoading, readOnly = false, showCompan
       cols.push(
         {
           accessorKey: "module.name",
-          header: "Serviço",
+          header: t("fields.service"),
           cell: ({ row }) => (
             <div className="font-medium">{row.original.module?.name ?? "N/D"}</div>
           ),
         },
         {
           accessorKey: "module.description",
-          header: "Descrição",
+          header: t("fields.description"),
           cell: ({ row }) => (
             <div className="truncate">
               {row.original.module?.description || "-"}
@@ -87,7 +89,7 @@ export function ListServices({ services, isLoading, readOnly = false, showCompan
         },
         {
           accessorKey: "status",
-          header: "Estado",
+          header: t("fields.status"),
           cell: ({ row }) => {
             const isActive = getAssociationStatus(row.original);
             return (
@@ -98,7 +100,7 @@ export function ListServices({ services, isLoading, readOnly = false, showCompan
                   } `}
                 variant={isActive ? "default" : "destructive"}
               >
-                {isActive ? "Ativo" : "Inativo"}
+                {isActive ? t("fields.active") : t("fields.inactive")}
               </Badge>
             );
           },
@@ -129,12 +131,12 @@ export function ListServices({ services, isLoading, readOnly = false, showCompan
     if (readOnly) return [];
     return [
       {
-        label: "Editar",
+        label: t("buttons.edit"),
         icon: <Edit className="size-4" />,
         onClick: openAssociationDialog,
       },
       {
-        label: "Desassociar",
+        label: t("buttons.dissociate"),
         icon: <Trash2 className="size-4" />,
         onClick: handleDeleteClick,
         variant: "ghost" as const,
@@ -150,12 +152,12 @@ export function ListServices({ services, isLoading, readOnly = false, showCompan
           columns={columns}
           dateKey="createdAt"
           isLoading={isLoading}
-          placeholder="Pesquisar serviços..."
-          rowActions={rowActions as any}
+          placeholder={t("placeholders.searchServices")}
+          rowActions={rowActions }
           actionButton={
             !readOnly
               ? {
-                label: "Associação de serviços",
+                label: t("buttons.associateServices"),
                 onClick: () =>
                   setDialogState({
                     associationId: null,
@@ -172,8 +174,8 @@ export function ListServices({ services, isLoading, readOnly = false, showCompan
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         isLoading={isDeleting}
-        title="Eliminar serviço"
-        message={`Tem certeza que deseja eliminar o serviço ${deleteTarget?.module?.name} ? Esta ação não pode ser desfeita.`}
+        title={t("titles.deleteService")}
+        message={`${t("deleteModal.message")} ${deleteTarget?.module?.name}? ${t("deleteModal.permanentAction")}`}
       />
 
 

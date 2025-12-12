@@ -11,6 +11,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { getFileUrl } from "@/infrastructure/utils/file-utils";
 import type { Address, Company, Contact } from "@/infrastructure/types/domain";
 import {
   Building2,
@@ -124,7 +125,7 @@ export function CompanyView({
           <div className="flex  items-center  gap-4  border-b pb-3">
             <Avatar className="h-16 w-16 rounded-lg">
               <AvatarImage
-                src={company.photo || undefined}
+                src={getFileUrl(company.photo)}
                 alt={company.businessName}
                 className="rounded-lg"
               />

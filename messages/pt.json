@@ -704,5 +704,78 @@
             "title": "Iniciar Nova Ronda",
             "description": "Preencha os dados iniciais para começar uma nova ronda."
         }
+    },
+    "ServicesManagement": {
+        "fields": {
+            "company": "Empresa",
+            "module": "Módulo ",
+            "service": "Serviço",
+            "description": "Descrição",
+            "status": "Estado",
+            "serviceName": "Nome do módulo",
+            "moduleName": "Nome do model",
+            "active": "Ativo",
+            "inactive": "Inativo"
+        },
+        "placeholders": {
+            "selectService": "Selecione um módulo",
+            "searchService": "Pesquisar módulo...",
+            "searchServices": "Pesquisar módulo...",
+            "searchModule": "Pesquisar módulo...",
+            "enterModuleName": "Digite o nome do módulo",
+            "enterServiceName": "Digite o nome do serviço",
+            "enterDescription": "Digite a descrição do serviço",
+            "status": "Status"
+        },
+        "messages": {
+            "noDataFiltered": "Nenhum dado filtrado.",
+            "noServiceFound": "Nenhum serviço encontrado.",
+            "serviceAvailable": "O serviço estará disponível para uso"
+        },
+        "buttons": {
+            "cancel": "Cancelar",
+            "saving": "A guardar...",
+            "saveChanges": "Guardar mudanças",
+            "associate": "Associar",
+            "edit": "Editar",
+            "dissociate": "Desassociar",
+            "delete": "Eliminar",
+            "processing": "Processando...",
+            "createService": "Criar Serviço",
+            "createModule": "Criar Módulo",
+            "updating": "Atualizando...",
+            "updateService": "Atualizar Serviço",
+            "associateServices": "Associação de serviços",
+            "close": "Fechar",
+            "viewOthers": "Ver outros"
+        },
+        "titles": {
+            "editAssociation": "Editar associação",
+            "associateServiceToCompany": "Associar serviço à empresa",
+            "createModule": "Criar Módulo",
+            "editService": "Editar Serviço",
+            "deleteService": "Eliminar serviço",
+            "services": "Serviços"
+        },
+        "descriptions": {
+            "updateServiceInfo": "Atualize as informações do serviço.",
+            "selectModuleAccess": "Selecione o módulo que deseja acessar"
+        },
+        "tabs": {
+            "module": "Módulo",
+            "companyModules": "Módulo por empresa"
+        },
+        "filters": {
+            "statusFilter": "Filtro por status",
+            "all": "Todos"
+        },
+        "deleteModal": {
+            "message": "Tem certeza que deseja eliminar o serviço",
+            "permanentAction": "Esta ação não pode ser desfeita."
+        },
+        "dynamic": {
+            "moduleTitle": "Módulo:",
+            "moduleContent": "O conteúdo deste módulo será carregado aqui."
+        }
     }
 }

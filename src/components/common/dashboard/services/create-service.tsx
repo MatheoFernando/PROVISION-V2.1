@@ -26,18 +26,19 @@ import { Switch } from "@/components/ui/switch";
 import { useCreateModule } from "@/infrastructure/hooks/useModules";
 import { moduleSchema } from "@/infrastructure/schema/schema-module";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 
 export function CreateService() {
+  const t = useTranslations("ServicesManagement");
   const [open, setOpen] = useState(false);
   const createModuleMutation = useCreateModule();
 
   const createModulePayloadSchema = moduleSchema.omit({ id: true, createdAt: true, updatedAt: true })
   type CreateModulePayload = z.infer<typeof createModulePayloadSchema>
 
-  const form = useForm<CreateModulePayload, any, CreateModulePayload>({
+  const form = useForm<CreateModulePayload,  CreateModulePayload>({
     resolver: zodResolver(createModulePayloadSchema) as Resolver<
       z.input<typeof createModulePayloadSchema>,
-      any,
       z.output<typeof createModulePayloadSchema>
     >,
     defaultValues: {
@@ -63,12 +64,12 @@ export function CreateService() {
       <DialogTrigger asChild>
         <Button className="px-6 py-5 text-white cursor-pointer">
           <Plus className="h-4 w-4 mr-2" />
-          Criar Módulo
+          {t("buttons.createModule")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Criar  Módulo</DialogTitle>
+          <DialogTitle>{t("titles.createModule")}</DialogTitle>
 
         </DialogHeader>
         <Form {...form}>
@@ -78,10 +79,10 @@ export function CreateService() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Módulo</FormLabel>
+                  <FormLabel>{t("fields.moduleName")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Digite o nome do módulo"
+                      placeholder={t("placeholders.enterModuleName")}
                       value={field.value as string}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -99,10 +100,10 @@ export function CreateService() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>{t("fields.description")}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Digite a descrição do serviço "
+                      placeholder={t("placeholders.enterDescription")}
                       className="resize-none"
                       value={field.value as string}
                       onChange={field.onChange}
@@ -123,9 +124,9 @@ export function CreateService() {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Serviço Ativo</FormLabel>
+                    <FormLabel>{t("fields.active")}</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      O serviço estará disponível para uso
+                      {t("messages.serviceAvailable")}
                     </div>
                   </div>
                   <FormControl>
@@ -146,18 +147,18 @@ export function CreateService() {
                 className="cursor-pointer"
                 onClick={() => setOpen(false)}
               >
-                Cancelar
+                {t("buttons.cancel")}
               </Button>
               <Button type="submit" disabled={isPending} className={`px-6 ${isPending ? 'cursor-wait opacity-90' : 'cursor-pointer'}`}>
                 {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processando...
+                    {t("buttons.processing")}
                   </>
                 ) : (
                   <>
 
-                    Criar Serviço
+                    {t("buttons.createService")}
                   </>
                 )}
               </Button>
