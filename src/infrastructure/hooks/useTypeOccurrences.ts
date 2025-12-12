@@ -84,7 +84,7 @@ export function useDeleteTypeOccurrenceMutation() {
       toast.success(t('delete.success'));
     },
     onError: (error) => {
-      console.error('Erro ao excluir tipo de ocorrência:', error);
+      console.error('Erro ao eliminar tipo de ocorrência:', error);
       toast.error(t('delete.error'));
     },
   });

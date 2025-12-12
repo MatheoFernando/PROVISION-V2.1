@@ -14,7 +14,7 @@ export const COMMON_ACTIONS: PermissionAction[] = [
     { label: 'Ver', value: 'view' },
     { label: 'Criar', value: 'create' },
     { label: 'Editar', value: 'edit' },
-    { label: 'Excluir', value: 'delete' },
+    { label: 'Eliminar', value: 'delete' },
 ];
 
 export const PERMISSION_MODULES: PermissionModule[] = [

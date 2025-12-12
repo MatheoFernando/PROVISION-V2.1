@@ -159,7 +159,7 @@ function ListUsers() {
         variant: 'ghost' as const
       },
       {
-        label: 'Excluir',
+        label: 'Eliminar',
         icon: <Trash className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
         onClick: handleDeleteClick,
         variant: 'ghost' as const
@@ -205,7 +205,7 @@ function ListUsers() {
 
 
   const deleteTitle =
-    usersToDelete.length > 1 ? 'Excluir utilizadores' : 'Excluir utilizador'
+    usersToDelete.length > 1 ? 'Eliminar utilizadores' : 'Eliminar utilizador'
   const deleteTargetLabel =
     usersToDelete[0]?.employee?.fullName ?? usersToDelete[0]?.phone ?? 'este utilizador'
   const deleteMessage =

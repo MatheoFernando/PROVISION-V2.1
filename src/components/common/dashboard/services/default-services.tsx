@@ -9,6 +9,7 @@ import { Rsu } from "./default/rsu/rsu";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useCompanyModules } from "@/infrastructure/hooks/useCompanyModules";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Drawer,
   DrawerClose,
@@ -18,10 +19,12 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import RondaPage from "./default/ronda/ronda";
 
 type ServiceType = string | null;
 
 export function DefaultServices() {
+  const t = useTranslations("Services");
   const { companyId } = useAuthStore();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -72,35 +75,34 @@ export function DefaultServices() {
     }
   }, [view]);
 
-
   const baseServices = [
     {
       id: "supervision",
-      name: "Supervisão",
-      description: "Serviço de supervisão e monitoramento",
+      name: t("supervision.name"),
+      description: t("supervision.description"),
       status: true,
       imageSrc: "/supervisionado.png",
     },
     {
       id: "occurrence",
-      name: "Ocorrência",
-      description: "Gestão de ocorrências e incidentes",
+      name: t("occurrence.name"),
+      description: t("occurrence.description"),
       status: true,
       imageSrc: "/incidente.png",
     },
     {
       id: "rsu",
-      name: "RSU",
-      description: "Recolha Seletiva de Resíduos",
+      name: t("rsu.name"),
+      description: t("rsu.description"),
       status: true,
       imageSrc: "/reciclar.png",
     },
     {
       id: "ronda",
-      name: "Ronda",
-      description: "Ronda de recolha",
+      name: t("ronda.name"),
+      description: t("ronda.description"),
       status: true,
-      imageSrc: "/guard.png",
+      imageSrc: "/transparency.png",
     },
   ];
 
@@ -172,7 +174,7 @@ export function DefaultServices() {
               <div
                 key={index}
                 onClick={() => !disabled && handleServiceClick(service.id)}
-                className={`min-w-[220px] max-w-[220px] h-[140px] rounded-2xl p-5 transition-all duration-300 cursor-pointer flex-shrink-0 flex flex-col justify-between
+                className={`min-w-[220px] max-w-[220px] h-[140px] rounded p-5 transition-all duration-300 cursor-pointer flex-shrink-0 flex flex-col justify-between
                   ${isSelected
                     ? " dark:bg-zinc-800 shadow-xl shadow-blue-500/10 ring-1 ring-black/5 dark:ring-white/10 transform scale-[1.02]"
                     : " dark:bg-zinc-900/60 hover:bg-white hover:dark:bg-zinc-800 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 hover:-translate-y-0.5"
@@ -223,7 +225,7 @@ export function DefaultServices() {
           return (
             <div
               onClick={() => !activeService.status && handleServiceClick(activeService.id)}
-              className={`flex-1 rounded-2xl p-5 transition-all cursor-pointer flex flex-col justify-between h-[120px]
+              className={`flex-1 rounded p-5 transition-all cursor-pointer flex flex-col justify-between h-[120px]
                 ${selectedService === activeService.id
                   ? " dark:bg-zinc-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10"
                   : "bg-muted/50"
@@ -282,7 +284,7 @@ export function DefaultServices() {
                         setIsDrawerOpen(false);
                       }
                     }}
-                    className={`rounded-2xl p-4 transition-all duration-200 cursor-pointer flex items-center gap-4
+                    className={`rounded p-4 transition-all duration-200 cursor-pointer flex items-center gap-4
                       ${isSelected
                         ? "bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50"
                         : "bg-gray-50/50 dark:bg-zinc-900/50 border border-transparent hover:bg-gray-100 dark:hover:bg-zinc-900"
@@ -334,7 +336,7 @@ export function DefaultServices() {
         <Rsu />
       )}
       {selectedService === "ronda" && (
-        <Rsu />
+        <RondaPage/>
       )}
 
       {!baseServices.some(s => s.id === selectedService) && selectedService && (

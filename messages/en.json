@@ -13,8 +13,8 @@
             "dark": "Dark"
         },
         "primaryColor": {
-            "title": "Primary Color",
-            "description": "Select the main color for buttons and links."
+            "title": "Primary Colour",
+            "description": "Select the main colour for buttons and links."
         },
         "radius": {
             "title": "Radius",
@@ -48,6 +48,8 @@
         "profile": "Profile",
         "logout": "Logout",
         "edit": "Edit",
+        "view": "View",
+        "remove": "Remove",
         "delete": "Delete",
         "confirm": "Confirm",
         "noResults": "No results",
@@ -358,6 +360,48 @@
             "delete": {
                 "success": "Employee deleted successfully!"
             }
+        },
+        "Rounds": {
+            "create": {
+                "success": "Round created successfully!",
+                "error": "Error creating round"
+            },
+            "update": {
+                "success": "Round updated successfully!",
+                "error": "Error updating round"
+            },
+            "delete": {
+                "success": "Round deleted successfully!",
+                "error": "Error deleting round"
+            }
+        },
+        "ItemInspectionRounds": {
+            "create": {
+                "success": "Item created successfully!",
+                "error": "Error creating item"
+            },
+            "update": {
+                "success": "Item updated successfully!",
+                "error": "Error updating item"
+            },
+            "delete": {
+                "success": "Item deleted successfully!",
+                "error": "Error deleting item"
+            }
+        },
+        "CheckListRoundGroups": {
+            "create": {
+                "success": "Assessment saved!",
+                "error": "Error saving assessment"
+            },
+            "update": {
+                "success": "Assessment updated!",
+                "error": "Error updating assessment"
+            },
+            "delete": {
+                "success": "Assessment deleted!",
+                "error": "Error deleting assessment"
+            }
         }
     },
     "SiteDetails": {
@@ -422,6 +466,10 @@
         "tabs": {
             "overview": "Overview",
             "sites": "Sites"
+        },
+        "actions": {
+            "associateClient": "Associate Client",
+            "edit": "Edit"
         },
         "sections": {
             "contactDetails": "Contact Details",
@@ -492,7 +540,8 @@
             "validation": {
                 "nameRequired": "Name is required",
                 "selectArea": "Select an area",
-                "selectZone": "Select a zone"
+                "selectZone": "Select a zone",
+                "selectSector": "Select a sector"
             }
         },
         "deleteModal": {
@@ -512,6 +561,153 @@
             "cancel": "Cancel",
             "confirm": "Delete",
             "deleting": "Deleting..."
+        }
+    },
+    "Supervision": {
+        "tabs": {
+            "details": "Details",
+            "resources": "Resources",
+            "equipments": "Equipments",
+            "observations": "Observations"
+        },
+        "sections": {
+            "operationalData": "Operational Data",
+            "responsible": "Responsible",
+            "equipmentDetails": "Equipment Details"
+        },
+        "fields": {
+            "status": "Status",
+            "date": "Date",
+            "time": "Time",
+            "desired": "Desired",
+            "present": "Present",
+            "employee": "Employee",
+            "department": "Department",
+            "code": "Code",
+            "name": "Name",
+            "equipment": "Equipment",
+            "site": "Site",
+            "noStatus": "No status",
+            "responsible": "Responsible"
+        },
+        "table": {
+            "code": "Code",
+            "status": "Status",
+            "name": "Name",
+            "model": "Model"
+        },
+        "messages": {
+            "noObservation": "No observation registered for this supervision.",
+            "noEquipment": "No equipment"
+        }
+    },
+    "Occurrence": {
+        "tabs": {
+            "info": "Details",
+            "context": "Context",
+            "equipments": "Equipments",
+            "actions": "Corrective Action",
+            "description": "Description"
+        },
+        "sections": {
+            "basicData": "Basic Data",
+            "localEquipment": "Location & Equipment",
+            "responsible": "Responsible",
+            "adoptedMeasures": "Adopted Measures",
+            "eventDescription": "Event Description"
+        },
+        "fields": {
+            "type": "Type",
+            "time": "Time",
+            "date": "Date",
+            "site": "Site",
+            "equipment": "Equipment",
+            "employee": "Employee",
+            "company": "Company",
+            "typology": "Typology",
+            "gravity": "Gravity",
+            "status": "Status"
+        },
+        "messages": {
+            "noAction": "No corrective action defined."
+        }
+    },
+    "Rsu": {
+        "tabs": {
+            "details": "Details",
+            "logistics": "Logistics",
+            "observations": "Observations"
+        },
+        "sections": {
+            "loadData": "Load Data",
+            "location": "Location",
+            "transport": "Transport",
+            "responsible": "Responsible",
+            "additionalNotes": "Additional Notes"
+        },
+        "fields": {
+            "container": "Container",
+            "quantity": "Quantity",
+            "vehicle": "Vehicle",
+            "company": "Company",
+            "date": "Date",
+            "site": "Site",
+            "responsible": "Responsible"
+        }
+    },
+    "EquipmentView": {
+        "title": "Equipment Details",
+        "serialString": "Serial Number",
+        "active": "Active",
+        "inactive": "Inactive",
+        "sections": {
+            "generalInfo": "General Information",
+            "siteAndType": "Site Details & Type"
+        },
+        "tabs": {
+            "site": "Site",
+            "type": "Equipment Type"
+        },
+        "fields": {
+            "mark": "Mark",
+            "model": "Model",
+            "code": "Code",
+            "company": "Company",
+            "client": "Client",
+            "contractedEmployees": "Contracted Employees",
+            "sector": "Sector",
+            "zone": "Zone",
+            "status": "Status",
+            "name": "Name",
+            "description": "Description",
+            "createdAt": "Created At"
+        }
+    },
+    "Services": {
+        "supervision": {
+            "name": "Supervision",
+            "description": "Supervision and monitoring service"
+        },
+        "occurrence": {
+            "name": "Occurrence",
+            "description": "Occurrence and incident management"
+        },
+        "rsu": {
+            "name": "RSU",
+            "description": "Selective Waste Collection"
+        },
+        "ronda": {
+            "name": "Patrol",
+            "description": "Collection patrol"
+        }
+    },
+    "Ronda": {
+        "title": "Patrol Management",
+        "subtitle": "Track and manage team patrols in real time.",
+        "create": {
+            "button": "New Patrol",
+            "title": "Start New Patrol",
+            "description": "Fill in the initial data to start a new patrol."
         }
     }
 }

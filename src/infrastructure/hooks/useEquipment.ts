@@ -228,7 +228,7 @@ export function useDeleteEquipment() {
       toast.success("Equipamento excluído com sucesso!");
     },
     onError: () => {
-      toast.error("Erro ao excluir equipamento");
+      toast.error("Erro ao eliminar equipamento");
     },
   });
 }

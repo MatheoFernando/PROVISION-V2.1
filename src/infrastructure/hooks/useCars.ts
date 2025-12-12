@@ -13,11 +13,24 @@ interface CarsQueryOptions {
   enabled?: boolean;
 }
 
-export function useCars(options?: CarsQueryOptions) {
+export function useCars(options?: CarsQueryOptions & { companyId?: string }) {
   return useQuery({
-    queryKey: ["cars"],
+    queryKey: ["cars", options?.companyId],
     queryFn: async (): Promise<Car[]> => {
       try {
+        if (options?.companyId) {
+          const response = await api.get(`/car/getByCompanyId/${options.companyId}`);
+          const data = response.data as unknown;
+          const payload = data as { items?: unknown; data?: unknown };
+
+          if (Array.isArray(payload)) return payload as Car[];
+          if (payload && typeof payload === 'object') {
+            if (Array.isArray(payload.items)) return payload.items as Car[];
+            if (Array.isArray(payload.data)) return payload.data as Car[];
+          }
+          return [];
+        }
+
         const response = await api.get("/car/getAll");
         const data = response.data as unknown;
         const payload = data as { items?: Car[]; data?: Car[] } | Car[];
@@ -28,9 +41,7 @@ export function useCars(options?: CarsQueryOptions) {
         throw err as unknown;
       }
     },
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
     enabled: options?.enabled ?? true,
@@ -126,7 +137,7 @@ export function useDeleteCar() {
       toast.success("Viatura excluída com sucesso!");
     },
     onError: () => {
-      toast.error("Erro ao excluir viatura");
+      toast.error("Erro ao eliminar viatura");
     },
   });
 }

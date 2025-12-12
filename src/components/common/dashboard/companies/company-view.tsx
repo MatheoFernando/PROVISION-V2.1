@@ -229,7 +229,7 @@ export function CompanyView({
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-600" />
                 <h3 className="text-sm font-semibold  tracking-wide text-slate-600">
-                  Endereço
+                  Morada
                 </h3>
               </div>
               <div className="space-y-3 rounded-md bg-slate-50  p-2 text-sm ">

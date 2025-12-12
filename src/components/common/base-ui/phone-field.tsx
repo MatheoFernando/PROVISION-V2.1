@@ -37,7 +37,7 @@ export function PhoneField({
     <div
       className={cn(
         " file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input group flex w-full items-center gap-3 rounded-md outline-none focus:outline-none focus-visible:outline-none focus-within:outline-none focus-within:ring-0 pl-3 text-base text-slate-900  border shadow-xs overflow-hidden  transition-all ",
-        size === "lg" ? "h-11" : "h-9",
+        size === "lg" ? "h-9" : "h-9",
         disabled && "opacity-60",
         className
       )}

@@ -10,7 +10,7 @@ import { useLoginMutation } from "@/infrastructure/hooks/useLoginMutation"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
-import { PhoneField } from "@/components/common/base-ui/inputs/phone-field"
+import { PhoneField } from "@/components/common/base-ui/phone-field"
 
 export default function LoginForm() {
   const [phone, setPhone] = useState("")

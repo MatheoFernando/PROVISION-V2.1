@@ -163,7 +163,7 @@ export function useDeleteRsuMutation() {
     },
     onError: (error: any) => {
       const message =
-        error?.response?.data?.message || "Erro ao excluir RSU";
+        error?.response?.data?.message || "Erro ao eliminar RSU";
       toast.error(message);
     },
   });

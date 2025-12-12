@@ -302,7 +302,7 @@ export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: 
               >
                 {isCreating ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                    <Loader2 className="w-4 h-4 animate-spin" /> A guardar...
                   </>
                 ) : (
                   "Salvar"

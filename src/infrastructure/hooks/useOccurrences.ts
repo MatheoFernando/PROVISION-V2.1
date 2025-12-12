@@ -82,7 +82,7 @@ export function useDeleteOccurrenceMutation() {
       toast.success(t('delete.success'));
     },
     onError: (error) => {
-      console.error('Erro ao excluir ocorrência:', error);
+      console.error('Erro ao eliminar ocorrência:', error);
       toast.error(t('delete.error'));
     },
   });

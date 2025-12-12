@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   useDepartments,
+  useDepartmentsByCompanyId,
   useCreateDepartment,
 } from "@/infrastructure/hooks/useDepartments";
 import {
@@ -42,9 +43,9 @@ export function DepartmentSelect({
   const [createdDepartments, setCreatedDepartments] = useState<
     Array<Department & { createdAt?: string }>
   >([]);
-  const { data: departments = [], isLoading, isFetching, refetch } = useDepartments();
-  const createDepartment = useCreateDepartment();
   const normalizedCompanyId = companyId ?? "";
+  const { data: departments = [], isLoading, isFetching, refetch } = useDepartmentsByCompanyId(normalizedCompanyId);
+  const createDepartment = useCreateDepartment();
   const isCompanyUnavailable = !normalizedCompanyId;
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(departmentSchema),
@@ -282,7 +283,7 @@ export function DepartmentSelect({
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                    <Loader2 className="w-4 h-4 animate-spin" /> A guardar...
                   </>
                 ) : (
                   "Salvar"

@@ -12,7 +12,7 @@ export interface Address {
 
 export const addressSchema = z.object({
   id: z.string().optional(),
-  houseHold: z.string().min(1, "Endereço é obrigatório"),
+  houseHold: z.string().min(1, "Morada é obrigatória"),
   commune: z.string().optional(),
   municipality: z.string().optional(),
   province: z.string().optional(),

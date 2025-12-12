@@ -14,6 +14,18 @@ export function useDepartments() {
   });
 }
 
+export function useDepartmentsByCompanyId(companyId?: string) {
+  return useQuery({
+    queryKey: ["departments", "company", companyId],
+    queryFn: async (): Promise<Department[]> => {
+      if (!companyId) return [];
+      const { data } = await api.get("/department/getByCompanyId", { params: { companyId } });
+      return (data?.data ?? data) as Department[];
+    },
+    enabled: !!companyId,
+  });
+}
+
 export function useDepartmentsByName(name: string) {
   return useQuery({
     queryKey: ["departments", "name", name],
@@ -82,7 +94,7 @@ export function useDeleteDepartment() {
       toast.success("Departamento excluído com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir departamento");
+      toast.error(error?.response?.data?.message || "Erro ao eliminar departamento");
     },
   });
 }

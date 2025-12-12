@@ -26,9 +26,7 @@ export function useCompaniesQuery(options?: { enabled?: boolean }) {
       return data?.data ?? data ?? [];
     },
     enabled: options?.enabled ?? true,
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -40,14 +38,10 @@ export function useCompanyByIdQuery(id?: string) {
     queryFn: async (): Promise<Company | null> => {
       if (!id) return null;
       const { data } = await api.get(`/company/${id}`);
-      const parsed = companySchema.safeParse(data?.data ?? data);
-      if (!parsed.success) throw new Error("Falha ao validar empresa");
-      return parsed.data as Company;
+      return data?.data ?? data ?? null;
     },
     enabled: !!id,
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 }
@@ -63,9 +57,7 @@ export function useCompanyByCodQuery(cod?: string) {
       return parsed.data as Company;
     },
     enabled: !!cod,
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 }
@@ -83,9 +75,7 @@ export function useCompaniesByNameQuery(name?: string) {
       return parsed.data as Company[];
     },
     enabled: !!name,
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 }
@@ -98,9 +88,7 @@ export function useCompanyModulesByModuleQuery(moduleId: string) {
       return response.data;
     },
     enabled: !!moduleId,
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 }
@@ -114,9 +102,7 @@ export function useCompanyModuleByIdQuery(companyModuleId?: string | null) {
       return (data?.data ?? data ?? null) as CompanyModuleWithDetails | null;
     },
     enabled: Boolean(companyModuleId),
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 }
@@ -283,7 +269,7 @@ export function useDeleteCompanyMutation() {
       toast.success("Empresa excluída com sucesso");
     },
     onError: () => {
-      toast.error("Erro ao excluir empresa");
+      toast.error("Erro ao eliminar empresa");
     },
   });
 }

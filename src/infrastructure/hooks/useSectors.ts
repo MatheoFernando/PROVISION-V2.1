@@ -82,7 +82,7 @@ export function useDeleteSector() {
       toast.success("Setor excluído com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir setor");
+      toast.error(error?.response?.data?.message || "Erro ao eliminar setor");
     },
   });
 }

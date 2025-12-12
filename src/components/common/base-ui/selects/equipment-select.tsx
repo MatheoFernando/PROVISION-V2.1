@@ -13,6 +13,8 @@ import type { Equipment } from "@/infrastructure/types/domain";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import { Loader2 } from "lucide-react";
 
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
 interface EquipmentSelectProps {
   value?: string;
   onChange: (value: string) => void;
@@ -25,8 +27,11 @@ type EquipmentWithMeta = Equipment & {
 
 export function EquipmentSelect({ value, onChange }: EquipmentSelectProps) {
   const [query, setQuery] = React.useState("");
+  const companyId = useAuthStore((s) => s.companyId);
 
-  const { data: equipmentsData, isLoading, refetch } = useEquipment();
+  const { data: equipmentsData, isLoading } = useEquipment(undefined, {
+    companyId: companyId || undefined,
+  });
 
   const equipmentList = React.useMemo<EquipmentWithMeta[]>(() => {
     const baseList = (() => {
@@ -38,7 +43,7 @@ export function EquipmentSelect({ value, onChange }: EquipmentSelectProps) {
       return [];
     })();
 
-    const merged = [ ...baseList];
+    const merged = [...baseList];
     const map = new Map<string, EquipmentWithMeta>();
 
     merged.forEach((equipment) => {
@@ -121,10 +126,10 @@ export function EquipmentSelect({ value, onChange }: EquipmentSelectProps) {
             </SelectContent>
           </Select>
         </div>
-     
+
       </div>
 
-     
+
     </>
   );
 }

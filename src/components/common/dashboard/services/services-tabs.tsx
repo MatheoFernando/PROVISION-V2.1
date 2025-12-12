@@ -149,7 +149,7 @@ export function AdminServicesTabs({
               },
             },
             {
-              label: "Excluir",
+              label: "Eliminar",
               icon: <Trash className="h-4 w-4 mr-2" />,
               onClick: (module: ModuleSchema) => {
                 setDeleteTarget(module);

@@ -25,6 +25,7 @@ import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { AreaSelect } from "@/components/common/base-ui/selects/area-select";
 import { ZoneSelect } from "@/components/common/base-ui/selects/zone-select";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
+import { cn } from "@/lib/utils";
 
 type OrgType = "AREA" | "ZONE" | "SECTOR";
 
@@ -131,14 +132,14 @@ export function UnifiedOrgModal({ open: controlledOpen, onOpenChange: controlled
         const commonPayload = {
             name: data.name,
             companyId,
-            employeeId: data.employeeId,
+            employeeId: data.employeeId || null,
         };
 
         const callbacks = {
             onSuccess: () => {
                 toast.success(t("toasts.success"));
 
-                // Invalidate queries to refresh data
+
                 if (data.type === "AREA") {
                     queryClient.invalidateQueries({ queryKey: ['areas'] });
                     queryClient.invalidateQueries({ queryKey: ['zones'] });
@@ -220,7 +221,7 @@ export function UnifiedOrgModal({ open: controlledOpen, onOpenChange: controlled
                     </DialogTrigger>
                 )
             )}
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-2xl border-none shadow-2xl ">
+            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-950">
                 <DialogHeader className="px-6 pt-6 pb-2">
                     <DialogTitle className="text-xl font-semibold tracking-tight">{t(`title.${type}`)}</DialogTitle>
                 </DialogHeader>
@@ -261,12 +262,12 @@ export function UnifiedOrgModal({ open: controlledOpen, onOpenChange: controlled
                                 </div>
                             )}
 
-                            <div className="space-y-1.5 col-span-2">
+                            <div className={cn("space-y-1.5", type === "ZONE" ? "col-span-1" : "col-span-2")}>
                                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("labels.name")}</Label>
                                 <Input
                                     {...form.register("name")}
                                     placeholder={t(type === "AREA" ? "placeholders.nameArea" : type === "ZONE" ? "placeholders.nameZone" : "placeholders.nameSector")}
-                                    className="h-11 rounded-xl bg-muted/30 border-transparent hover:bg-muted/50 focus-visible:ring-0 focus-visible:bg-muted/50 transition-all"
+                                    className=" h-9.5"
                                 />
                                 {form.formState.errors.name && (
                                     <span className="text-destructive text-xs ml-1">{form.formState.errors.name.message}</span>

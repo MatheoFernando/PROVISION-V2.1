@@ -378,7 +378,7 @@ export function RsuDialog({ open, onOpenChange, rsuToEdit, onSuccess }: RsuDialo
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  A guardar...
                 </>
               ) : (
                 rsuToEdit ? "Atualizar RSU" : "Criar RSU"

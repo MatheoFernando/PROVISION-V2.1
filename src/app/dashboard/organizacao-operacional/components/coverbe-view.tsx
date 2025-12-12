@@ -17,7 +17,7 @@ interface OrgKanbanViewProps {
 }
 
 export function OperationalView({ onAdd }: OrgKanbanViewProps) {
-    const t = useTranslations("OrganizationalStructure.deleteModal");
+    const t = useTranslations("OrganizationalStructure");
     const { data: areas = [], isLoading: isLoadingAreas } = useAreas();
     const { data: zones = [], isLoading: isLoadingZones } = useZones();
     const { data: sectors = [], isLoading: isLoadingSectors } = useSectors();
@@ -108,8 +108,8 @@ export function OperationalView({ onAdd }: OrgKanbanViewProps) {
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title={t(itemToDelete?.type === 'AREA' ? 'titleArea' : itemToDelete?.type === 'ZONE' ? 'titleZone' : 'titleSector')}
-                message={`${t(itemToDelete?.type === 'AREA' ? 'messageArea' : itemToDelete?.type === 'ZONE' ? 'messageZone' : 'messageSector')} "${itemToDelete?.name}". ${t('confirmMessage')}`}
+                title={t(itemToDelete?.type === 'AREA' ? 'deleteModal.titleArea' : itemToDelete?.type === 'ZONE' ? 'deleteModal.titleZone' : 'deleteModal.titleSector')}
+                message={`${t(itemToDelete?.type === 'AREA' ? 'deleteModal.messageArea' : itemToDelete?.type === 'ZONE' ? 'deleteModal.messageZone' : 'deleteModal.messageSector')} "${itemToDelete?.name}". ${t('deleteModal.confirmMessage')}`}
             />
 
             <AreaColumn

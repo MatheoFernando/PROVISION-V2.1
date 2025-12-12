@@ -12,7 +12,6 @@ import {
   useCreateGrossCustomer,
   useDeleteCustomer,
   useCustomersByCompanyId,
-  useCustomers,
 } from "@/infrastructure/hooks/useCustomers";
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
@@ -99,13 +98,9 @@ export function CustomersTable({
     enabled: !!companyId,
   });
 
-  const {
-    data: allCustomers = [],
-    isLoading: isLoadingAll,
-  } = useCustomers();
 
-  const customers = companyId ? customersByCompany : allCustomers;
-  const isLoadingCustomers = companyId ? isLoadingByCompany : isLoadingAll;
+  const customers = customersByCompany 
+  const isLoadingCustomers = isLoadingByCompany;
 
   const deleteCustomer = useDeleteCustomer();
   const createGrossCustomer = useCreateGrossCustomer();
@@ -117,11 +112,7 @@ export function CustomersTable({
   >();
 
 
-  const selectedCustomerId =
-    (selectedCustomer as Customer | Company | undefined)?.id;
-
-
-
+ 
   const data = customers;
   const isLoading = isLoadingCustomers;
   const tableColumns = customerColumns;
@@ -178,7 +169,7 @@ export function CustomersTable({
       setIsDeleteOpen(false);
       setSelectedCustomer(undefined);
     } catch (error) {
-      toast.error("Erro ao excluir cliente");
+      toast.error("Erro ao eliminar cliente");
     }
   };
 
@@ -223,7 +214,7 @@ export function CustomersTable({
             onClick: (customer) => handleEdit(customer),
           },
           {
-            label: "Excluir",
+            label: "Eliminar",
             icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (customer) => handleDelete(customer),
             render: (customer, action) => {
@@ -232,7 +223,6 @@ export function CustomersTable({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      {/* Wrap in span to ensure Tooltip works even if DropdownMenuItem is disabled-ish */}
                       <span tabIndex={0} className="w-full outline-none">
                         <DropdownMenuItem
                           className={`w-full cursor-pointer ${hasSites ? "opacity-50 cursor-not-allowed" : ""
@@ -280,7 +270,7 @@ export function CustomersTable({
           setSelectedCustomer(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Empresa"
+        title="Eliminar Empresa"
         message="Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita."
         isLoading={deleteCustomer.isPending}
       />

@@ -69,7 +69,7 @@ export function useDeletePermission() {
       toast.success("Permissão excluída com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir permissão");
+      toast.error(error?.response?.data?.message || "Erro ao eliminar permissão");
     },
   });
 }

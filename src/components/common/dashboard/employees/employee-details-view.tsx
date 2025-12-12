@@ -9,7 +9,7 @@ import {
     Phone,
     Briefcase,
     User,
-    Building
+    Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,7 @@ import { useState } from "react";
 import { useDepartments } from "@/infrastructure/hooks/useDepartments";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useSiteById } from "@/infrastructure/hooks/useSites";
+import { Pencil } from "phosphor-react";
 
 function getFirstItem<T>(entity: T | T[] | undefined | null): T | undefined {
     if (!entity) return undefined;
@@ -102,7 +103,7 @@ export function EmployeeDetailsView() {
                                     className="h-8 w-8 rounded-lg object-cover"
                                 />
                             ) : (
-                                <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                     <User className="w-4 h-4" />
                                 </div>
                             )}
@@ -124,8 +125,8 @@ export function EmployeeDetailsView() {
                             onClick={() => setIsEditEmployeeOpen(true)}
                             className="rounded-full bg-foreground text-background hover:bg-foreground/90"
                         >
-                            <User className="w-4 h-4 mr-2" />
-                            Editar
+                            <Pencil className="w-4 h-4 mr-2" />
+                            {t('CustomerDetails.actions.edit')}
                         </Button>
                     </div>
                 </div>
@@ -151,9 +152,9 @@ export function EmployeeDetailsView() {
                     <TabsContent value="overview" className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded p-6 shadow-sm flex flex-col gap-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                                    <MapPin className="w-5 h-5 text-indigo-500" />
+                                    <MapPin className="w-5 h-5 text-blue-500" />
                                     {t('CustomerDetails.sections.contactDetails')}
                                 </h3>
                                 <div className="space-y-3 pt-2">
@@ -179,10 +180,10 @@ export function EmployeeDetailsView() {
                                 </div>
                             </div>
 
-                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
+                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded p-6 shadow-sm flex flex-col gap-6">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                                        <Briefcase className="w-5 h-5 text-indigo-500" />
+                                        <Briefcase className="w-5 h-5 text-blue-500" />
                                         Informações Profissionais
                                     </h3>
                                 </div>

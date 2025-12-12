@@ -15,7 +15,7 @@ export function useCustomers() {
     queryKey: CUSTOMERS_QUERY_KEY,
     queryFn: async (): Promise<Customer[]> => {
       const response = await api.get("/customer/getAll");
-      return response.data.data;
+      return response.data.data ?? response.data ?? [];
     },
     staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
@@ -32,7 +32,7 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       const response = await api.get("/customer/getByCompanyId", {
         params: { companyId },
       });
-      return response.data.data;
+      return response.data.data ?? response.data ?? [];
     },
     enabled: (options?.enabled ?? true) && !!companyId,
     staleTime: 0,

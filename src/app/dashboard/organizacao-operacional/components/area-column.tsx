@@ -73,12 +73,12 @@ export function AreaColumn({
                             </div>
                         </header>
 
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <p className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
                             <User className="h-4 w-4 text-primary/60" />
                             <span className="truncate max-w-[180px] text-sm">{metrics.responsible}</span>
                         </p>
 
-                        <footer className="grid grid-cols-3 gap-2 pt-1 border-t border-border/30 mt-1">
+                        <footer className="hidden md:grid grid-cols-3 gap-2 pt-1 border-t border-border/30 mt-1">
                             <div className="flex gap-2 items-center justify-center p-1.5 rounded-lg bg-muted/30">
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground/70">{t("metrics.zones")}</span>
                                 <span className="text-xs font-bold text-foreground">{metrics.zones}</span>

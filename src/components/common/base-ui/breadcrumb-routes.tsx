@@ -169,7 +169,7 @@ export function BreadcrumbClient(): React.ReactElement {
               </>
             ) : (
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-primary text-xl font-semibold flex items-center gap-2">
+                <BreadcrumbPage className="text-primary text-lg font-semibold flex items-center gap-2">
                   {c.isLoading ? (
                     <Skeleton className="h-6 w-32 rounded-lg" />
                   ) : (

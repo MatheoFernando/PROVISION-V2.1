@@ -349,7 +349,7 @@ export function OccurrenceDialog({
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  A guardar...
                 </>
               ) : occurrenceToEdit ? (
                 "Atualizar Ocorrência"

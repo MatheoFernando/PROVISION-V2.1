@@ -8,7 +8,7 @@ export const createEmployeeSchema = z.object({
   siteId: z.string().optional(),
   departmentId: z.string().min(1, "Departamento é obrigatório"),
   cod: z.string().min(1, "Código é obrigatório"),
-  addressId: z.string().min(1, "Endereço é obrigatório"),
+  addressId: z.string().min(1, "Morada é obrigatória"),
   function: z.string().min(1, "Função é obrigatória"),
   roleId: z.string().optional(),
 });

@@ -80,7 +80,7 @@ export function TypeEquipmentDialog({ typeEquipmentToEdit, open, onOpenChange }:
       onOpenChange(false);
       form.reset();
     } catch (error) {
-      toast.error("Erro ao salvar tipo de equipamento");
+      toast.error("Erro ao guardar tipo de equipamento");
     } finally {
       setIsSubmitting(false);
     }
@@ -151,7 +151,7 @@ export function TypeEquipmentDialog({ typeEquipmentToEdit, open, onOpenChange }:
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  A guardar...
                 </>
               ) : (
                 typeEquipmentToEdit ? "Atualizar" : "Criar"

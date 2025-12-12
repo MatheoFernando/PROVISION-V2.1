@@ -39,7 +39,7 @@
         }
     },
     "Common": {
-        "save": "Salvar",
+        "save": "Guardar",
         "cancel": "Cancelar",
         "create": "Adicionar Funcionário",
         "actions": "Ações",
@@ -47,7 +47,9 @@
         "settings": "Configurações",
         "profile": "Perfil",
         "edit": "Editar",
-        "delete": "Excluir",
+        "view": "Ver",
+        "remove": "Remover",
+        "delete": "Eliminar",
         "confirm": "Confirmar",
         "noResults": "Sem resultados",
         "yes": "Sim",
@@ -112,7 +114,7 @@
             "phone": "Telefone",
             "nif": "NIF",
             "contact": "Contacto",
-            "address": "Endereço"
+            "address": "Morada"
         },
         "placeholders": {
             "name": "Digite o nome",
@@ -127,7 +129,7 @@
         "toasts": {
             "createSuccess": "Cliente criado com sucesso!",
             "updateSuccess": "Cliente atualizado com sucesso!",
-            "error": "Erro ao salvar cliente"
+            "error": "Erro ao guardar cliente"
         }
     },
     "Employees": {
@@ -153,7 +155,7 @@
         "toasts": {
             "createSuccess": "Funcionário criado com sucesso!",
             "updateSuccess": "Funcionário atualizado com sucesso!",
-            "error": "Erro ao salvar funcionário",
+            "error": "Erro ao guardar funcionário",
             "limitReached": "Limite de trabalhadores atingido."
         },
         "limitReachedWarning": "Atenção: O limite de trabalhadores para este site ({limit}) foi atingido. Por favor, aumente o número de trabalhadores permitidos do site."
@@ -185,7 +187,7 @@
         "toasts": {
             "createSuccess": "Utilizador criado com sucesso!",
             "updateSuccess": "Utilizador atualizado com sucesso!",
-            "error": "Erro ao salvar utilizador"
+            "error": "Erro ao guardar utilizador"
         }
     },
     "Hooks": {
@@ -200,7 +202,7 @@
             },
             "delete": {
                 "success": "Utilizador eliminado com sucesso",
-                "error": "Erro ao deletar utilizador"
+                "error": "Erro ao eliminar utilizador"
             }
         },
         "Customers": {
@@ -217,8 +219,8 @@
                 "error": "Erro ao atualizar cliente"
             },
             "delete": {
-                "success": "Cliente deletado com sucesso!",
-                "error": "Erro ao deletar cliente"
+                "success": "Cliente eliminado com sucesso!",
+                "error": "Erro ao eliminar cliente"
             }
         },
         "Areas": {
@@ -231,8 +233,8 @@
                 "error": "Erro ao atualizar área"
             },
             "delete": {
-                "success": "Área excluída com sucesso!",
-                "error": "Erro ao excluir área"
+                "success": "Área eliminada com sucesso!",
+                "error": "Erro ao eliminar área"
             }
         },
         "Occurrences": {
@@ -245,8 +247,8 @@
                 "error": "Erro ao atualizar ocorrência. Tente novamente."
             },
             "delete": {
-                "success": "Ocorrência excluída com sucesso!",
-                "error": "Erro ao excluir ocorrência. Tente novamente."
+                "success": "Ocorrência eliminada com sucesso!",
+                "error": "Erro ao eliminar ocorrência. Tente novamente."
             }
         },
         "TypeOccurrence": {
@@ -259,8 +261,8 @@
                 "error": "Erro ao atualizar tipo de ocorrência"
             },
             "delete": {
-                "success": "Tipo de ocorrência excluído!",
-                "error": "Erro ao excluir tipo de ocorrência"
+                "success": "Tipo de ocorrência eliminado!",
+                "error": "Erro ao eliminar tipo de ocorrência"
             }
         },
         "Sites": {
@@ -277,22 +279,22 @@
                 "error": "Erro ao atualizar site"
             },
             "delete": {
-                "success": "Site excluído com sucesso!",
-                "error": "Erro ao excluir site"
+                "success": "Site eliminado com sucesso!",
+                "error": "Erro ao eliminar site"
             }
         },
         "Addresses": {
             "create": {
-                "success": "Endereço criado com sucesso!",
-                "error": "Erro ao criar endereço"
+                "success": "Morada criada com sucesso!",
+                "error": "Erro ao criar morada"
             },
             "update": {
-                "success": "Endereço atualizado com sucesso!",
-                "error": "Erro ao atualizar endereço"
+                "success": "Morada atualizada com sucesso!",
+                "error": "Erro ao atualizar morada"
             },
             "delete": {
-                "success": "Endereço excluído com sucesso!",
-                "error": "Erro ao excluir endereço"
+                "success": "Morada eliminada com sucesso!",
+                "error": "Erro ao eliminar morada"
             }
         },
         "TypeEquipment": {
@@ -305,8 +307,8 @@
                 "error": "Erro ao atualizar tipo de equipamento"
             },
             "delete": {
-                "success": "Tipo de equipamento removido com sucesso",
-                "error": "Erro ao remover tipo de equipamento"
+                "success": "Tipo de equipamento eliminado com sucesso",
+                "error": "Erro ao eliminar tipo de equipamento"
             }
         },
         "Rsu": {
@@ -319,8 +321,8 @@
                 "error": "Erro ao atualizar RSU"
             },
             "delete": {
-                "success": "RSU excluído com sucesso",
-                "error": "Erro ao excluir RSU"
+                "success": "RSU eliminado com sucesso",
+                "error": "Erro ao eliminar RSU"
             }
         },
         "Supervisions": {
@@ -333,8 +335,8 @@
                 "error": "Erro ao atualizar supervisão"
             },
             "delete": {
-                "success": "Supervisão excluída com sucesso",
-                "error": "Erro ao excluir supervisão"
+                "success": "Supervisão eliminada com sucesso",
+                "error": "Erro ao eliminar supervisão"
             }
         },
         "UserPermissions": {
@@ -355,7 +357,49 @@
                 "success": "Funcionário atualizado com sucesso!"
             },
             "delete": {
-                "success": "Funcionário excluído com sucesso!"
+                "success": "Funcionário eliminado com sucesso!"
+            }
+        },
+        "Rounds": {
+            "create": {
+                "success": "Ronda criada com sucesso!",
+                "error": "Erro ao criar ronda"
+            },
+            "update": {
+                "success": "Ronda atualizada com sucesso!",
+                "error": "Erro ao atualizar ronda"
+            },
+            "delete": {
+                "success": "Ronda eliminada com sucesso!",
+                "error": "Erro ao eliminar ronda"
+            }
+        },
+        "ItemInspectionRounds": {
+            "create": {
+                "success": "Item criado com sucesso!",
+                "error": "Erro ao criar item"
+            },
+            "update": {
+                "success": "Item atualizado com sucesso!",
+                "error": "Erro ao atualizar item"
+            },
+            "delete": {
+                "success": "Item eliminado com sucesso!",
+                "error": "Erro ao eliminar item"
+            }
+        },
+        "CheckListRoundGroups": {
+            "create": {
+                "success": "Avaliação guardada!",
+                "error": "Erro ao guardar avaliação"
+            },
+            "update": {
+                "success": "Avaliação atualizada!",
+                "error": "Erro ao atualizar avaliação"
+            },
+            "delete": {
+                "success": "Avaliação eliminada!",
+                "error": "Erro ao eliminar avaliação"
             }
         }
     },
@@ -421,6 +465,10 @@
         "tabs": {
             "overview": "Visão Geral",
             "sites": "Sites"
+        },
+        "actions": {
+            "associateClient": "Associar Cliente",
+            "edit": "Editar"
         },
         "sections": {
             "contactDetails": "Detalhes de Contato",
@@ -490,26 +538,171 @@
             "validation": {
                 "nameRequired": "O nome é obrigatório",
                 "selectArea": "Selecione uma área",
-                "selectZone": "Selecione uma zona"
+                "selectZone": "Selecione uma zona",
+                "selectSector": "Selecione um sector"
             }
         },
         "deleteModal": {
             "titleArea": "Eliminar Área",
             "titleZone": "Eliminar Zona",
             "titleSector": "Eliminar Sector",
-            "messageArea": "Tem a certeza que deseja eliminar a área",
-            "messageZone": "Tem a certeza que deseja eliminar a zona",
-            "messageSector": "Tem a certeza que deseja eliminar o sector",
             "confirmMessage": "Esta ação não pode ser desfeita."
         }
     },
     "Components": {
         "DeleteModal": {
-            "title": "Tem certeza que deseja excluir?",
+            "title": "Tem a certeza que deseja eliminar?",
             "message": "Esta ação não pode ser desfeita.",
             "cancel": "Cancelar",
             "confirm": "Eliminar",
             "deleting": "Eliminando..."
+        }
+    },
+    "Supervision": {
+        "tabs": {
+            "details": "Detalhes",
+            "resources": "Recursos",
+            "equipments": "Equipamentos",
+            "observations": "Observações"
+        },
+        "sections": {
+            "operationalData": "Dados Operativos",
+            "responsible": "Responsável",
+            "equipmentDetails": "Detalhes do Equipamento"
+        },
+        "fields": {
+            "status": "Estado",
+            "date": "Data",
+            "time": "Hora",
+            "desired": "Desejado",
+            "present": "Presente",
+            "employee": "Funcionário",
+            "department": "Departamento",
+            "code": "Código",
+            "name": "Nome",
+            "equipment": "Equipamento",
+            "site": "Site",
+            "noStatus": "Sem estado",
+            "responsible": "Responsável"
+        },
+        "table": {
+            "code": "Código",
+            "status": "Estado",
+            "name": "Nome",
+            "model": "Modelo"
+        },
+        "messages": {
+            "noObservation": "Nenhuma observação registrada para esta supervisão.",
+            "noEquipment": "Sem equipamento"
+        }
+    },
+    "Occurrence": {
+        "tabs": {
+            "info": "Detalhes",
+            "context": "Recursos",
+            "equipments": "Equipamentos",
+            "actions": "Ação Corretiva",
+            "description": "Descrição"
+        },
+        "sections": {
+            "basicData": "Dados Básicos",
+            "localEquipment": "Local e Equipamento",
+            "responsible": "Responsável",
+            "adoptedMeasures": "Medidas Adotadas",
+            "eventDescription": "Descrição do Evento"
+        },
+        "fields": {
+            "type": "Tipo",
+            "time": "Horário",
+            "date": "Data",
+            "site": "Site",
+            "equipment": "Equipamento",
+            "employee": "Funcionário",
+            "company": "Empresa",
+            "typology": "Tipologia",
+            "gravity": "Gravidade",
+            "status": "Estado"
+        },
+        "messages": {
+            "noAction": "Nenhuma ação corretiva definida."
+        }
+    },
+    "Rsu": {
+        "tabs": {
+            "details": "Detalhes",
+            "logistics": "Logística",
+            "observations": "Observações"
+        },
+        "sections": {
+            "loadData": "Dados da Carga",
+            "location": "Localização",
+            "transport": "Transporte",
+            "responsible": "Responsável",
+            "additionalNotes": "Notas Adicionais"
+        },
+        "fields": {
+            "container": "Contentor",
+            "quantity": "Quantidade",
+            "vehicle": "Viatura",
+            "company": "Empresa",
+            "date": "Data",
+            "site": "Site",
+            "responsible": "Responsável"
+        }
+    },
+    "EquipmentView": {
+        "title": "Detalhes do Equipamento",
+        "serialString": "Número de Série",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "sections": {
+            "generalInfo": "Informações Gerais",
+            "siteAndType": "Detalhes do Site e Tipo"
+        },
+        "tabs": {
+            "site": "Site",
+            "type": "Tipo de Equipamento"
+        },
+        "fields": {
+            "mark": "Marca",
+            "model": "Modelo",
+            "code": "Código",
+            "company": "Empresa",
+            "client": "Cliente",
+            "contractedEmployees": "Funcionários Contratados",
+            "sector": "Sector",
+            "zone": "Zona",
+            "status": "Estado",
+            "name": "Nome",
+            "description": "Descrição",
+            "createdAt": "Criado em"
+        }
+    },
+    "Services": {
+        "supervision": {
+            "name": "Supervisão",
+            "description": "Serviço de supervisão e monitorização"
+        },
+        "occurrence": {
+            "name": "Ocorrência",
+            "description": "Gestão de ocorrências e incidentes"
+        },
+        "rsu": {
+            "name": "RSU",
+            "description": "Resíduos Sólidos Urbanos"
+        },
+        "ronda": {
+            "name": "Ronda",
+            "description": "Ronda de recolha"
+        }
+    },
+    "Ronda": {
+        "title": "Gestão de Rondas",
+        "subtitle": "Acompanhe e administre as rondas da equipa em tempo real.",
+        "create": {
+            "button": "Nova Ronda",
+            "title": "Iniciar Nova Ronda",
+            "description": "Preencha os dados iniciais para começar uma nova ronda."
         }
     }
 }

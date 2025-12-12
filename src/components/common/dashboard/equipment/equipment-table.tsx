@@ -226,8 +226,8 @@ export function EquipmentTable({
             onClick: (equipment) => handleEdit(equipment),
           },
           {
-            label: "Excluir",
-            icon: <Trash className="h-4 w-4 mr-2 text-red-600" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (equipment) => handleDelete(equipment),
           },
         ]}
@@ -254,7 +254,7 @@ export function EquipmentTable({
           setSelectedEquipment(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Equipamento"
+        title="Eliminar Equipamento"
         message="Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita."
         isLoading={deleteEquipment.isPending}
       />

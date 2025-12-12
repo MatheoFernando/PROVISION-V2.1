@@ -685,7 +685,7 @@ export function BulkImportDialog<TInput>({
                       downloadTemplate();
                     }}
                   >
-                    <Download className="mr-2 size-4 text-blue-500" />
+                    <Download className="mr-2 size-4" />
                     Baixar modelo
                   </Button>
                 </div>
@@ -936,7 +936,7 @@ export function BulkImportDialog<TInput>({
           <Button
             type="button"
             onClick={handleSubmit}
-            className="w-full sm:w-auto cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
+            className="w-full sm:w-auto cursor-pointer"
             disabled={!stats.valid || isSubmitting || !hasData}
           >
             {isSubmitting ? "Enviando..." : `Criar ${stats.valid} registro(s)`}

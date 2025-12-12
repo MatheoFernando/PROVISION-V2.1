@@ -22,19 +22,22 @@ export function DeleteModal({
   message = "Are you sure you want to delete?",
   isLoading = false,
 }: DeleteModalProps) {
-  const { t: tCommon } = { t: (key: string) => key }; 
+  const { t: tCommon } = { t: (key: string) => key };
   const t = useTranslations("Components.DeleteModal");
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
-      <div className="relative bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
+      <div className="relative bg-white dark:bg-slate-950 rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 z-[10000]">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
         >
           <X className="w-4 h-4 text-gray-600" />
         </button>
@@ -43,9 +46,9 @@ export function DeleteModal({
           <Trash2 className="w-8 h-8 text-red-500" />
 
 
-          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('title')}</h2>
 
-          <p className="text-gray-600 text-sm">{t('message')}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('message')}</p>
 
           <div className="flex gap-3 w-full">
             <Button

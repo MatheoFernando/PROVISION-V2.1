@@ -30,8 +30,9 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
     },
 
     {
-      title: "Sidebar.company", 
+      title: "Sidebar.company",
       iconKey: "Buildings",
+      url: "/dashboard/empresa",
       items: [
         {
           title: "Sidebar.equipment",
@@ -44,7 +45,7 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
           iconKey: "UsersFour",
         },
         {
-          title: "Sidebar.vehicles", 
+          title: "Sidebar.vehicles",
           url: "/dashboard/veiculos",
           iconKey: "Truck",
         },
@@ -52,7 +53,7 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
           title: "Sidebar.operationalOrganization",
           url: "/dashboard/organizacao-operacional",
           iconKey: "TreeStructure",
-          
+
         },
       ],
     },
@@ -72,7 +73,7 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
           iconKey: "Package",
         },
         {
-          title: "Sidebar.systemDefinitions", 
+          title: "Sidebar.systemDefinitions",
           url: "/dashboard/configuracoes/definicoes-sistema",
           iconKey: "Sliders",
         },
@@ -82,12 +83,12 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
           iconKey: "PlugsConnected",
         },
         {
-          title: "Sidebar.securityAndLogs", 
+          title: "Sidebar.securityAndLogs",
           url: "/dashboard/configuracoes/seguranca-logs",
           iconKey: "ShieldCheck",
         },
         {
-          title: "Sidebar.backupAndRestore", 
+          title: "Sidebar.backupAndRestore",
           url: "/dashboard/configuracoes/backup-restauro",
           iconKey: "HardDrives",
         },

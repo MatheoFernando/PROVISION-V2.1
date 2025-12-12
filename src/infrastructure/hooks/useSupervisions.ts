@@ -54,6 +54,20 @@ export function useSupervisionsByDayQuery(date?: Date) {
   });
 }
 
+export function useSupervisionsByStatusQuery(status?: string) {
+  return useQuery({
+    queryKey: ["supervisions", "byStatus", status ?? "all"],
+    enabled: Boolean(status),
+    queryFn: async (): Promise<Supervision[]> => {
+      const { data } = await api.get("/supervision/getByStatus", {
+        params: { status },
+      });
+      return (data?.data ?? data) as Supervision[];
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
 
 export function useSupervisionQuery(id: string) {
   return useQuery({
@@ -126,7 +140,7 @@ export function useDeleteSupervisionMutation() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Erro ao excluir supervisão"
+        error.response?.data?.message || "Erro ao eliminar supervisão"
       );
     },
   });

@@ -88,7 +88,7 @@ export function ZoneColumn({
                             </div>
                         </header>
 
-                        <footer className="grid grid-cols-2 gap-2 pt-1 border-t border-border/30 mt-1">
+                        <footer className="hidden md:grid grid-cols-2 gap-2 pt-1 border-t border-border/30 mt-1">
                             <div className="flex gap-2 items-center justify-center p-1.5 rounded-lg bg-muted/30">
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground/70">{t("metrics.sectors")}</span>
                                 <span className="text-xs font-bold text-foreground">{metrics.sectors}</span>

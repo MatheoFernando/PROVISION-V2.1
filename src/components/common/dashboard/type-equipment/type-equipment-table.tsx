@@ -125,7 +125,7 @@ export function TypeEquipmentTable() {
             onClick: (typeEquipment) => handleEdit(typeEquipment),
           },
           {
-            label: "Excluir",
+            label: "Eliminar",
             icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (typeEquipment) => handleDelete(typeEquipment),
           },

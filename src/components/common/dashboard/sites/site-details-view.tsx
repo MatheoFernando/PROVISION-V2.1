@@ -7,7 +7,8 @@ import {
     MapPin,
     Users,
     HardHat,
-    Plus
+    Plus,
+    Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,6 @@ import { cn } from "@/lib/utils";
 import { useSiteById } from "@/infrastructure/hooks/useSites";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
 import { SiteDialog } from "./site-create";
 import { EquipmentDialog } from "@/components/common/dashboard/equipment/equipment-create";
 import { EmployeeDialog } from "@/components/common/dashboard/employees/employee-create";
@@ -29,21 +29,9 @@ import { Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useDeleteEquipment } from "@/infrastructure/hooks/useEquipment";
-import { useUpdateEmployee, useEmployees } from "@/infrastructure/hooks/useEmployees";
-import { useEquipment } from "@/infrastructure/hooks/useEquipment";
-import { useDeleteSite } from "@/infrastructure/hooks/useSites";
-import { useAreas } from "@/infrastructure/hooks/useAreas";
-import { useZones } from "@/infrastructure/hooks/useZones";
-import { useSectors } from "@/infrastructure/hooks/useSectors";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 
 function getFirstItem<T>(entity: T | T[] | undefined | null): T | undefined {
     if (!entity) return undefined;
@@ -118,7 +106,7 @@ export function SiteDetailsView() {
                             <ChevronLeft className="w-5 h-5" />
                         </Button>
                         <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <Building2 className="w-4 h-4" />
                             </div>
                             <h1 className="text-lg font-semibold tracking-tight uppercase truncate max-w-[600px]" title={headerTitle}>
@@ -137,7 +125,7 @@ export function SiteDetailsView() {
                             <Pencil className="w-4 h-4 mr-2" />
                             {t('SiteDetails.actions.editSite') || 'Edit Site'}
                         </Button>
-                        <DeleteSiteButton site={site} t={t} router={router} />
+
                     </div>
                 </div>
             </header>
@@ -172,9 +160,9 @@ export function SiteDetailsView() {
 
                     <TabsContent value="overview" className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded p-6 shadow-sm flex flex-col gap-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                                    <MapPin className="w-5 h-5 text-indigo-500" />
+                                    <MapPin className="w-5 h-5 text-blue-500" />
                                     {t('SiteDetails.sections.locationDetails')}
                                 </h3>
                                 <div className="space-y-3 pt-2">
@@ -190,10 +178,10 @@ export function SiteDetailsView() {
                                 </div>
                             </div>
 
-                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
+                            <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded p-6 shadow-sm flex flex-col gap-6">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                                        <Users className="w-5 h-5 text-indigo-500" />
+                                        <Users className="w-5 h-5 text-blue-500" />
                                         {t('SiteDetails.sections.operationalInfo')}
                                     </h3>
                                 </div>
@@ -347,7 +335,6 @@ function ToolsTabContent({ equipments, t, onAddEquipment, siteId }: { equipments
         {
             label: t("Common.delete") || "Delete",
             icon: <Trash className="w-4 h-4" />,
-            variant: "destructive" as const,
             onClick: (row: Equipment) => setEquipmentToDelete(row),
         },
     ];
@@ -370,7 +357,7 @@ function ToolsTabContent({ equipments, t, onAddEquipment, siteId }: { equipments
                             <Button
                                 size="sm"
                                 onClick={onAddEquipment}
-                                className="rounded-full gap-2 pl-3 pr-4 shadow-sm"
+                                className="gap-2 pl-3 pr-4 shadow-sm"
                             >
                                 <Plus className="w-4 h-4" />
                                 {t('SiteDetails.actions.addEquipment') || "Add Equipment"}
@@ -394,45 +381,16 @@ function ToolsTabContent({ equipments, t, onAddEquipment, siteId }: { equipments
 
 
 function EmployeesTabContent({ site, t, isLimitReached }: { site: Site | null | undefined, t: (key: string) => string, isLimitReached: boolean }) {
+    const router = useRouter();
     const [isCreateEmployeeOpen, setIsCreateEmployeeOpen] = useState(false);
-    const [employeeToDissociate, setEmployeeToDissociate] = useState<any | null>(null);
-    const updateEmployee = useUpdateEmployee();
+    const [employeeToEdit, setEmployeeToEdit] = useState<any | null>(null);
     const queryClient = useQueryClient();
-
-    const { data: areas = [] } = useAreas();
-    const { data: zones = [] } = useZones();
-    const { data: sectors = [] } = useSectors();
-
-    const employeesWithDependencies = useMemo(() => {
-        if (!site) return new Set<string>();
-        const ids = new Set<string>();
-
-        areas.forEach((a) => a.employeeId && ids.add(a.employeeId));
-        zones.forEach((z) => z.employeeId && ids.add(z.employeeId));
-        sectors.forEach((s) => s.employeeId && ids.add(s.employeeId));
-        return ids;
-    }, [areas, zones, sectors, site]);
 
     const employees = useMemo(() => {
         return site?.employees || [];
     }, [site]);
 
-    const handleDissociate = async () => {
-        if (!employeeToDissociate?.id) return;
-        try {
-            await updateEmployee.mutateAsync({
-                id: employeeToDissociate.id,
-                siteId: null as any
-            });
-            await queryClient.invalidateQueries({ queryKey: ["site", site?.id] });
-            setEmployeeToDissociate(null);
-            toast.success("Funcionário removido do site com sucesso");
-        } catch (error) {
-            console.error(error);
-            toast.error("Erro ao remover funcionário");
-        }
-    }
-
+ 
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "cod",
@@ -453,7 +411,22 @@ function EmployeesTabContent({ site, t, isLimitReached }: { site: Site | null | 
         }
     ];
 
-
+    const rowActions = [
+        {
+            label: t("Common.view") || "Ver",
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (row: any) => router.push(`/dashboard/funcionarios/${row.id}`),
+        },
+        {
+            label: t("Common.edit") || "Editar",
+            icon: <Pencil className="w-4 h-4" />,
+            onClick: (row: any) => {
+                setEmployeeToEdit(row);
+                setIsCreateEmployeeOpen(true);
+            },
+        },
+       
+    ];
 
     return (
         <div className="space-y-4">
@@ -465,14 +438,18 @@ function EmployeesTabContent({ site, t, isLimitReached }: { site: Site | null | 
                 <DataTableGeneric
                     data={employees}
                     columns={columns}
+                    rowActions={rowActions}
                     placeholder={t('Employees.placeholders.search') || "Search employees..."}
                     actionButton={{
                         label: t('Common.create') || "Create",
                         component: (
                             <Button
                                 size="sm"
-                                onClick={() => setIsCreateEmployeeOpen(true)}
-                                className="rounded-full gap-2 pl-3 pr-4 shadow-sm"
+                                onClick={() => {
+                                    setEmployeeToEdit(null);
+                                    setIsCreateEmployeeOpen(true);
+                                }}
+                                className="gap-2 pl-3 pr-4 shadow-sm"
                                 disabled={isLimitReached}
                             >
                                 <Plus className="w-4 h-4" />
@@ -485,99 +462,22 @@ function EmployeesTabContent({ site, t, isLimitReached }: { site: Site | null | 
 
             <EmployeeDialog
                 open={isCreateEmployeeOpen}
-                onOpenChange={setIsCreateEmployeeOpen}
+                onOpenChange={(open) => {
+                    setIsCreateEmployeeOpen(open);
+                    if (!open) setTimeout(() => setEmployeeToEdit(null), 300);
+                }}
                 siteId={site?.id}
                 isSiteLocked={true}
+                employeeToEdit={employeeToEdit}
                 onSuccess={async () => {
                     await queryClient.invalidateQueries({ queryKey: ["site", site?.id] });
+                    setIsCreateEmployeeOpen(false);
+                    setEmployeeToEdit(null);
                 }}
             />
 
-            <DeleteModal
-                isOpen={!!employeeToDissociate}
-                onClose={() => setEmployeeToDissociate(null)}
-                onConfirm={handleDissociate}
-                title={t('Components.DeleteModal.title')}
-                message={t('Components.DeleteModal.message')}
-                isLoading={updateEmployee.isPending}
-            />
+         
         </div>
     )
 }
 
-function DeleteSiteButton({ site, t, router }: { site: Site | null | undefined, t: any, router: any }) {
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const deleteSite = useDeleteSite();
-
-    const { data: allEmployees = [] } = useEmployees(site?.companyId, { enabled: !!site?.companyId });
-    const { data: allEquipment = [] } = useEquipment(undefined, { enabled: !!site?.companyId, companyId: site?.companyId });
-
-    if (!site) return null;
-
-    // Check actual dependencies for THIS site
-    const hasEmployees = allEmployees.some(emp => emp.siteId === site.id);
-    const hasEquipment = allEquipment.some(eq => eq.siteId === site.id);
-    const isDisabled = hasEmployees || hasEquipment;
-
-    const handleDelete = async () => {
-        try {
-            await deleteSite.mutateAsync(site.id as string);
-            toast.success("Site excluído com sucesso!");
-            router.push("/dashboard/sites");
-        } catch (error) {
-            toast.error("Erro ao excluir site");
-        }
-    };
-
-    return (
-        <>
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span tabIndex={0} className="inline-flex">
-                            <Button
-                                size="sm"
-                                variant="destructive"
-                                className={cn(
-                                    "rounded-full",
-                                    isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                                )}
-                                onClick={(e) => {
-                                    if (isDisabled) {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                    } else {
-                                        setIsDeleteOpen(true);
-                                    }
-                                }}
-                            >
-                                <Trash className="w-4 h-4 mr-2" />
-                                {t('Common.delete') || 'Delete'}
-                            </Button>
-                        </span>
-                    </TooltipTrigger>
-                    {isDisabled && (
-                        <TooltipContent>
-                            <p>
-                                {hasEmployees && hasEquipment
-                                    ? "Não pode excluir site com funcionários e equipamentos associados"
-                                    : hasEmployees
-                                        ? "Não pode excluir site com funcionários associados"
-                                        : "Não pode excluir site com equipamentos associados"}
-                            </p>
-                        </TooltipContent>
-                    )}
-                </Tooltip>
-            </TooltipProvider>
-
-            <DeleteModal
-                isOpen={isDeleteOpen}
-                onClose={() => setIsDeleteOpen(false)}
-                onConfirm={handleDelete}
-                title="Excluir Site"
-                message="Tem certeza que deseja excluir este site? Esta ação não pode ser desfeita."
-                isLoading={deleteSite.isPending}
-            />
-        </>
-    );
-}

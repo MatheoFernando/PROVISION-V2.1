@@ -79,7 +79,7 @@ export function useDeleteModule() {
       toast.success("Módulo excluído com sucesso!");
     },
     onError: () => {
-      toast.error("Erro ao excluir módulo");
+      toast.error("Erro ao eliminar módulo");
     },
   });
 }

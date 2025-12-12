@@ -10,17 +10,20 @@ interface SitesQueryOptions {
   enabled?: boolean;
 }
 
-export function useSites(customerId?: string, options?: SitesQueryOptions) {
+export function useSites(customerId?: string, options?: SitesQueryOptions & { companyId?: string }) {
   return useQuery({
-    queryKey: ["sites", customerId],
+    queryKey: ["sites", customerId, options?.companyId],
     queryFn: async (): Promise<Site[]> => {
+      if (options?.companyId) {
+        const response = await api.get(`/site/getByCompanyId:${options.companyId}`);
+        return response.data;
+      }
       const response = customerId
         ? await api.get("/site/getByCustomerId", { params: { customerId } })
         : await api.get("/site/getAll");
       return response.data.data ?? response.data ?? [];
     },
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
     enabled: options?.enabled ?? true,
@@ -59,7 +62,6 @@ export function useSiteById(id?: string, options?: SitesQueryOptions) {
       return (data as Site) ?? null;
     },
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
     enabled: (options?.enabled ?? true) && Boolean(id),

@@ -16,11 +16,6 @@ import { DataTableGeneric } from "@/components/common/base-ui/data-table"
 import type { DateRange } from "react-day-picker"
 import { SupervisionDialog } from "./supervision-create"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"
-import { useEmployees } from "@/infrastructure/hooks/useEmployees"
-import { useEquipment } from "@/infrastructure/hooks/useEquipment"
-import { useSites } from "@/infrastructure/hooks/useSites"
-import { useDepartments } from "@/infrastructure/hooks/useDepartments"
-import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
 import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
 import { SupervisionDrawer } from "./supervision-view"
@@ -29,10 +24,9 @@ interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
   onEdit?: (supervision: Supervision) => void
-  customerId?: string
 }
 
-function ActionsButtons({ supervision, onEdit, customerId }: ActionsButtonsProps) {
+function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
   const [isViewOpen, setIsViewOpen] = React.useState(false)
   const deleteMutation = useDeleteSupervisionMutation()
@@ -78,7 +72,7 @@ function ActionsButtons({ supervision, onEdit, customerId }: ActionsButtonsProps
             disabled={deleteMutation.isPending}
           >
             <Trash className="size-4 mr-2" />
-            Excluir
+            Eliminar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -87,6 +81,10 @@ function ActionsButtons({ supervision, onEdit, customerId }: ActionsButtonsProps
         supervision={supervision}
         isOpen={isViewOpen}
         onOpenChange={setIsViewOpen}
+        onEdit={(sup) => {
+          setIsViewOpen(false);
+          onEdit?.(sup);
+        }}
       />
 
       <DeleteModal
@@ -94,7 +92,7 @@ function ActionsButtons({ supervision, onEdit, customerId }: ActionsButtonsProps
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
         isLoading={deleteMutation.isPending}
-        title="Excluir Supervisão"
+        title="Eliminar Supervisão"
         message={`Tem certeza que deseja excluir a supervisão do equipamento ?`}
       />
     </>
@@ -121,15 +119,9 @@ const formatHour = (value?: string) => {
 }
 
 const createSupervisionColumns = (
-  maps: {
-    employeeById: Record<string, string>
-    equipmentById: Record<string, string>
-    siteById: Record<string, string>
-    departmentById: Record<string, string>
-    companyById?: Record<string, string>
+  options: {
     isGlobalAdmin?: boolean
     onEdit?: (supervision: Supervision) => void
-    sites?: any[]
   }
 ): ColumnDef<Supervision>[] => [
   {
@@ -167,40 +159,41 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorFn: (row: Supervision) => maps.equipmentById[row.equipmentId || ""] || 'N/A',
+    accessorFn: (row: Supervision) => {
+        const eq = row.equipments;
+        return eq ? `${eq.mark || ''} ${eq.model || ''}`.trim() || 'N/A' : 'N/A';
+    },
     id: "equipment",
     header: `Equipamentos`,
     cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const equipment = maps.equipmentById[row.original.equipmentId || ""] || ""
-      return <div>{equipment || 'N/A'}</div>
+        const eq = row.original.equipments;
+        const name = eq ? `${eq.cod || ''}`.trim() : 'N/A';
+        return <div>{name || 'N/A'}</div>
     },
   },
   {
-    accessorFn: (row: Supervision) => maps.employeeById[row.employeeId || ""] || 'N/A',
+    accessorFn: (row: Supervision) => row.employees?.fullName || 'N/A',
     id: "employee",
     header: "Funcionário",
     cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const name = maps.employeeById[row.original.employeeId || ""]
-      return <div>{name || 'N/A'}</div>
+      return <div>{row.original.employees?.fullName || 'N/A'}</div>
     },
   },
   {
-    accessorFn: (row: Supervision) => maps.siteById[row.siteId || ""] || 'N/A',
+    accessorFn: (row: Supervision) => row.sites?.name || 'N/A',
     id: "site",
     header: "Site",
     cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const name = maps.siteById[row.original.siteId || ""]
-      return <div>{name || 'N/A'}</div>
+      return <div>{row.original.sites?.name || 'N/A'}</div>
     },
   },
-  maps.isGlobalAdmin && maps.companyById
+  options.isGlobalAdmin
     ? {
-      accessorFn: (row: Supervision) => maps.companyById?.[row.companyId || ""] || "N/A",
+      accessorFn: (row: Supervision) => row.company?.businessName || "N/A",
       id: "company",
       header: "Empresa",
       cell: ({ row }: CellContext<Supervision, unknown>) => {
-        const name = maps.companyById?.[row.original.companyId || ""]
-        return <div>{name || "N/A"}</div>
+        return <div>{row.original.company?.businessName || "N/A"}</div>
       },
     }
     : null,
@@ -215,12 +208,11 @@ const createSupervisionColumns = (
     },
   },
   {
-    accessorFn: (row: Supervision) => maps.departmentById[row.departmentId || ""] || 'N/A',
+    accessorFn: (row: Supervision) => row.department?.name || 'N/A',
     id: "department",
     header: "Departamento",
     cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const name = maps.departmentById[row.original.departmentId || ""]
-      return <div>{name || 'N/A'}</div>
+      return <div>{row.original.departments?.name || 'N/A'}</div>
     },
   },
   {
@@ -241,13 +233,11 @@ const createSupervisionColumns = (
     header: "Ações",
     size: 50,
     cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const site = maps.sites?.find((s: any) => s.id === row.original.siteId)
       return (
         <ActionsButtons
           supervision={row.original}
-          equipmentCode={maps.equipmentById[row.original.equipmentId || ""]}
-          onEdit={maps.onEdit}
-          customerId={site?.customerId}
+          equipmentCode={row.original.equipments?.cod}
+          onEdit={options.onEdit}
         />
       )
     },
@@ -260,51 +250,22 @@ interface SupervisionTableProps {
   onCreateClick?: () => void
   onDateRangeChange?: (range?: DateRange) => void
   onBulkDelete?: (selected: Supervision[]) => void
+  statusFilter?: string
+  onStatusFilterChange?: (status?: string) => void
 }
 
-export function SupervisionTable({ data, isLoading, onDateRangeChange }: SupervisionTableProps) {
-  const companyId = useAuthStore((s) => s.companyId || undefined)
-  const isGlobalAdmin = useAuthStore((s) => s.isGlobalAdmin)
-  const { data: employees = [] } = useEmployees(companyId)
-  const { data: equipments = [] } = useEquipment()
-  const { data: sites = [] } = useSites()
-  const { data: departments = [] } = useDepartments()
+export function SupervisionTable({
+  data,
+  isLoading,
+  onDateRangeChange,
+  statusFilter,
+  onStatusFilterChange,
+}: SupervisionTableProps) {
+
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
 
-  const employeeById = React.useMemo(() => {
-    const map: Record<string, string> = {}
-      ; (employees as any[]).forEach((e: any) => {
-        if (e?.id) map[e.id] = e.fullName || e.name || ""
-      })
-    return map
-  }, [employees])
-
-  const equipmentById = React.useMemo(() => {
-    const map: Record<string, string> = {}
-      ; (equipments as any[]).forEach((e: any) => {
-        if (e?.id) map[e.id] = e.cod || e.model || e.mark || ""
-      })
-    return map
-  }, [equipments])
-
-  const siteById = React.useMemo(() => {
-    const map: Record<string, string> = {}
-      ; (sites as any[]).forEach((s: any) => {
-        if (s?.id) map[s.id] = s.name || ""
-      })
-    return map
-  }, [sites])
-
-  const departmentById = React.useMemo(() => {
-    const map: Record<string, string> = {}
-      ; (departments as any[]).forEach((d: any) => {
-        if (d?.id) map[d.id] = d.name || ""
-      })
-    return map
-  }, [departments])
-
-
+  
 
   const handleCreate = () => {
     setSelectedSupervision(null)
@@ -326,12 +287,7 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
       <DataTableGeneric
         data={data}
         columns={createSupervisionColumns({
-          employeeById,
-          equipmentById,
-          siteById,
-          departmentById,
           onEdit: handleEdit,
-          sites: sites as any[]
         })}
 
         searchKey="cod"
@@ -343,6 +299,12 @@ export function SupervisionTable({ data, isLoading, onDateRangeChange }: Supervi
           label: "Nova Supervisão",
           onClick: handleCreate,
         }}
+        statusOptions={[
+          { label: "Pendente", value: "Pendente" },
+          { label: "Finalizado", value: "Finalizado" },
+        ]}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
       />
 
       <SupervisionDialog

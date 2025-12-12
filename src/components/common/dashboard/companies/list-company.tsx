@@ -176,7 +176,7 @@ function ListCompany() {
           },
 
           {
-            label: "Excluir",
+            label: "Eliminar",
             icon: (
               <Trash2 className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />
             ),
@@ -214,7 +214,7 @@ function ListCompany() {
             setSelectedCompany(null);
           }
         }}
-        title="Excluir empresa"
+        title="Eliminar empresa"
         message={`Tem certeza que deseja excluir a empresa ${selectedCompany?.businessName ?? ""
           } ? Esta ação não pode ser desfeita.`}
       />

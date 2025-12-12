@@ -5,7 +5,6 @@ import * as React from "react";
 import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
-  useSites,
   useDeleteSite,
   useCreateGrossSite,
   useSitesByCompanyAndCustomer,
@@ -153,7 +152,6 @@ function parseWorkersCount(rawValue: string | undefined) {
 
 export function SitesTable({
   openCreateOnLoad = false,
-  shouldNavigateBack = false,
   customerId,
   companyId: companyIdProp,
   data,
@@ -172,44 +170,12 @@ export function SitesTable({
     { enabled: shouldFetch && !!companyId && !!customerId }
   );
 
-  const { data: sites = [], isLoading } = useSites(customerId, {
-    enabled: shouldFetch && (!companyId || !customerId)
-  });
-
-  const finalSites = (companyId && customerId) ? sitesByCompanyAndCustomer : sites;
-  const finalIsLoading = (companyId && customerId) ? isLoadingByCompanyAndCustomer : isLoading;
-  // const [isViewOpen, setIsViewOpen] = useState(false);
+  const finalSites = sitesByCompanyAndCustomer;
+  const finalIsLoading = isLoadingByCompanyAndCustomer;
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
   const [isBulkOpen, setIsBulkOpen] = useState(false);
-
-  const resetCreateState = () => {
-    setIsCreateOpen(false);
-    setSelectedSite(undefined);
-  };
-
-  const handleReturn = () => {
-    if (shouldNavigateBack) router.back();
-  };
-
-  const handleCreateCancel = () => {
-    resetCreateState();
-    handleReturn();
-  };
-
-  const handleCreateSuccess = () => {
-    resetCreateState();
-    handleReturn();
-  };
-
-  const handleCreateDialogChange = (open: boolean) => {
-    if (open) {
-      setIsCreateOpen(true);
-      return;
-    }
-    handleCreateCancel();
-  };
 
   const handleView = (site: Site) => {
     if (site.id) {
@@ -236,7 +202,7 @@ export function SitesTable({
       setIsDeleteOpen(false);
       setSelectedSite(undefined);
     } catch (error) {
-      toast.error("Erro ao excluir site");
+      toast.error("Erro ao eliminar site");
     }
   };
 
@@ -244,11 +210,12 @@ export function SitesTable({
   const resolvedIsLoading = isLoadingOverride ?? finalIsLoading;
 
 
-  const { data: allEmployees = [] } = useEmployees(undefined, {
-    enabled: true,
+  const { data: allEmployees = [] } = useEmployees(companyId, {
+    enabled: !!companyId,
   });
   const { data: allEquipment = [] } = useEquipment(undefined, {
     enabled: true,
+    companyId,
   });
 
   const sitesWithEmployees = new Set(allEmployees.map((emp) => emp.siteId).filter(Boolean));
@@ -286,7 +253,7 @@ export function SitesTable({
             onClick: (site) => handleEdit(site),
           },
           {
-            label: "Excluir",
+            label: "Eliminar",
             icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (site) => handleDelete(site),
             render: (site, action) => {
@@ -359,7 +326,7 @@ export function SitesTable({
           setSelectedSite(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Site"
+        title="Eliminar Site"
         message="Tem certeza que deseja excluir este site? Esta ação não pode ser desfeita."
         isLoading={deleteSite.isPending}
       />

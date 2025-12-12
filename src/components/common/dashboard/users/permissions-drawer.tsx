@@ -141,7 +141,7 @@ export function ChangePermissionsDrawer({
                         disabled={isLoading}
                         className="w-fit h-10 font-medium rounded-lg transition-colors"
                     >
-                        {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+                        {isLoading ? 'A guardar...' : 'Salvar Alterações'}
                     </Button>
                     <Button
                         variant="outline"

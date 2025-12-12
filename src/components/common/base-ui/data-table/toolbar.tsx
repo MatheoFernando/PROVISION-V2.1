@@ -1,11 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FunnelPlus, Plus, X, ChevronDown, UploadCloud } from "lucide-react";
-import { ArrowClockwise } from "phosphor-react";
+import {  Plus, X, ChevronDown, UploadCloud } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -25,6 +23,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FadersHorizontal } from "phosphor-react";
 
 export interface ToolbarProps<TData extends RowData> {
   table: ReactTable<TData>;
@@ -51,6 +57,9 @@ export interface ToolbarProps<TData extends RowData> {
   searchKey?: string;
   dateKey?: string;
   onRefetch?: () => void;
+  statusOptions?: { label: string; value: string }[];
+  statusFilter?: string;
+  onStatusFilterChange?: (status?: string) => void;
 }
 
 export function Toolbar<TData extends RowData>({
@@ -67,7 +76,9 @@ export function Toolbar<TData extends RowData>({
   onClearRange,
   searchKey,
   dateKey,
-  onRefetch,
+  statusOptions,
+  statusFilter,
+  onStatusFilterChange,
 }: ToolbarProps<TData>) {
   const [showDatePicker, setShowDatePicker] = React.useState(false);
   const [sortLabel, setSortLabel] = React.useState("Mais recente")
@@ -106,6 +117,34 @@ export function Toolbar<TData extends RowData>({
             className="h-9 "
           />
         </div>
+        {statusOptions && (
+          <Select
+            value={statusFilter ?? (table.getColumn("status")?.getFilterValue() as string) ?? "all"}
+            onValueChange={(value) => {
+              if (onStatusFilterChange) {
+                onStatusFilterChange(value === "all" ? undefined : value);
+              } else {
+                if (value === "all") {
+                  table.getColumn("status")?.setFilterValue(undefined);
+                } else {
+                  table.getColumn("status")?.setFilterValue(value);
+                }
+              }
+            }}
+          >
+            <SelectTrigger className="h-9 w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         {toolbar && (
           <div className="flex items-center gap-3">{toolbar(table)}</div>
         )}
@@ -163,7 +202,7 @@ export function Toolbar<TData extends RowData>({
               className="h-11 cursor-pointer bg-muted/40 hover:bg-muted/60 dark:bg-muted/20 dark:hover:bg-muted/30"
               aria-label="Filtrar"
             >
-              <FunnelPlus className=" size-4" />
+              <FadersHorizontal className=" size-4" />
             </Button>
           </DrawerTrigger>
           <DrawerContent className="max-w-2xl w-full">

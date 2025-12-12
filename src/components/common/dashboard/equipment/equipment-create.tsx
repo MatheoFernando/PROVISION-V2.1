@@ -146,7 +146,7 @@ export function EquipmentDialog({
       onOpenChange(false);
       if (onSuccess) onSuccess(savedEquipment);
     } catch (error) {
-      toast.error("Erro ao salvar equipamento");
+      toast.error("Erro ao guardar equipamento");
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -323,7 +323,7 @@ export function EquipmentDialog({
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  A guardar...
                 </>
               ) : equipmentToEdit ? (
                 "Atualizar Equipamento"

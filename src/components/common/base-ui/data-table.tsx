@@ -60,6 +60,9 @@ interface DataTableProps<TData extends RowData, TValue> {
   isLoading?: boolean;
   dateKey?: keyof TData & string;
   onDateRangeChange?: (range?: DateRange) => void;
+  statusOptions?: { label: string; value: string }[];
+  statusFilter?: string;
+  onStatusFilterChange?: (status?: string) => void;
 }
 
 export function DataTableGeneric<TData extends RowData, TValue>({
@@ -75,6 +78,9 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   isLoading = false,
   dateKey,
   onDateRangeChange,
+  statusOptions,
+  statusFilter,
+  onStatusFilterChange,
 }: DataTableProps<TData, TValue>) {
   const hasDateColumn = React.useMemo(() => {
     if (!dateKey) return false;
@@ -231,6 +237,9 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         searchKey={searchKey}
         dateKey={dateKey}
         onRefetch={onRefetch}
+        statusOptions={statusOptions}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
       />
 
       <TableView

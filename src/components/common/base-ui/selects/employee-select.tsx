@@ -11,16 +11,20 @@ import { Loader2 } from "lucide-react";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import type { Employee } from "@/infrastructure/types/domain";
 
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
 interface EmployeeSelectProps {
   value?: string;
   onChange: (value: string) => void;
-  companyId: string;
+  companyId?: string;
 }
 
-export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectProps) {
+export function EmployeeSelect({ value, onChange, companyId: propCompanyId }: EmployeeSelectProps) {
   const [query, setQuery] = useState("");
+  const storeCompanyId = useAuthStore((s) => s.companyId);
+  const companyId = propCompanyId || storeCompanyId || "";
 
-  const { data: employees = [], isLoading, refetch } = useEmployees(companyId);
+  const { data: employees = [], isLoading } = useEmployees(companyId);
 
   const list: Array<Employee & { createdAt?: string }> = (() => {
     const baseList = Array.isArray(employees) ? employees : [];
@@ -92,7 +96,7 @@ export function EmployeeSelect({ value, onChange, companyId }: EmployeeSelectPro
                 />
               </div>
 
-              <div className="pl-8 pr-2 bg-muted/50 border-b sticky top-10 z-10">
+              <div className="pl-2 pr-2 bg-muted/50 border-b sticky top-10 z-10">
                 <div className="grid grid-cols-[100px_1fr] w-full">
                   <div className="px-2 py-2 text-xs font-semibold border-r border-border/50">Código</div>
                   <div className="px-2 py-2 text-xs font-semibold">Nome do Funcionário</div>

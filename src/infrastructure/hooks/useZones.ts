@@ -82,7 +82,7 @@ export function useDeleteZone() {
       toast.success("Zona excluída com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir zona");
+      toast.error(error?.response?.data?.message || "Erro ao eliminar zona");
     },
   });
 }

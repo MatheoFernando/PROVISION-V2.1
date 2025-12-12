@@ -43,43 +43,58 @@ export default function AppearanceSettings() {
                     <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('Appearance.theme.title')}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('Appearance.theme.description')}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-3 gap-3">
                     <button
                         onClick={() => setTheme('light')}
-                        className={`flex-1 p-3 rounded-xl border-2 transition-all ${theme === 'light'
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
+                        className={cn(
+                            "group relative flex flex-col items-center gap-2 p-1 rounded-xl border-2 transition-all",
+                            theme === 'light'
+                                ? "border-[var(--primary)] bg-muted/50"
+                                : "border-transparent hover:bg-muted/50"
+                        )}
                     >
-                        <div className="space-y-2 rounded-lg bg-[#ecedef] p-2">
-                            <div className="space-y-2 rounded-md bg-white p-2 shadow-sm">
-                                <div className="h-1.5 w-16 rounded-lg bg-[#ecedef]" />
-                                <div className="h-1.5 w-20 rounded-lg bg-[#ecedef]" />
-                            </div>
-                            <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
-                                <div className="h-3 w-3 rounded-full bg-[#ecedef]" />
-                                <div className="h-1.5 w-20 rounded-lg bg-[#ecedef]" />
+                        <div className="w-full aspect-[4/3] rounded-lg bg-[#f4f4f5] border border-slate-200 p-2 overflow-hidden shadow-sm">
+                            <div className="space-y-2">
+                                <div className="space-y-1.5 rounded-md bg-white p-2 shadow-sm border border-slate-100">
+                                    <div className="h-1.5 w-1/2 rounded-full bg-slate-200" style={{ backgroundColor: theme === 'light' ? 'var(--primary)' : undefined, opacity: theme === 'light' ? 0.2 : undefined }} />
+                                    <div className="h-1.5 w-3/4 rounded-full bg-slate-100" />
+                                </div>
+                                <div className="flex items-center gap-1.5 rounded-md bg-white p-2 shadow-sm border border-slate-100">
+                                    <div className="size-4 rounded-full bg-slate-100" style={{ backgroundColor: theme === 'light' ? 'var(--primary)' : undefined }} />
+                                    <div className="h-1.5 w-1/2 rounded-full bg-slate-100" />
+                                </div>
                             </div>
                         </div>
+                        <span className="text-xs font-medium text-muted-foreground">{t('Appearance.theme.light')}</span>
+                        {theme === 'light' && <Check className="absolute top-2 right-2 size-3.5 text-[var(--primary)]" />}
                     </button>
+
                     <button
                         onClick={() => setTheme('dark')}
-                        className={`flex-1 p-3 rounded-xl border-2 transition-all ${theme === 'dark'
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
+                        className={cn(
+                            "group relative flex flex-col items-center gap-2 p-1 rounded-xl border-2 transition-all",
+                            theme === 'dark'
+                                ? "border-[var(--primary)] bg-muted/50"
+                                : "border-transparent hover:bg-muted/50"
+                        )}
                     >
-                        <div className="space-y-2 rounded-lg bg-slate-950 p-2">
-                            <div className="space-y-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                <div className="h-1.5 w-16 rounded-lg bg-slate-400" />
-                                <div className="h-1.5 w-20 rounded-lg bg-slate-400" />
-                            </div>
-                            <div className="flex items-center gap-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                <div className="h-3 w-3 rounded-full bg-slate-400" />
-                                <div className="h-1.5 w-20 rounded-lg bg-slate-400" />
+                        <div className="w-full aspect-[4/3] rounded-lg bg-slate-950 border border-slate-800 p-2 overflow-hidden shadow-sm">
+                            <div className="space-y-2">
+                                <div className="space-y-1.5 rounded-md bg-slate-900 p-2 border border-slate-800">
+                                    <div className="h-1.5 w-1/2 rounded-full bg-slate-800" style={{ backgroundColor: theme === 'dark' ? 'var(--primary)' : undefined, opacity: theme === 'dark' ? 0.4 : undefined }} />
+                                    <div className="h-1.5 w-3/4 rounded-full bg-slate-800" />
+                                </div>
+                                <div className="flex items-center gap-1.5 rounded-md bg-slate-900 p-2 border border-slate-800">
+                                    <div className="size-4 rounded-full bg-slate-800" style={{ backgroundColor: theme === 'dark' ? 'var(--primary)' : undefined }} />
+                                    <div className="h-1.5 w-1/2 rounded-full bg-slate-800" />
+                                </div>
                             </div>
                         </div>
+                        <span className="text-xs font-medium text-muted-foreground">{t('Appearance.theme.dark')}</span>
+                        {theme === 'dark' && <Check className="absolute top-2 right-2 size-3.5 text-[var(--primary)]" />}
                     </button>
+
+                 
                 </div>
             </div>
 
@@ -97,10 +112,10 @@ export default function AppearanceSettings() {
                         setTimeout(() => window.location.reload(), 500);
                     }}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[180px] rounded-lg border-2 border-border bg-background">
                         <SelectValue placeholder={t('Localization.language.title')} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border-border">
                         <SelectItem value="pt">Português</SelectItem>
                         <SelectItem value="en">English</SelectItem>
                     </SelectContent>
@@ -112,19 +127,26 @@ export default function AppearanceSettings() {
                     <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('Appearance.primaryColor.title')}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('Appearance.primaryColor.description')}</p>
                 </div>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                     {THEME_COLORS.map((color) => (
                         <button
                             key={color.name}
                             onClick={() => updateBranding({ primaryColor: color.value })}
-                            className={`relative aspect-square rounded-xl border-2 transition-all hover:scale-105 ${settings.branding.primaryColor === color.value
-                                    ? 'border-blue-500 shadow-md'
-                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
+                            className={cn(
+                                "group relative aspect-square rounded-full flex items-center justify-center transition-all hover:scale-110",
+                                settings.branding.primaryColor === color.value
+                                    ? "ring-2 ring-offset-2 ring-[var(--primary)] ring-offset-background"
+                                    : "hover:ring-1 hover:ring-border"
+                            )}
                         >
-                            <span className={cn("absolute inset-1 rounded-lg", color.class)} />
+                            <span
+                                className="size-8 rounded-full shadow-sm border border-black/5 dark:border-white/10"
+                                style={{ backgroundColor: color.value }}
+                            />
                             {settings.branding.primaryColor === color.value && (
-                                <Check className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 text-white z-10" />
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-sm">
+                                    <Check className="h-2.5 w-2.5" />
+                                </span>
                             )}
                         </button>
                     ))}
@@ -141,12 +163,17 @@ export default function AppearanceSettings() {
                         <button
                             key={option.value}
                             onClick={() => updateBranding({ radius: option.value })}
-                            className={`py-2.5 rounded-xl border-2 transition-all text-sm font-medium ${settings.branding.radius === option.value
-                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
-                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
-                                }`}
+                            className={cn(
+                                "py-2 rounded-lg border text-xs font-medium transition-all relative overflow-hidden",
+                                settings.branding.radius === option.value
+                                    ? "border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/10"
+                                    : "border-border hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                            )}
                         >
                             {option.label}
+                            {settings.branding.radius === option.value && (
+                                <div className="absolute inset-0 bg-current opacity-[0.03]" />
+                            )}
                         </button>
                     ))}
                 </div>

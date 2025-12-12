@@ -45,6 +45,12 @@ export function ServicesMenu() {
       label: "RSU",
       imageClass: "bg-accent/10",
     },
+     {
+      id: "ronda",
+      imageSrc: "/transparency.png",
+      label: "Ronda",
+      imageClass: "bg-accent/10",
+    },
   ];
 
   return (
@@ -53,7 +59,7 @@ export function ServicesMenu() {
         <DotsNine className="h-6 w-6 text-gray-700 cursor-pointer hover:text-primary transition-colors" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-80 bg-card border-border/50 p-2 dark:bg-[#0f172a]"
+        className="w-md bg-card border-border/50 p-2 dark:bg-slate-950"
         align="end"
         sideOffset={8}
       >
@@ -61,12 +67,12 @@ export function ServicesMenu() {
           Serviços Rápidos
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border/50 mb-3" />
-        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {menuItems.map((item, index) => (
             <DropdownMenuItem
               key={index}
               onClick={() => handleNavigation(item.id)}
-              className="flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg border border-border/20 hover:border-primary/20"
+              className="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded border border-border/20 hover:border-primary/20"
             >
               <div className={`rounded-lg p-2 ${item.imageClass}`}>
                 <Image

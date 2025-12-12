@@ -127,7 +127,7 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
           await deleteEmployee({ id: target.id, companyId });
           successCount += 1;
         } catch (error) {
-          toast.error(`Erro ao excluir ${target.fullName ?? "funcionário"}`);
+          toast.error(`Erro ao eliminar ${target.fullName ?? "funcionário"}`);
         }
       }
 
@@ -171,8 +171,8 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
 
   const deleteTitle =
     employeesToDelete.length > 1
-      ? "Excluir Funcionários"
-      : "Excluir Funcionário";
+      ? "Eliminar Funcionários"
+      : "Eliminar Funcionário";
   const deleteTargetLabel =
     employeesToDelete[0]?.fullName ?? "este funcionário";
   const deleteMessage =
@@ -236,7 +236,7 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
             onClick: (employee) => handleEdit(employee),
           },
           {
-            label: "Excluir",
+            label: "Eliminar",
             icon: <Trash className="h-4 w-4 mr-2 text-gray-600" />,
             onClick: (employee) => handleDelete(employee),
             render: (employee, action) => {

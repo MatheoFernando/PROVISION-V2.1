@@ -118,7 +118,7 @@ export function useDeleteContainer() {
       toast.success("Container excluído com sucesso!");
     },
     onError: () => {
-      toast.error("Erro ao excluir container");
+      toast.error("Erro ao eliminar container");
     }
   });
 }

@@ -19,7 +19,7 @@ export default function ThemeToggle() {
     return theme === 'dark' ? <Sun className='size-4' /> : <Moon className='size-4' />;
   };
   return (
-    <div onClick={cycle} className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 border rounded-full transition-colors duration-300 p-2 hover:bg-primary/10 hover:text-primary">
+    <div onClick={cycle} className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800 rounded-full transition-colors duration-300 p-2 hover:bg-primary/10 hover:text-primary">
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={theme}

@@ -29,12 +29,12 @@ export function useEmployees(
     queryKey: employeesKey(companyId),
     enabled: (options?.enabled ?? true) && Boolean(companyId),
     queryFn: async (): Promise<Employee[]> => {
-      const response = await api.get(`/employee/getAll/${companyId}`);
-      return response.data.data;
+      const response = await api.get("/employee/getByCompanyId", {
+        params: { companyId },
+      });
+      return response.data.data ?? response.data ?? [];
     },
-    staleTime: 2 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -57,9 +57,7 @@ export function useEmployeeById(id?: string, companyId?: string) {
         return (list || []).find((e: any) => e?.id === id) ?? null;
       }
     },
-
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -79,7 +77,6 @@ export function useEmployeeByCod(cod?: string, companyId?: string) {
     },
 
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -99,7 +96,6 @@ export function useEmployeesByName(name?: string, companyId?: string) {
     },
 
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });

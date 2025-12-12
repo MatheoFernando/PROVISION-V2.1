@@ -1,7 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Eye, Wrench, Calendar, Clock, User, Building, ListChecks, Users } from "lucide-react"
+import {
+  Eye, Wrench, Calendar, Clock, User, Building, ListChecks, Hash, Box, Users,
+  Pencil
+} from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -15,138 +18,165 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Supervision } from "@/infrastructure/types/domain"
+import { useTranslations } from "next-intl"
 import { useSupervisionQuery } from "@/infrastructure/hooks/useSupervisions"
 
-interface SupervisionWithRelations extends Supervision {
-  employee?: { fullName?: string; name?: string } | null
-  site?: { name?: string; cod?: string } | null
-  equipment?: { cod?: string; model?: string; mark?: string } | null
-  department?: { name?: string } | null
-}
-
 interface SupervisionDrawerProps {
-  supervision: Supervision | null
+  supervision?: Supervision | null
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  onEdit?: (supervision?: Supervision | null) => void
 }
 
-const statusStyles: Record<string, string> = {
-  Finalizado: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  Planeado: "bg-blue-100 text-blue-800 border-blue-200",
-  Pendente: "bg-amber-100 text-amber-800 border-amber-200",
-  "Em Curso": "bg-orange-100 text-orange-800 border-orange-200",
+type SupervisionWithRelations = Supervision & {
+  employee?: { id: string; name?: string; fullName?: string; cod?: string }
+  site?: { id: string; name?: string; cod?: string; equipments?: any[] }
+  equipment?: { id: string; name?: string; mark?: string; cod?: string }
+  department?: { id: string; name?: string }
 }
 
-const formatHour = (value?: string) => {
-  if (!value) return "--"
-  if (value.includes("T") && Number.isNaN(Date.parse(value))) {
-    const fallback = value.includes(":") ? value : `${value}:00`
-    return fallback.slice(0, 5)
-  }
-  const date = value.includes("T")
-    ? new Date(value)
-    : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`)
-  if (Number.isNaN(date.getTime())) {
-    const fallback = value.includes(":") ? value : `${value}:00`
-    return fallback.slice(0, 5)
-  }
-  return date
-    .toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: false })
-    .replace(".", ":")
-}
-
-const formatDate = (value?: string) => {
-  if (!value) return "--"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })
-}
-
-export function SupervisionDrawer({ supervision, isOpen, onOpenChange }: SupervisionDrawerProps) {
+export function SupervisionDrawer({ supervision, isOpen, onOpenChange, onEdit }: SupervisionDrawerProps) {
+  const t = useTranslations("Supervision")
   const supervisionId = supervision?.id ?? ""
   const { data: supervisionFromApi } = useSupervisionQuery(supervisionId)
   const detail = (supervisionFromApi ?? supervision) as SupervisionWithRelations | null
-
   if (!detail) return null
 
-  const statusClass = statusStyles[detail.status ?? ""] ?? "bg-slate-100 text-slate-700 border-slate-200"
+  const isStatusActive = detail.status === 'Finalizado' || detail.status === 'ACTIVE'
+  const statusClass = isStatusActive
+    ? "bg-green-500 text-white border-green-600"
+    : "bg-orange-200 text-red-600"
 
   const metrics = [
-    { label: "Desejado", value: detail.desiredNumberWorkers || "--" },
-    { label: "Presentes", value: detail.numberWorkerPresent || "--" },
+    { label: t("fields.desired"), value: detail.desiredNumberWorkers || "--" },
+    { label: t("fields.present"), value: detail.numberWorkerPresent || "--" },
   ]
+
+  // Extract employee data
+  const employeeDisplay = detail.employees?.fullName
+    ? `${detail.employees.fullName} (${detail.employees.cod || 'N/A'})`
+    : 'N/A'
+
+  // Extract department data
+  const departmentDisplay = detail.department?.name || detail.employees?.department?.name || 'N/A'
+
+  // Extract site data
+  const siteDisplay = detail.sites?.name
+    ? `${detail.sites.name} (${detail.sites.cod || 'N/A'})`
+    : 'N/A'
+
+  // Extract equipment data - handle both single equipment and array
+  const equipmentsList = detail.equipments
+    ? [detail.equipments]
+    : (detail.sites?.equipments || [])
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white dark:bg-slate-950 rounded-3xl shadow-2xl border-none">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white dark:bg-slate-950 shadow-2xl border-none">
         <DialogHeader className="px-6 py-6 border-b border-gray-100 dark:border-slate-900/50 bg-gray-50/50 dark:bg-slate-900/20">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-slate-900 dark:text-gray-100">
                 <Eye className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-                Supervisão
+                Supervisão #{detail.cod}
               </DialogTitle>
-              <DialogDescription className="text-sm text-slate-500">
-                Visão completa da supervisão e dos recursos envolvidos.
+              <DialogDescription className="flex items-center gap-2">
+                {t("sections.operationalData")}
+                <div >
+                  <Badge variant={isStatusActive ? 'default' : 'outline'} className={`text-xs px-3 py-1 ${statusClass}`}>
+                    {detail.status || t("fields.noStatus")}
+                  </Badge>
+                </div>
               </DialogDescription>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <Badge variant="outline" className={`border text-xs ${statusClass}`}>
-                {detail.status || "Sem status"}
-              </Badge>
-              <div className="flex gap-2">
-                <Badge variant="outline" className="border-blue-200 text-xs text-blue-700 bg-blue-50">
-                  <Clock className="mr-1 h-3.5 w-3.5" />
-                  {formatHour(detail.time)}
-                </Badge>
-                <Badge variant="outline" className="border-slate-200 text-xs text-slate-700 bg-slate-50">
-                  <Calendar className="mr-1 h-3.5 w-3.5" />
-                  {formatDate(detail.createdAt)}
-                </Badge>
-              </div>
-            </div>
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                onClick={() => {
+                  onOpenChange(false);
+                  onEdit(detail);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </DialogHeader>
 
         <div className="p-0">
-          <Tabs defaultValue="summary" className="w-full">
+          <Tabs defaultValue="details" className="w-full">
             <div className="px-6 pt-4">
-              <TabsList className="grid w-full grid-cols-3 bg-gray-100/50 dark:bg-slate-900/50 p-1 rounded-xl">
+              <TabsList className="grid w-full grid-cols-4 bg-gray-100/50 dark:bg-slate-900/50 p-1 rounded-xl">
                 <TabsTrigger
-                  value="summary"
-                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all duration-200"
+                  value="details"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-500 data-[state=active]:shadow-sm transition-all duration-200"
                 >
-                  Resumo
+                  {t("tabs.details")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="resources"
-                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all duration-200"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-500 data-[state=active]:shadow-sm transition-all duration-200"
                 >
-                  Recursos
+                  {t("tabs.resources")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="equipments"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-500 data-[state=active]:shadow-sm transition-all duration-200"
+                >
+                  {t("tabs.equipments")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="observations"
-                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all duration-200"
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-500 data-[state=active]:shadow-sm transition-all duration-200"
                 >
-                  Observações
+                  {t("tabs.observations")}
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="p-6 h-[400px] overflow-y-auto">
-              <TabsContent value="summary" className="mt-0 space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+            <div className="p-6 h-[450px] overflow-y-auto custom-scrollbar">
+              <TabsContent value="details" className="mt-0 space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50/50 dark:bg-blue-600/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20">
+                    <div className="flex items-center gap-2 mb-2 text-blue-500 dark:text-blue-400">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-xs font-semibold uppercase">{t("fields.time")}</span>
+                    </div>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      {formatHour(detail.time)}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50/50 dark:bg-blue-600/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20">
+                    <div className="flex items-center gap-2 mb-2 text-blue-500 dark:text-blue-400">
+                      <Calendar className="w-4 h-4" />
+                      <span className="text-xs font-semibold uppercase">{t("fields.date")}</span>
+                    </div>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      {formatDate(detail.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
                 <section className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <ListChecks className="h-4 w-4 text-slate-500" />
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                      Resumo Operacional
+                      {t("sections.operationalData")}
                     </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-center">
@@ -167,35 +197,64 @@ export function SupervisionDrawer({ supervision, isOpen, onOpenChange }: Supervi
 
               <TabsContent value="resources" className="mt-0 space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
                 <div className="grid grid-cols-1 gap-6">
-                  <Section icon={User} title="Responsável">
+                  <Section icon={User} title={t("sections.responsible")}>
                     <div className="bg-gray-50 dark:bg-slate-900/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
-                      <TextRow label="Funcionário" value={detail.employee?.fullName || detail.employee?.name || detail.employeeId} />
+                      <DetailBox label={t("fields.responsible")} value={employeeDisplay} icon={User} />
                       <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                      <TextRow label="Departamento" value={detail.department?.name || detail.departmentId} />
+                      <TextRow label={t("fields.department")} value={departmentDisplay} />
                     </div>
                   </Section>
 
-                  <Section icon={Building} title="Local e Equipamento">
+                  <Section icon={Building} title="Local">
                     <div className="bg-gray-50 dark:bg-slate-900/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
-                      <TextRow label="Site" value={detail.site?.name || detail.site?.cod || detail.siteId} />
-                      <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                      <TextRow
-                        label="Equipamento"
-                        value={
-                          detail.equipment
-                            ? `${detail.equipment.cod || ''} ${detail.equipment.model || ''}`
-                            : detail.equipmentId
-                        }
-                      />
+                      <DetailBox label={t("fields.site")} value={siteDisplay} icon={Building} />
                     </div>
                   </Section>
                 </div>
               </TabsContent>
 
+              <TabsContent value="equipments" className="mt-0 space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <Section icon={Box} title={t("sections.equipmentDetails")}>
+                  {equipmentsList.length > 0 ? (
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-gray-50 dark:bg-slate-900">
+                          <TableRow>
+                            <TableHead className="w-[100px]">{t("table.code")}</TableHead>
+                            <TableHead>{t("table.name")}</TableHead>
+                            <TableHead>{t("table.model")}</TableHead>
+                            <TableHead className="text-right">{t("table.status")}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {equipmentsList.map((eq: any, idx: number) => (
+                            <TableRow key={eq.id || idx}>
+                              <TableCell className="font-medium">{eq.cod || "--"}</TableCell>
+                              <TableCell>{eq.name || eq.mark || "--"}</TableCell>
+                              <TableCell>{eq.model || "--"}</TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={eq.status ? "default" : "secondary"} className={eq.status ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                                  {eq.status === "ACTIVE" || eq.status === true ? "Ativo" : "Inativo"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-400">
+                      <Box className="w-8 h-8 mb-2 opacity-50" />
+                      <p>{t("messages.noEquipment")}</p>
+                    </div>
+                  )}
+                </Section>
+              </TabsContent>
+
               <TabsContent value="observations" className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
-                <Section icon={Wrench} title="Observações e Medidas">
-                  <div className="bg-amber-50/50 dark:bg-amber-900/10 p-5 rounded-xl border border-amber-100 dark:border-amber-900/20 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                    {detail.observation || "Nenhuma observação registrada para esta supervisão."}
+                <Section icon={Wrench} title={t("tabs.observations")}>
+                  <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-xl border border-blue-100 dark:border-blue-900/20 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                    {detail.observation || t("messages.noObservation")}
                   </div>
                 </Section>
               </TabsContent>
@@ -217,12 +276,27 @@ function TextRow({
   valueClass?: string
 }) {
   return (
-    <div className="flex justify-between items-center text-sm">
+    <div className="flex justify-between items-center text-sm py-1">
       <span className="text-slate-500">{label}</span>
       <span className={`font-medium text-slate-900 dark:text-gray-100 ${valueClass}`}>{value || "—"}</span>
     </div>
   )
 }
+
+function DetailBox({ label, value, icon: Icon }: { label: string, value?: string, icon?: any }) {
+  return (
+    <div className="bg-white dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+        {Icon && <Icon className="w-3 h-3" />}
+        {label}
+      </div>
+      <div className="text-sm font-semibold text-slate-900 dark:text-gray-100 truncate" title={value}>
+        {value || "--"}
+      </div>
+    </div>
+  );
+}
+
 
 function Section({
   icon: Icon,
@@ -243,4 +317,26 @@ function Section({
     </div>
   )
 }
+
+const formatHour = (value?: string) => {
+  if (!value) return "--"
+  if (value.includes("T") && Number.isNaN(Date.parse(value))) {
+    const fallback = value.includes(":") ? value : `${value}:00`
+    return fallback.slice(0, 5)
+  }
+  const date = value.includes("T")
+    ? new Date(value)
+    : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = value.includes(":") ? value : `${value}:00`
+    return fallback.slice(0, 5)
+  }
+  return date
+    .toLocaleTimeString("pt-AO", { hour: "2-digit", minute: "2-digit", hour12: false })
+    .replace(".", ":")
+}
+
+const formatDate = (value?: string | Date) =>
+  value ? new Date(value).toLocaleString("pt-BR") : "—";
+
 

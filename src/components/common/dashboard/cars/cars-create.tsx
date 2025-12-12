@@ -214,7 +214,7 @@ export function CarDialog({ open, onOpenChange, carToEdit }: CarDialogProps) {
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  A guardar...
                 </>
               ) : carToEdit ? (
                 "Atualizar Dados"

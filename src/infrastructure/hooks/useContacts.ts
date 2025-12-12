@@ -106,7 +106,7 @@ export function useDeleteContact() {
       toast.success("Contato excluído com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao excluir contato");
+      toast.error(error.response?.data?.message || "Erro ao eliminar contato");
     },
   });
 }

@@ -11,6 +11,8 @@ import {
 import { useSites } from "@/infrastructure/hooks/useSites";
 import { Input } from "@/components/ui/input";
 
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
 interface SiteSelectProps {
   value?: string;
   onChange: (value: string) => void;
@@ -19,9 +21,14 @@ interface SiteSelectProps {
   disabled?: boolean;
 }
 
-export function SiteSelect({ value, onChange, customerId, disabled }: SiteSelectProps) {
+export function SiteSelect({ value, onChange, customerId, disabled, companyId: propCompanyId }: SiteSelectProps) {
   const [query, setQuery] = React.useState("");
-  const { data: sitesData, isLoading} = useSites(customerId);
+  const storeCompanyId = useAuthStore((s) => s.companyId);
+  const companyId = propCompanyId || storeCompanyId;
+
+  const { data: sitesData, isLoading } = useSites(customerId, {
+    companyId: companyId || undefined,
+  });
 
   const sitesList = React.useMemo<Site[]>(() => {
     const baseList = (() => {
@@ -119,11 +126,11 @@ export function SiteSelect({ value, onChange, customerId, disabled }: SiteSelect
                         className="cursor-pointer border-b last:border-b-0 hover:bg-accent"
                       >
                         <div className="grid grid-cols-[100px_1fr] w-full items-center">
-                          <span className="px-2 text-sm border-r border-border/50 ">
+                          <span className=" text-sm border-r border-border/50 ">
                             {site.cod || '---'}
                           </span>
-                          <span className="px-2 truncate">
-                           {site.name.slice(0, 15)}
+                          <span className="truncate">
+                            {site.name.slice(0, 15)}
                           </span>
                         </div>
                       </SelectItem>

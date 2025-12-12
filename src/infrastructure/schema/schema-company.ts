@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const addressSchema = z.object({
-  houseHold: z.string().min(1, "Endereço é obrigatório"),
+  houseHold: z.string().min(1, "Morada é obrigatória"),
   commune: z.string().optional(),
   municipality: z.string().optional(),
   province: z.string().optional(),

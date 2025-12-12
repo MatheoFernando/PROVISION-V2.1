@@ -80,7 +80,7 @@ export function NavUser({
               >
                 <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg ">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className=" dark:text-gray-400 bg-white font-medium uppercase border-l pl-2 border-gray-900 rounded-none">
+                  <AvatarFallback className="text-gray-900 dark:text-gray-400 bg-white dark:bg-slate-950 font-medium uppercase border-l pl-2 border-gray-200 dark:border-gray-800 rounded-none">
                     <Buildings className="size-6" />
                   </AvatarFallback>
                 </Avatar>
@@ -115,7 +115,7 @@ export function NavUser({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem className="cursor-pointer hover:bg-primary/10 hover:text-primary" onClick={() => router.push('/dashboard/perfil')}>
+                <DropdownMenuItem className="cursor-pointer hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20" onClick={() => router.push('/dashboard/perfil')}>
                   <Gear className="hover:bg-primary/10 hover:text-primary" />
                   {t('NavUser.settings')}
                 </DropdownMenuItem>

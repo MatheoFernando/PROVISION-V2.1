@@ -55,12 +55,13 @@ export function EmployeeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const companyId = useAuthStore((s) => s.companyId) ?? "";
   const createEmployee = useCreateEmployee();
-  const updateEmployee = useUpdateEmployee();
+  const updateEmployee = useUpdateEmployee()
+  console.log(companyId);
 
   const form = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
-      companyId,
+      companyId: companyId || "",
       fullName: "",
       photo: "",
       contactId: "",
@@ -159,7 +160,11 @@ export function EmployeeDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          if (errors.companyId) {
+            toast.error("Erro na identificação da empresa. Tente recarregar a página.");
+          }
+        })} className="flex flex-col">
           <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 md:col-span-2">
@@ -210,7 +215,7 @@ export function EmployeeDialog({
                   </p>
                 )}
               </div>
- <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="function" className="text-slate-700 font-medium">
                   {t("fields.function")} *
                 </Label>
@@ -285,7 +290,7 @@ export function EmployeeDialog({
                   </p>
                 )}
               </div>
-             
+
             </div>
 
           </div>

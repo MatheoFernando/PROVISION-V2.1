@@ -175,7 +175,7 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
               >
                 {createTypeEquipment.status === "pending" ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                    <Loader2 className="w-4 h-4 animate-spin" /> A guardar...
                   </>
                 ) : (
                   "Salvar"

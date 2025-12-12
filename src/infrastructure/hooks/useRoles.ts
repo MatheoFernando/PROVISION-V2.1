@@ -92,7 +92,7 @@ export function useDeleteRole() {
       toast.success("Papel excluído com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao excluir papel");
+      toast.error(error?.response?.data?.message || "Erro ao eliminar papel");
     },
   });
 }

@@ -95,10 +95,10 @@ export default function SecurityGeneralSettings() {
                             general: { ...settings.general, itemsPerPage: parseInt(val) }
                         })}
                     >
-                        <SelectTrigger id="itemsPerPage" className="rounded-xl border-2 border-gray-200 dark:border-gray-700">
+                        <SelectTrigger id="itemsPerPage" className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-950">
                             <SelectValue placeholder="Selecione a quantidade" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700">
                             <SelectItem value="10">10 itens</SelectItem>
                             <SelectItem value="20">20 itens</SelectItem>
                             <SelectItem value="50">50 itens</SelectItem>

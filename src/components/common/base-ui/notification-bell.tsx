@@ -103,7 +103,7 @@ export function NotificationBell() {
           )}
         </div>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="bg-white dark:bg-slate-950">
         <DrawerHeader>
           <div className="flex items-center justify-between">
             <div className="space-y-1">

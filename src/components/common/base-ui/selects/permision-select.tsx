@@ -135,7 +135,7 @@ export function PermissionSelect({ value, onChange }: PermissionSelectProps) {
                 disabled={createPermission.status === "pending"}
                 className="bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500/80 px-6 py-2 rounded transition cursor-pointer"
               >
-                {createPermission.status === "pending" ? "Salvando..." : "Salvar"}
+                {createPermission.status === "pending" ? "A guardar..." : "Salvar"}
               </Button>
             </div>
           </form>

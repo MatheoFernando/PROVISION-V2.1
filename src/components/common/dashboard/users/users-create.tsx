@@ -45,7 +45,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { PhoneField } from "@/components/common/base-ui/inputs/phone-field";
+import { PhoneField } from "@/components/common/base-ui/phone-field";
 import { toast } from "sonner";
 
 interface UserDialogProps {

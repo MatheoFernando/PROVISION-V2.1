@@ -8,7 +8,6 @@ import { Car } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { CarDialog } from "./cars-create";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
 import { createGrossCarSchema } from "@/infrastructure/schema/schema-cars";
@@ -62,11 +61,14 @@ interface CarsTableProps {
 
 export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }: CarsTableProps = {}) {
   const shouldFetch = !data;
-  const { data: cars = [], isLoading } = useCars({ enabled: shouldFetch });
   const deleteCar = useDeleteCar();
   const createGrossCar = useCreateGrossCar();
   const fallbackCompanyId = useAuthStore((s) => s.companyId) ?? "";
   const companyId = companyIdProp ?? fallbackCompanyId;
+  const { data: cars = [], isLoading } = useCars({
+    enabled: shouldFetch,
+    companyId: companyId || undefined,
+  });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Car | undefined>();
@@ -95,7 +97,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
       setIsDeleteOpen(false);
       setSelectedCar(undefined);
     } catch (error) {
-      toast.error("Erro ao excluir veículo");
+      toast.error("Erro ao eliminar veículo");
     }
   };
 
@@ -127,7 +129,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
             onClick: (car) => handleEdit(car),
           },
           {
-            label: "Excluir",
+            label: "Eliminar",
             icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (car) => handleDelete(car),
           },
@@ -156,7 +158,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
           setSelectedCar(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Veículo"
+        title="Eliminar Veículo"
         message="Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita."
         isLoading={deleteCar.isPending}
       />

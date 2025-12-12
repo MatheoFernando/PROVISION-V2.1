@@ -36,7 +36,7 @@ import {
   useAngolaCountry,
   useAngolaProvinces,
 } from "@/infrastructure/hooks/useAngolaLocations";
-import { PhoneField } from "@/components/common/base-ui/inputs/phone-field";
+import { PhoneField } from "@/components/common/base-ui/phone-field";
 
 function CompanyFormPage() {
   const params = useSearchParams();
@@ -419,7 +419,7 @@ function CompanyFormPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-medium text-slate-700">
-                            Endereço Completo
+                            Morada Completa
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -686,7 +686,7 @@ function CompanyFormPage() {
                   {saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
+                      A guardar...
                     </>
                   ) : (
                     <>Criar empresa</>

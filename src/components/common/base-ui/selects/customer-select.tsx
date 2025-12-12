@@ -105,7 +105,7 @@ export function CustomerSelect({ value, onChange, disabled, companyId: propCompa
                 />
               </div>
 
-              <div className="pl-8 pr-2 bg-muted/50 border-b sticky top-10 z-10">
+              <div className="pl-2 pr-2 bg-muted/50 border-b sticky top-10 z-10">
                 <div className="grid grid-cols-[100px_1fr] w-full">
                   <div className="px-2 py-2 text-xs font-semibold border-r border-border/50">Código</div>
                   <div className="px-2 py-2 text-xs font-semibold">Nome do Cliente</div>

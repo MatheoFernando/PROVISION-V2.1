@@ -211,12 +211,7 @@ export function SiteDialog({
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-2 border-t border-gray-100 pt-6"></div>
-
-              <div className="space-y-2">
+                     <div className="space-y-2">
                 <Label
                   htmlFor="geoLocationEntityId"
                   className="text-slate-700 font-medium"
@@ -259,7 +254,6 @@ export function SiteDialog({
                 )}
               </div>
 
-              <div className="md:col-span-2 border-t border-gray-100 pt-6"></div>
 
               <div className="space-y-2">
                 <Label htmlFor="areaId" className="text-slate-700 font-medium">
@@ -308,7 +302,6 @@ export function SiteDialog({
                 )}
               </div>
 
-              <div className="md:col-span-2 border-t border-gray-100 pt-6"></div>
 
               <div className="space-y-2">
                 <Label htmlFor="contactId" className="text-slate-700 font-medium">
@@ -328,7 +321,7 @@ export function SiteDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="addressId" className="text-slate-700 font-medium">
-                  Endereço *
+                  Morada *
                 </Label>
                 <AddressSelect
                   value={form.watch("addressId")}
@@ -341,6 +334,11 @@ export function SiteDialog({
                   </p>
                 )}
               </div>
+                </div>
+                
+              </div>
+
+           
             </div>
           </div>
 
@@ -362,7 +360,7 @@ export function SiteDialog({
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  A guardar...
                 </>
               ) : siteToEdit ? (
                 "Atualizar Dados"

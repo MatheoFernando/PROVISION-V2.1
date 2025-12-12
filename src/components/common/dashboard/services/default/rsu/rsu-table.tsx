@@ -7,7 +7,7 @@ import {
   Eye,
   Edit,
   Trash2,
-  X,
+
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
@@ -83,18 +83,26 @@ function ActionsButtons({ rsu, onEdit }: ActionsButtonsProps) {
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-2 size-4" />
-            Excluir
+            Eliminar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <RsuDrawer rsu={rsu} isOpen={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
+      <RsuDrawer
+        rsu={rsu}
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        onEdit={(rsu) => {
+          setIsDrawerOpen(false);
+          onEdit?.(rsu);
+        }}
+      />
 
       <DeleteModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleDelete}
-        title="Excluir RSU"
+        title="Eliminar RSU"
         message={`Tem certeza que deseja excluir o RSU ${rsu.cod}?`}
         isLoading={deleteMutation.isPending}
       />
@@ -192,6 +200,8 @@ export function RsuTable({
   data,
   isLoading,
   onDateRangeChange,
+  statusFilter,
+  onStatusFilterChange,
 }: RsuTableProps) {
   const companyId = useAuthStore((state) => state.companyId || undefined);
   const { data: employees = [] } = useEmployees(companyId);
@@ -276,6 +286,12 @@ export function RsuTable({
           label: "Novo RSU",
           onClick: handleCreate,
         }}
+        statusOptions={[
+          { label: "Pendente", value: "Pendente" },
+          { label: "Finalizado", value: "Finalizado" },
+        ]}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
       />
 
       <RsuDialog

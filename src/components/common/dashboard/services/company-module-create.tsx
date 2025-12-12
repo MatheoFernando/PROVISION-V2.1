@@ -221,7 +221,7 @@ export function CompanyModuleDialog({
             }
             onClick={handleSubmit}
           >
-            {isSubmitting ? "Salvando..." : associationId ? "Salvar mudanças" : "Associar"}
+            {isSubmitting ? "A guardar..." : associationId ? "Salvar mudanças" : "Associar"}
           </Button>
         </DialogFooter>
       </DialogContent>

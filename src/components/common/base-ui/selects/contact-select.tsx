@@ -18,7 +18,7 @@ import type { Contact } from "@/infrastructure/types/domain";
 import { contactSchema } from "@/infrastructure/schema/schema-contact";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhoneField } from "@/components/common/base-ui/inputs/phone-field";
+import { PhoneField } from "@/components/common/base-ui/phone-field";
 
 type ContactForm = z.infer<typeof contactSchema>;
 
@@ -98,8 +98,8 @@ export function ContactSelect({
           <Input
             readOnly
             value={displayPhones}
-            placeholder="Nenhum contato "
-            disabled={isLoading}
+            placeholder="Crie um contato"
+            disabled={isLoading || !selectedContact}
             className="w-full"
           />
           {isLoading && (
@@ -249,7 +249,7 @@ export function ContactSelect({
                 >
                   {createContact.status === "pending" ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                      <Loader2 className="w-4 h-4 animate-spin" /> A guardar...
                     </>
                   ) : (
                     "Salvar"

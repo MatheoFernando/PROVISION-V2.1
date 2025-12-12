@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CellContext, ColumnDef } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Edit, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,20 +15,19 @@ import {
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { OccurrenceViewDrawer } from "./occurrence-view";
 import { OccurrenceDialog } from "./occurrence-create";
-import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
-import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
-import { useEmployees } from "@/infrastructure/hooks/useEmployees";
-import { useEquipment } from "@/infrastructure/hooks/useEquipment";
-import { useSites } from "@/infrastructure/hooks/useSites";
+import { useDeleteOccurrenceMutation, useOccurrences } from "@/infrastructure/hooks/useOccurrences";
+import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";;
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { Trash } from "phosphor-react";
+import type { DateRange } from "react-day-picker";
 
 function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const deleteMutation = useDeleteOccurrenceMutation();
+  const occurrences = useOccurrences();
   const handleConfirmDelete = () => {
     deleteMutation.mutate(occurrence.id!, {
       onSuccess: () => setIsDeleteOpen(false),
@@ -70,7 +69,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
             disabled={deleteMutation.isPending}
           >
             <Trash className="size-4 mr-2" />
-            Excluir
+            Eliminar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -79,6 +78,10 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
         occurrence={occurrence}
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        onEdit={() => {
+          setIsDialogOpen(false);
+          setIsEditOpen(true);
+        }}
       />
 
       <OccurrenceDialog
@@ -92,7 +95,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
         isLoading={deleteMutation.isPending}
-        title="Excluir Ocorrência"
+        title="Eliminar Ocorrência"
         message={`Tem certeza que deseja excluir a ocorrência ${occurrence.cod}?`}
       />
     </>
@@ -226,58 +229,36 @@ interface OccurrenceTableProps {
   data: Occurrence[];
   isLoading?: boolean;
   onCreateClick?: () => void;
+  onDateRangeChange?: (range?: DateRange) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (status?: string) => void;
 }
 
 export function OccurrenceTable({
   data,
   isLoading,
+  onCreateClick,
+  onDateRangeChange,
+  statusFilter,
+  onStatusFilterChange,
 }: OccurrenceTableProps) {
   const companyId = useAuthStore((s) => s.companyId || undefined);
-  const { data: employees = [] } = useEmployees(companyId);
-  const { data: equipments = [] } = useEquipment();
-  const { data: sites = [] } = useSites();
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 
-  const employeeById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (employees as any[]).forEach((e: any) => {
-      if (e?.id) map[e.id] = e.fullName || e.name || "";
-    });
-    return map;
-  }, [employees]);
-
-  const equipmentById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (equipments as any[]).forEach((e: any) => {
-      if (e?.id) map[e.id] = e.cod || e.model || e.mark || "";
-    });
-    return map;
-  }, [equipments]);
-
-  const siteById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (sites as any[]).forEach((s: any) => {
-      if (s?.id) map[s.id] = s.name || "";
-    });
-    return map;
-  }, [sites]);
-
-  const resolvedData = React.useMemo(() => {
-    return (data || []).map((o) => ({
-      ...o,
-      employeeId: o.employeeId,
-      equipmentId: o.equipmentId,
-      siteId: o.siteId,
-      employeeName: employeeById[o.employeeId || ""] || "—",
-      equipmentName: equipmentById[o.equipmentId || ""] || "—",
-      siteName: siteById[o.siteId || ""] || "—",
+  // Transform data to extract nested properties
+  const transformedData: OccurrenceWithNames[] = React.useMemo(() => {
+    return data.map((occurrence) => ({
+      ...occurrence,
+      employeeName: (occurrence as any)?.employees?.fullName,
+      equipmentName: (occurrence as any)?.equipments?.cod,
+      siteName: (occurrence as any)?.sites?.name,
     }));
-  }, [data, employeeById, equipmentById, siteById]);
+  }, [data]);
 
   return (
     <div className="w-full">
       <DataTableGeneric
-        data={resolvedData}
+        data={transformedData}
         columns={createOccurrenceColumns()}
         searchKey="cod"
         placeholder="Pesquisar..."
@@ -285,8 +266,15 @@ export function OccurrenceTable({
         isLoading={isLoading}
         actionButton={{
           label: "Nova Ocorrência",
-          onClick: () => setIsCreateOpen(true),
+          onClick: onCreateClick || (() => setIsCreateOpen(true)),
         }}
+        statusOptions={[
+          { label: "Ativo", value: "Ativo" },
+          { label: "Inativo", value: "Inativo" },
+        ]}
+        onDateRangeChange={onDateRangeChange}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
       />
 
       <OccurrenceDialog

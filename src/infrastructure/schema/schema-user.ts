@@ -3,7 +3,7 @@ import { z } from "zod";
 const baseUserSchema = z.object({
   id: z.string().optional(),
   phone: z.string(),
-  password: z.string().min(13).optional(),
+  password: z.string().min(6).optional(),
   isGlobalAdmin: z.boolean(),
   status: z.boolean(),
   companyId: z.string().optional(),

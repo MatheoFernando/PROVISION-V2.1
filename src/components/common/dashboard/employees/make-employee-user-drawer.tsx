@@ -1,15 +1,13 @@
-"use client";
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
 import { EmployeeSelect } from "@/components/common/base-ui/selects/employee-select";
 import { UserSelect } from "@/components/common/base-ui/selects/user-select";
 import {
@@ -87,37 +85,29 @@ export function MakeEmployeeUserDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={setOpen} direction="right">
-      <DrawerTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         {children || (
-          <Button className="h-10 cursor-pointer shadow-sm transition-all hover:shadow-md">
+          <Button className="h-11 cursor-pointer shadow-sm transition-all hover:shadow-md">
             <UserPlus className="mr-2 h-4 w-4" />
             Tornar utilizador do sistema
           </Button>
         )}
-      </DrawerTrigger>
-      <DrawerContent className="h-full w-full sm:max-w-xl">
-        <div className="flex h-full flex-col">
-          <DrawerHeader className="border-b border-border px-6 py-5">
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white dark:bg-slate-950 border-none rounded-2xl shadow-2xl">
+        <div className="flex flex-col">
+          <DialogHeader className="border-b border-border/50 px-6 py-5 bg-muted/10">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <DrawerTitle className="text-2xl font-bold text-foreground">
+                <DialogTitle className="text-xl font-bold text-foreground tracking-tight">
                   Tornar Funcionário Utilizador
-                </DrawerTitle>
+                </DialogTitle>
               </div>
-              <DrawerClose asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </DrawerClose>
+            
             </div>
-          </DrawerHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          </DialogHeader>
+          <div className="flex-1 px-6 py-6 space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">
                   Funcionário
@@ -141,12 +131,12 @@ export function MakeEmployeeUserDrawer({
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-border/50 px-6 py-4 bg-muted/10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="px-6 cursor-pointer"
+              className="px-6 cursor-pointer rounded-xl"
               disabled={isSubmitting}
             >
               Cancelar
@@ -155,13 +145,13 @@ export function MakeEmployeeUserDrawer({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-8 cursor-pointer shadow-sm hover:shadow-md transition-all"
+              className="px-6 cursor-pointer shadow-sm hover:shadow-md transition-all rounded-xl"
             >
-              {isSubmitting ? "Salvando..." : "Salvar associação"}
+              {isSubmitting ? "A guardar..." : "Guardar associação"}
             </Button>
           </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }

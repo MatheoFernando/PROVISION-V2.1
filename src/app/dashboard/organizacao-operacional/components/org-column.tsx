@@ -50,7 +50,8 @@ export function OrgColumn({
 
     return (
         <Card className={cn(
-            "flex flex-col h-full shadow-sm border border-border/40 rounded-2xl overflow-hidden bg-background/40 backdrop-blur-sm transition-all duration-300",
+            "flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300",
+            "shadow-none border-0 bg-transparent md:shadow-sm md:border md:border-border/40 md:bg-background/40 md:backdrop-blur-sm",
             isActive ? "opacity-100" : "opacity-50 pointer-events-none grayscale",
             className
         )}>
@@ -85,13 +86,11 @@ export function OrgColumn({
                     <LoadingState />
                 ) : (
                     <ScrollArea className="h-full">
-                        <div className="p-3 space-y-3 pb-safe-offset"> {/* Added padding bottom for safety */}
-                            {/* Check if children is empty array or empty fragment might be tricky, checking count is safer or passing strict empty state */}
-                            {(Array.isArray(children) && children.length === 0) || !children ? (
-                                <EmptyState message={emptyMessage || t("messages.noItemsFound")} onAction={onAdd} />
-                            ) : (
-                                children
-                            )}
+                        <div className="p-3 space-y-3 pb-safe-offset"> {(Array.isArray(children) && children.length === 0) || !children ? (
+                            <EmptyState message={emptyMessage || t("messages.noItemsFound")} onAction={onAdd} />
+                        ) : (
+                            children
+                        )}
                         </div>
                     </ScrollArea>
                 )}

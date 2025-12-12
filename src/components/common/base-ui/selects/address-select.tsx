@@ -127,8 +127,8 @@ export function AddressSelect({
         <Input
           readOnly
           value={displayAddress}
-          placeholder="Nenhum endereço "
-          disabled={isLoading}
+          placeholder="Crie um endereço"
+          disabled={isLoading || !addressById}
           className="w-full"
         />
         {isLoading && (
@@ -168,7 +168,7 @@ export function AddressSelect({
             if (isSaving) e.preventDefault();
           }}
         >
-          <div className="font-medium mb-4 text-lg">Criar Endereço</div>
+          <div className="font-medium mb-4 text-lg">Criar Morada</div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -178,7 +178,7 @@ export function AddressSelect({
           >
             <div className="col-span-2">
               <Label htmlFor="houseHold" className="mb-2 block">
-                Endereço
+                Morada
               </Label>
               <Input
                 id="houseHold"
@@ -357,7 +357,7 @@ export function AddressSelect({
                 {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Salvando...
+                    A guardar...
                   </>
                 ) : (
                   "Salvar"
