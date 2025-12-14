@@ -14,6 +14,7 @@ export default function Occurrence() {
   const [range, setRange] = React.useState<DateRange | undefined>(undefined)
   const [status, setStatus] = React.useState<string | undefined>(undefined)
 
+  
   const { data: all = [], isLoading: loadingAll } = useOccurrences()
 
   const singleDay = React.useMemo(() => {
@@ -40,7 +41,7 @@ export default function Occurrence() {
 
   return (
     <OccurrenceTable
-      data={(occurrences as any) ?? []}
+      data={(occurrences) ?? []}
       isLoading={isLoading}
       onCreateClick={() => setIsCreateModalOpen(true)}
       onDateRangeChange={setRange}

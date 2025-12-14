@@ -34,7 +34,6 @@ export function useEmployees(
       });
       return response.data.data ?? response.data ?? [];
     },
-    refetchOnMount: "always",
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -57,7 +56,6 @@ export function useEmployeeById(id?: string, companyId?: string) {
         return (list || []).find((e: any) => e?.id === id) ?? null;
       }
     },
-    refetchOnMount: "always",
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -76,7 +74,6 @@ export function useEmployeeByCod(cod?: string, companyId?: string) {
       return (data as Employee) ?? null;
     },
 
-    refetchOnMount: "always",
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -95,7 +92,6 @@ export function useEmployeesByName(name?: string, companyId?: string) {
       return (data as Employee[]) ?? [];
     },
 
-    refetchOnMount: "always",
     refetchOnReconnect: true,
     retry: 1,
   });

@@ -237,23 +237,23 @@ interface OccurrenceTableProps {
 export function OccurrenceTable({
   data,
   isLoading,
-  onCreateClick,
   onDateRangeChange,
   statusFilter,
   onStatusFilterChange,
 }: OccurrenceTableProps) {
-  const companyId = useAuthStore((s) => s.companyId || undefined);
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-
-  // Transform data to extract nested properties
   const transformedData: OccurrenceWithNames[] = React.useMemo(() => {
     return data.map((occurrence) => ({
       ...occurrence,
-      employeeName: (occurrence as any)?.employees?.fullName,
-      equipmentName: (occurrence as any)?.equipments?.cod,
-      siteName: (occurrence as any)?.sites?.name,
+      employeeName: (occurrence )?.employees?.fullName,
+      equipmentName: (occurrence )?.equipments?.cod,
+      siteName: (occurrence )?.sites?.name,
     }));
   }, [data]);
+
+  const onCreateClick = () => {
+    setIsCreateOpen(true);
+  };
 
   return (
     <div className="w-full">
@@ -266,7 +266,7 @@ export function OccurrenceTable({
         isLoading={isLoading}
         actionButton={{
           label: "Nova Ocorrência",
-          onClick: onCreateClick || (() => setIsCreateOpen(true)),
+          onClick: onCreateClick
         }}
         statusOptions={[
           { label: "Ativo", value: "Ativo" },

@@ -63,20 +63,17 @@ export function SupervisionDrawer({ supervision, isOpen, onOpenChange, onEdit }:
     { label: t("fields.present"), value: detail.numberWorkerPresent || "--" },
   ]
 
-  // Extract employee data
+
   const employeeDisplay = detail.employees?.fullName
     ? `${detail.employees.fullName} (${detail.employees.cod || 'N/A'})`
     : 'N/A'
 
-  // Extract department data
   const departmentDisplay = detail.department?.name || detail.employees?.department?.name || 'N/A'
 
-  // Extract site data
   const siteDisplay = detail.sites?.name
     ? `${detail.sites.name} (${detail.sites.cod || 'N/A'})`
     : 'N/A'
 
-  // Extract equipment data - handle both single equipment and array
   const equipmentsList = detail.equipments
     ? [detail.equipments]
     : (detail.sites?.equipments || [])

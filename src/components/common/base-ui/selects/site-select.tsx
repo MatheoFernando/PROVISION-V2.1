@@ -42,23 +42,7 @@ export function SiteSelect({ value, onChange, customerId, disabled, companyId: p
     const merged: Array<Site & { createdAt?: string }> = [
       ...baseList,
     ];
-    const map = new Map<string, Site & { createdAt?: string }>();
-    merged.forEach((site) => {
-      if (!site?.id) return;
-      map.set(site.id, {
-        ...site,
-        id: site.id,
-        name: site.name ?? "",
-        createdAt:
-          (site as Site & { createdAt?: string }).createdAt ??
-          new Date().toISOString(),
-      });
-    });
-    return Array.from(map.values()).sort((a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
-    });
+   return merged
   }, [sitesData]);
 
   const filtered = React.useMemo(() => {

@@ -192,7 +192,7 @@ export function CustomersView() {
               {customerId && (
                 <SitesTable
                   customerId={customerId}
-                  companyId={(customer as any)?.companyId}
+                  companyId={(customer)?.companyId}
                   shouldNavigateBack={false}
                 />
               )}

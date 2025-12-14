@@ -18,8 +18,6 @@ export function useCustomers() {
       return response.data.data ?? response.data ?? [];
     },
     staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -35,9 +33,6 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       return response.data.data ?? response.data ?? [];
     },
     enabled: (options?.enabled ?? true) && !!companyId,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -157,9 +152,6 @@ export function useSearchCustomersByName(name: string) {
       return response.data.data ?? response.data;
     },
     enabled: Boolean(name && name.trim().length > 0),
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });
@@ -180,9 +172,6 @@ export function useCustomerById(id?: string) {
       }
     },
     enabled: Boolean(id),
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });

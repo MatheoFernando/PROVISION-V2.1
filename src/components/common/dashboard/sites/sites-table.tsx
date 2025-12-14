@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import * as React from "react";
-import { Eye, PencilSimple, Trash, X } from "phosphor-react";
+import { Eye, PencilSimple, Trash } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
   useDeleteSite,
   useCreateGrossSite,
   useSitesByCompanyAndCustomer,
+  useSites,
 } from "@/infrastructure/hooks/useSites";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
@@ -163,14 +164,14 @@ export function SitesTable({
   const companyId = companyIdProp || authCompanyId || "";
   const deleteSite = useDeleteSite();
   const createGrossSite = useCreateGrossSite();
-
+const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, companyId }); 
   const { data: sitesByCompanyAndCustomer = [], isLoading: isLoadingByCompanyAndCustomer } = useSitesByCompanyAndCustomer(
     companyId,
     customerId,
     { enabled: shouldFetch && !!companyId && !!customerId }
   );
 
-  const finalSites = sitesByCompanyAndCustomer;
+  const finalSites = companyId && customerId ? sitesByCompanyAndCustomer : sites;
   const finalIsLoading = isLoadingByCompanyAndCustomer;
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

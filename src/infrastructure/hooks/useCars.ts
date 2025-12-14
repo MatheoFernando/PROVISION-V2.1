@@ -19,29 +19,21 @@ export function useCars(options?: CarsQueryOptions & { companyId?: string }) {
     queryFn: async (): Promise<Car[]> => {
       try {
         if (options?.companyId) {
-          const response = await api.get(`/car/getByCompanyId/${options.companyId}`);
-          const data = response.data as unknown;
-          const payload = data as { items?: unknown; data?: unknown };
-
-          if (Array.isArray(payload)) return payload as Car[];
-          if (payload && typeof payload === 'object') {
-            if (Array.isArray(payload.items)) return payload.items as Car[];
-            if (Array.isArray(payload.data)) return payload.data as Car[];
-          }
-          return [];
+          const response = await api.get("/car/getByCompanyId", {
+            params: { companyId: options.companyId },
+          });
+          const data = response.data.data
+          return data as Car[];
         }
 
         const response = await api.get("/car/getAll");
-        const data = response.data as unknown;
-        const payload = data as { items?: Car[]; data?: Car[] } | Car[];
-        const list = Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? []);
-        return list as Car[];
+        const data = response.data.data
+        return data as Car[];
       } catch (err) {
         toast.error("Falha ao carregar viaturas");
         throw err as unknown;
       }
     },
-    refetchOnMount: "always",
     refetchOnReconnect: true,
     retry: 1,
     enabled: options?.enabled ?? true,
@@ -61,15 +53,8 @@ export function useCarById(id?: string) {
       } catch {
         try {
           const response = await api.get("/car/getAll");
-          const data = response.data as unknown;
-          let list: Car[] = [];
-          if (Array.isArray(data)) {
-            list = data as Car[];
-          } else {
-            const payload = data as { items?: Car[]; data?: Car[] };
-            list = payload.items ?? payload.data ?? [];
-          }
-          return list.find((c) => c.id === id) || null;
+          const data = response.data.data;
+          return data
         } catch {
           return null;
         }

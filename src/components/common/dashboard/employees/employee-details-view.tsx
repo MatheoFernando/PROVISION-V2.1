@@ -8,7 +8,6 @@ import {
     Mail,
     Phone,
     Briefcase,
-    User,
     Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { EmployeeDialog } from "./employee-create";
 import { useState } from "react";
-import { useDepartments } from "@/infrastructure/hooks/useDepartments";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useSiteById } from "@/infrastructure/hooks/useSites";
 import { Pencil } from "phosphor-react";
@@ -56,12 +54,10 @@ export function EmployeeDetailsView() {
     const companyId = useAuthStore((state) => state.companyId) ?? "";
 
     const { data: employee, isLoading } = useEmployeeById(employeeId, companyId);
-    const { data: departments = [] } = useDepartments();
     const { data: site } = useSiteById(employee?.siteId);
     const [isEditEmployeeOpen, setIsEditEmployeeOpen] = useState(false);
 
-    const departmentName = departments.find(d => d.id === employee?.departmentId)?.name || '-';
-
+   
     if (isLoading) {
         return <EmployeeDetailsSkeleton />;
     }
@@ -96,18 +92,7 @@ export function EmployeeDetailsView() {
                             <ChevronLeft className="w-5 h-5" />
                         </Button>
                         <div className="flex items-center gap-3">
-                            {employee?.photo ? (
-                                <img
-                                    src={employee.photo}
-                                    alt={employee.fullName}
-                                    className="h-8 w-8 rounded-lg object-cover"
-                                />
-                            ) : (
-                                <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                    <User className="w-4 h-4" />
-                                </div>
-                            )}
-
+                        
                             <div className="flex gap-2">
                                 <h1 className="text-lg  tracking-tight truncate max-w-[600px]">
                                     {employee?.cod}
@@ -197,7 +182,7 @@ export function EmployeeDetailsView() {
                                     />
                                     <DetailRow
                                         label="Departamento"
-                                        value={departmentName}
+                                        value=""
                                         className="py-3 text-base"
                                         icon={Building}
                                     />

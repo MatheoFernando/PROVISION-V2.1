@@ -33,28 +33,11 @@ export function CustomerSelect({ value, onChange, disabled, companyId: propCompa
   const customersList = React.useMemo<Customer[]>(() => {
     const baseList = Array.isArray(customers) ? customers : [];
 
-    const merged: Array<Customer & { createdAt?: string }> = [
+    const merged: Array<Customer> = [
       ...baseList,
     ];
 
-    const map = new Map<string, Customer & { createdAt?: string }>();
-    merged.forEach((customer) => {
-      if (!customer?.id) return;
-      map.set(customer.id, {
-        ...customer,
-        id: customer.id,
-        name: customer.name ?? "",
-        createdAt:
-          (customer as Customer & { createdAt?: string }).createdAt ??
-          new Date().toISOString(),
-      });
-    });
-
-    return Array.from(map.values()).sort((a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
-    });
+    return merged;
   }, [customers]);
 
   const selectedCustomer = React.useMemo(() =>

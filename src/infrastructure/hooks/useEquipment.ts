@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
-import { Equipment, Site } from "../types/domain";
+import { Equipment } from "../types/domain";
 import { z } from "zod";
 import {
   createEquipmentSchema,
@@ -40,16 +40,7 @@ export function useEquipment(
         });
         const list = (response.data?.data ?? response.data ?? []) as Equipment[];
 
-        if (customerId) {
-          const sitesResponse = await api.get("/site/getAll", {
-            params: { customerId },
-          });
-          const customerSites = (sitesResponse.data?.data ?? []) as Site[];
-          const siteIds = new Set(
-            customerSites.map((site) => site.id).filter(Boolean),
-          );
-          return list.filter((eq: Equipment) => siteIds.has(eq.siteId));
-        }
+      
 
         return list;
       }
@@ -61,8 +52,6 @@ export function useEquipment(
       return allEquipment;
     },
 
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     enabled: options?.enabled ?? true,
     retry: 1,
@@ -78,8 +67,6 @@ export function useEquipmentById(id?: string, companyId?: string) {
       return data || null;
     },
     enabled: !!id && !!companyId,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 1,
   });

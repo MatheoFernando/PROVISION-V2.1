@@ -73,11 +73,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Car | undefined>();
   const [isBulkOpen, setIsBulkOpen] = useState(false);
-  const dataset = data ?? cars;
-  const filteredCars = useMemo(() => {
-    if (!companyId) return dataset;
-    return dataset.filter((car) => car.companyId === companyId);
-  }, [dataset, companyId]);
+
   const handleEdit = (car: Car) => {
     setSelectedCar(car);
     setIsCreateOpen(true);
@@ -105,7 +101,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredCars}
+        data={cars}
         isLoading={isLoadingOverride ?? isLoading}
         dateKey="createdAt"
         searchKey="cod"

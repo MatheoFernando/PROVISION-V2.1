@@ -45,10 +45,7 @@ export function EquipmentView({ equipment, isOpen, onClose }: EquipmentViewProps
     return status ? t("active") : t("inactive");
   };
 
-  const getStatusText = (status?: boolean | string | null) => {
-    if (status === undefined || status === null) return "—";
-    return getStatusLabel(resolveStatus(status));
-  };
+
 
   const formatDate = (value?: string | Date) =>
     value ? new Date(value).toLocaleString("pt-BR") : "—";
@@ -106,7 +103,7 @@ export function EquipmentView({ equipment, isOpen, onClose }: EquipmentViewProps
                 <InfoRow label={t("fields.mark")} value={equipment.mark} />
                 <InfoRow label={t("fields.model")} value={equipment.model} />
                 <InfoRow label={t("fields.code")} value={equipment.cod} />
-                <InfoRow label={t("fields.company")} value="-" />
+                <InfoRow label={t("fields.company")} value={equipment.company?.businessName ?? "—"} />
               </div>
             </SimpleSection>
 
@@ -152,10 +149,6 @@ export function EquipmentView({ equipment, isOpen, onClose }: EquipmentViewProps
                     <div className="grid gap-4 sm:grid-cols-2">
                       <InfoRow label={t("fields.name")} value={equipment.typeEquipment?.name} />
                       <InfoRow label={t("fields.description")} value={equipment.typeEquipment?.description} />
-                      <InfoRow
-                        label={t("fields.status")}
-                        value={getStatusText(equipment.typeEquipment?.status)}
-                      />
                       <InfoRow label={t("fields.createdAt")} value={formatDate(equipment.typeEquipment?.createdAt)} />
                     </div>
                   </div>
