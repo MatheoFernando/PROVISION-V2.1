@@ -139,7 +139,7 @@ export function EquipmentView({ equipment, isOpen, onClose }: EquipmentViewProps
                             : "—"
                         }
                       />
-                      <InfoRow label={t("fields.status")} value={equipment.site?.status ?? "—"} />
+                     
                     </div>
                   </div>
                 </TabsContent>

@@ -3,19 +3,18 @@
 import * as React from "react";
 import { SupervisionTable } from "./supervision-table";
 import {
-  useSupervisionsQuery,
-  useSupervisionsByDayQuery,
-  useSupervisionsByStatusQuery,
+  useSupervisions,
 } from "@/infrastructure/hooks/useSupervisions";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import type { DateRange } from "react-day-picker";
 
 export default function Supervision() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [range, setRange] = React.useState<DateRange | undefined>(undefined);
   const [status, setStatus] = React.useState<string | undefined>(undefined);
-
-  const { data: all = [], isLoading: loadingAll } = useSupervisionsQuery();
-
+  
+  const companyId = useAuthStore((state) => state.companyId);
+  
   const singleDay = React.useMemo(() => {
     if (!range?.from || !range.to) return undefined;
     const from = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate());
@@ -23,20 +22,10 @@ export default function Supervision() {
     return from.getTime() === to.getTime() ? from : undefined;
   }, [range]);
 
-  const { data: byDay = [], isLoading: loadingByDay } = useSupervisionsByDayQuery(singleDay);
-  const { data: byStatus = [], isLoading: loadingByStatus } = useSupervisionsByStatusQuery(status);
-
-  const supervisions = status
-    ? byStatus
-    : singleDay
-      ? byDay
-      : all;
-
-  const isLoading = status
-    ? loadingByStatus
-    : singleDay
-      ? loadingByDay
-      : loadingAll;
+  const { data: supervisions = [], isLoading } = useSupervisions(companyId ?? undefined, {
+    date: singleDay,
+    status
+  });
 
   return (
     <SupervisionTable

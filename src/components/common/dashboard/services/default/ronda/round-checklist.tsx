@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Loader2, Save, CheckCircle2, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +15,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
 import { useItemInspectionRounds } from "@/infrastructure/hooks/useItemInspectionRounds";
 import { useCheckListRoundGroups, useCreateCheckListRoundGroupMutation } from "@/infrastructure/hooks/useCheckListRoundGroups";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
@@ -38,18 +35,11 @@ interface RoundChecklistProps {
 }
 
 export function RoundChecklist({ roundId }: RoundChecklistProps) {
-    const t = useTranslations("Ronda.Checklist");
     const router = useRouter();
     const companyId = useAuthStore((state) => state.companyId || "");
     const [isManagerOpen, setIsManagerOpen] = useState(false);
-
-    const { data: items = [], isLoading: isLoadingItems } = useItemInspectionRounds();
-    const { data: existingGroups = [], isLoading: isLoadingGroups, refetch: refetchGroups } = useCheckListRoundGroups(roundId);
-
-    const totalItems = items.length;
-    const completedItems = existingGroups.length;
-    const progress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-    const isComplete = progress === 100 && totalItems > 0;
+    const { data: items = [], isLoading: isLoadingItems } = useItemInspectionRounds(companyId);
+    const { data: existingGroups = [], isLoading: isLoadingGroups, refetch: refetchGroups } = useCheckListRoundGroups(companyId, roundId);
 
     const handleBack = () => {
         router.back();
@@ -70,19 +60,7 @@ export function RoundChecklist({ roundId }: RoundChecklistProps) {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                        <div className="text-right w-full md:w-auto">
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 block">
-                                {completedItems} de {totalItems} itens
-                            </span>
-                            <div className="w-full md:w-32 h-2 bg-gray-100 dark:bg-slate-800 rounded-full mt-1 overflow-hidden">
-                                <div
-                                    className="h-full bg-blue-600 transition-all duration-500 ease-out"
-                                    style={{ width: `${progress}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                  
                 </div>
             </header>
 
@@ -122,25 +100,7 @@ export function RoundChecklist({ roundId }: RoundChecklistProps) {
                 )}
             </ScrollArea>
 
-            <div className="p-4 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shrink-0 flex justify-end gap-3 sticky bottom-0 z-10">
-                <Button
-                    variant="ghost"
-                    onClick={handleBack}
-                >
-                    Voltar
-                </Button>
-                <Button
-                    disabled={!isComplete}
-                    className="bg-green-600 hover:bg-green-700 text-white gap-2"
-                    onClick={() => {
-                        toast.success("Checklist concluído com sucesso!");
-                        handleBack();
-                    }}
-                >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Concluir Checklist
-                </Button>
-            </div>
+           
 
 
             <ChecklistManager
@@ -165,7 +125,7 @@ function ChecklistItemCard({ item, roundId, companyId, existingEvaluation, onSav
     const [isExpanded, setIsExpanded] = useState(!existingEvaluation);
 
     const form = useForm<EvaluationFormValues>({
-        resolver: zodResolver(evaluationSchema) as any,
+        resolver: zodResolver(evaluationSchema),
         defaultValues: {
             assessment: existingEvaluation?.assessment ?? 0,
             applicable: existingEvaluation?.applicable ?? true,

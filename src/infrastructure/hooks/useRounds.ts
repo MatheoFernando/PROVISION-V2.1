@@ -4,13 +4,19 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
 import type { Round } from '@/infrastructure/types/domain';
 
-export function useRounds() {
+interface RoundsQueryOptions {
+    enabled?: boolean;
+}
+
+export function useRounds(companyId?: string, options?: RoundsQueryOptions) {
     return useQuery({
-        queryKey: ['rounds'],
+        queryKey: ['rounds', companyId],
         queryFn: async (): Promise<Round[]> => {
-            const { data } = await api.get('/round/getAll');
-            return data?.data ?? data;
+            if (!companyId) return [];
+            const { data } = await api.get(`/round/GetAllByCompany/${companyId}`);
+            return data?.data ?? data ?? [];
         },
+        enabled: (options?.enabled ?? true) && !!companyId,
     });
 }
 
@@ -18,11 +24,32 @@ export function useRound(id: string) {
     return useQuery({
         queryKey: ['round', id],
         queryFn: async (): Promise<Round | null> => {
-            const { data } = await api.get(`/round/getAll`, { params: { id } });
-            const list = data?.data ?? [];
-            return Array.isArray(list) ? (list.find((r: any) => r.id === id) ?? null) : null;
+            const { data } = await api.get(`/round/getById/${id}`);
+            return data?.data ?? data ?? null;
         },
         enabled: !!id,
+    });
+}
+
+export function useRoundsByDate(companyId: string, date: string, options?: RoundsQueryOptions) {
+    return useQuery({
+        queryKey: ['rounds', 'by-date', companyId, date],
+        queryFn: async (): Promise<Round> => {
+            const { data } = await api.get(`/round/getBydate/${companyId}/${date}`);
+            return data?.data ?? data ?? null;
+        },
+        enabled: (options?.enabled ?? true) && !!companyId && !!date,
+    });
+}
+
+export function useRoundsByNumber(companyId: string, number: number, options?: RoundsQueryOptions) {
+    return useQuery({
+        queryKey: ['rounds', 'by-number', companyId, number],
+        queryFn: async (): Promise<Round> => {
+            const { data } = await api.get(`/round/getByNumberRound/${companyId}/${number}`);
+            return data?.data ?? data ?? null;
+        },
+        enabled: (options?.enabled ?? true) && !!companyId && !!number,
     });
 }
 

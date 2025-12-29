@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/infrastructure/utils/api";
 import { toast } from "sonner";
-import { moduleSchema, modulesListSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
+import { modulesListSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
 
 export function useModules() {
   return useQuery({

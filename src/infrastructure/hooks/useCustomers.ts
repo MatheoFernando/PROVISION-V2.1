@@ -17,9 +17,7 @@ export function useCustomers() {
       const response = await api.get("/customer/getAll");
       return response.data.data ?? response.data ?? [];
     },
-    staleTime: 2 * 60 * 1000,
-    refetchOnReconnect: true,
-    retry: 1,
+
   });
 }
 
@@ -33,8 +31,7 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
       return response.data.data ?? response.data ?? [];
     },
     enabled: (options?.enabled ?? true) && !!companyId,
-    refetchOnReconnect: true,
-    retry: 1,
+ 
   });
 }
 

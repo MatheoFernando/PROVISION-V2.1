@@ -11,8 +11,8 @@ import {
   List,
   Calendar,
   Box,
-  Hash,
-  Pencil
+  Pencil,
+  LucideIcon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,19 +37,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
-import { useOccurrence } from "@/infrastructure/hooks/useOccurrences";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Occorrence } from "@/infrastructure/types/domain";
+import type { Equipment } from "@/infrastructure/types/domain";
 
 interface OccurrenceDialogProps {
   occurrence: Occurrence;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit?: (occurrence: Occorrence) => void;
+  onEdit?: (occurrence: Occurrence) => void;
 }
 
-const formatHour = (value?: string) => {
+const formatHour = (value?: string): string => {
   if (!value) return "--";
   if (value.includes("T") && Number.isNaN(Date.parse(value))) {
     const fallback = value.includes(":") ? value : `${value}:00`;
@@ -71,7 +70,7 @@ const formatHour = (value?: string) => {
     .replace(".", ":");
 };
 
-const formatDateTime = (value?: string) => {
+const formatDateTime = (value?: string): string => {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -82,6 +81,35 @@ const formatDateTime = (value?: string) => {
   });
 };
 
+const getGravityColor = (gravity: string): string => {
+  switch (gravity) {
+    case "Alta":
+      return "bg-red-500 text-white border-red-600";
+    case "Média":
+      return "bg-orange-200 text-red-500 border-orange-300";
+    case "Baixa":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    default:
+      return "bg-gray-200 text-gray-500 border-gray-300";
+  }
+};
+
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case "Aberto":
+      return "bg-red-100 text-red-800 border-red-200";
+    case "Em Andamento":
+      return "bg-orange-100 text-orange-800 border-orange-200";
+    case "Fechado":
+    case "Ativo":
+      return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    case "Inativo":
+      return "bg-gray-200 text-gray-700 border-gray-300";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
+
 export function OccurrenceViewDrawer({
   occurrence,
   isOpen,
@@ -90,49 +118,15 @@ export function OccurrenceViewDrawer({
 }: OccurrenceDialogProps) {
   const t = useTranslations("Occurrence");
   const tSupervision = useTranslations("Supervision");
-  const { data: occurrenceFromApi } = useOccurrence(occurrence?.id ?? "");
-  const current = occurrenceFromApi ?? occurrence;
 
-  const typeOccurrenceName = (current as any)?.typeOccorence?.description || "N/A";
-  const employeeDisplay = (current as any)?.employees?.fullName || "N/A";
-  const companyName = (current as any)?.companies?.businessName || "N/A";
-  const siteDisplay = (current as any)?.sites?.name
-    ? `${(current as any)?.sites?.name} (${(current as any)?.sites?.cod || "--"})`
+  const typeOccurrenceName = occurrence.typeOccorence?.description ?? "N/A";
+  const employeeDisplay = occurrence.employees?.fullName ?? "N/A";
+  const companyName = occurrence.companies?.businessName ?? "N/A";
+  const siteDisplay = occurrence.sites?.name
+    ? `${occurrence.sites.name} (${occurrence.sites.cod ?? "--"})`
     : "N/A";
 
-  const equipmentsList = (current as any)?.equipments
-    ? [(current as any)?.equipments]
-    : [];
-
-  const getGravityColor = (gravity: string) => {
-    switch (gravity) {
-      case "Alta":
-        return "bg-red-500 text-white border-red-600";
-      case "Média":
-        return "bg-orange-200 text-red-500 border-orange-300";
-      case "Baixa":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-200 text-gray-500 border-gray-300";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Aberto":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Em Andamento":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "Fechado":
-        return "bg-emerald-100 text-emerald-800 border-emerald-200";
-      case "Ativo":
-        return "bg-emerald-100 text-emerald-800 border-emerald-200";
-      case "Inativo":
-        return "bg-gray-200 text-gray-700 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  const equipmentsList: Equipment[] = occurrence.equipments ? [occurrence.equipments] : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -142,13 +136,13 @@ export function OccurrenceViewDrawer({
             <div className="space-y-1">
               <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-slate-900 dark:text-gray-100">
                 <AlertTriangle className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-                Ocorrência #{current.cod}
+                Ocorrência #{occurrence.cod}
               </DialogTitle>
               <DialogDescription className="flex items-center gap-2">
                 {t("sections.basicData")}
                 <div>
-                  <Badge variant="outline" className={`border text-xs px-3 py-1 ${getStatusColor(current.status)}`}>
-                    {current.status}
+                  <Badge variant="outline" className={`border text-xs px-3 py-1 ${getStatusColor(occurrence.status)}`}>
+                    {occurrence.status}
                   </Badge>
                 </div>
               </DialogDescription>
@@ -160,7 +154,7 @@ export function OccurrenceViewDrawer({
                 className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 onClick={() => {
                   onOpenChange(false);
-                  onEdit(current as Occorrence);
+                  onEdit(occurrence);
                 }}
               >
                 <Pencil className="h-4 w-4" />
@@ -216,7 +210,7 @@ export function OccurrenceViewDrawer({
                       <span className="text-xs font-semibold uppercase">{t("fields.time")}</span>
                     </div>
                     <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      {formatHour(current.time)}
+                      {formatHour(occurrence.time)}
                     </p>
                   </div>
                   <div className="bg-blue-50/50 dark:bg-blue-600/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20">
@@ -225,7 +219,7 @@ export function OccurrenceViewDrawer({
                       <span className="text-xs font-semibold uppercase">{t("fields.date")}</span>
                     </div>
                     <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      {formatDateTime(current.createdAt)}
+                      {formatDateTime(occurrence.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -237,8 +231,8 @@ export function OccurrenceViewDrawer({
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
                         {t("fields.gravity")}
                       </div>
-                      <Badge variant="outline" className={`border text-xs ${getGravityColor(current.gravity)}`}>
-                        {current.gravity}
+                      <Badge variant="outline" className={`border text-xs ${getGravityColor(occurrence.gravity)}`}>
+                        {occurrence.gravity}
                       </Badge>
                     </div>
                   </div>
@@ -276,14 +270,17 @@ export function OccurrenceViewDrawer({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {equipmentsList.map((eq: any, idx: number) => (
-                            <TableRow key={eq.id || idx}>
-                              <TableCell className="font-medium">{eq.cod || "--"}</TableCell>
-                              <TableCell>{eq.name || eq.mark || "--"}</TableCell>
-                              <TableCell>{eq.model || "--"}</TableCell>
+                          {equipmentsList.map((eq, idx) => (
+                            <TableRow key={eq.id ?? idx}>
+                              <TableCell className="font-medium">{eq.cod ?? "--"}</TableCell>
+                              <TableCell>{eq.mark ?? "--"}</TableCell>
+                              <TableCell>{eq.model ?? "--"}</TableCell>
                               <TableCell className="text-right">
                                 {eq.status !== undefined ? (
-                                  <Badge variant={eq.status ? "default" : "secondary"} className={eq.status ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                                  <Badge 
+                                    variant={eq.status ? "default" : "secondary"} 
+                                    className={eq.status ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}
+                                  >
                                     {eq.status ? "Ativo" : "Inativo"}
                                   </Badge>
                                 ) : (
@@ -307,7 +304,7 @@ export function OccurrenceViewDrawer({
               <TabsContent value="actions" className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
                 <Section icon={Wrench} title={t("sections.adoptedMeasures")}>
                   <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-xl border border-blue-100 dark:border-blue-900/20 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                    {current.correctiveAction || t("messages.noAction")}
+                    {occurrence.correctiveAction || t("messages.noAction")}
                   </div>
                 </Section>
               </TabsContent>
@@ -315,7 +312,7 @@ export function OccurrenceViewDrawer({
               <TabsContent value="description" className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
                 <Section icon={List} title={t("sections.eventDescription")}>
                   <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-xl border border-blue-100 dark:border-blue-900/20 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                    {current.description || "Nenhuma descrição disponível."}
+                    {occurrence.description || "Nenhuma descrição disponível."}
                   </div>
                 </Section>
               </TabsContent>
@@ -327,7 +324,13 @@ export function OccurrenceViewDrawer({
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: React.ComponentType<{ className?: string }>, title: string, children: React.ReactNode }) {
+interface SectionProps {
+  icon: LucideIcon;
+  title: string;
+  children: React.ReactNode;
+}
+
+function Section({ icon: Icon, title, children }: SectionProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -339,15 +342,13 @@ function Section({ icon: Icon, title, children }: { icon: React.ComponentType<{ 
   )
 }
 
-function TextRow({
-  label,
-  value,
-  valueClass = "",
-}: {
-  label: string
-  value?: React.ReactNode
-  valueClass?: string
-}) {
+interface TextRowProps {
+  label: string;
+  value?: React.ReactNode;
+  valueClass?: string;
+}
+
+function TextRow({ label, value, valueClass = "" }: TextRowProps) {
   return (
     <div className="flex justify-between items-center text-sm py-1">
       <span className="text-slate-500">{label}</span>
@@ -356,7 +357,13 @@ function TextRow({
   )
 }
 
-function DetailBox({ label, value, icon: Icon }: { label: string, value?: string, icon?: any }) {
+interface DetailBoxProps {
+  label: string;
+  value?: string;
+  icon?: LucideIcon;
+}
+
+function DetailBox({ label, value, icon: Icon }: DetailBoxProps) {
   return (
     <div className="bg-white dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm">
       <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">

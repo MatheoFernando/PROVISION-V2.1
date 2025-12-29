@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as React from "react";
-import { Eye, PencilSimple, Trash, X } from "phosphor-react";
+import { Eye, PencilSimple, Trash } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import {
   useCreateGrossEquipment,

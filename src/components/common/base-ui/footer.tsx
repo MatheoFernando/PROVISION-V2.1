@@ -9,15 +9,15 @@ export function Footer() {
 
     return (
         <footer className="bg-background p-1.5 border-t border-slate-200 dark:border-border/50">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                     {company ? (
                         <>
-                            <span className="text-base px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            <span className="text-sm px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                                 {company.cod}
                             </span>
                             -
-                            <span className="text-base font-medium text-foreground">{company.taxName}</span>
+                            <span className="text-sm font-medium text-foreground">{company.taxName}</span>
                         </>
                     ) : (
                         <div className="flex items-center gap-2 animate-pulse">
@@ -26,7 +26,7 @@ export function Footer() {
                         </div>
                     )}
                 </div>
-                <div className="text-base font-medium">
+                <div className="text-sm font-medium">
                   &copy;  Provision {new Date().getFullYear()} 
                 </div>
             </div>

@@ -4,27 +4,19 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
 import type { Occorrence } from '@/infrastructure/types/domain';
 
-export function useOccurrences() {
+export function useOccurrences(companyId: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['occurrences'],
+    queryKey: ['occurrences', companyId],
     queryFn: async (): Promise<Occorrence[]> => {
-      const { data } = await api.get('/occorrence/getAll');
-      return data?.data ?? data;
+      if (!companyId) return [];
+      const { data } = await api.get(`/occorrence/getAllByCompany/${companyId}`);
+      return data?.data ?? data ?? [];
     },
+    enabled: !!companyId && (options?.enabled ?? true),
   });
 }
 
-export function useOccurrence(id: string) {
-  return useQuery({
-    queryKey: ['occurrence', id],
-    queryFn: async (): Promise<Occorrence | null> => {
-      const { data } = await api.get(`/occorrence/getAll`, { params: { id } });
-      const list = data?.data ?? [];
-      return Array.isArray(list) ? (list.find((o: any) => o.id === id) ?? null) : null;
-    },
-    enabled: !!id,
-  });
-}
+
 
 export function useCreateOccurrenceMutation() {
   const queryClient = useQueryClient();
@@ -88,36 +80,40 @@ export function useDeleteOccurrenceMutation() {
   });
 }
 
-export function useOccurrencesByDate(date: string) {
+export function useOccurrencesByDate(companyId: string, date: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['occurrences', 'date', date],
+    queryKey: ['occurrences', 'date', companyId, date],
     queryFn: async (): Promise<Occorrence[]> => {
-      const { data } = await api.get('/occorrence/getByDate', { params: { date } });
-      return data?.data ?? data;
+      if (!companyId || !date) return [];
+      const encodedDate = encodeURIComponent(date);
+      const { data } = await api.get(`/occorrence/getByDate/${companyId}/${encodedDate}`);
+      return data?.data ?? data ?? [];
     },
-    enabled: Boolean(date),
+    enabled: !!companyId && !!date && (options?.enabled ?? true),
   });
 }
 
-export function useOccurrencesBySiteId(siteId: string) {
+export function useOccurrencesBySiteId(companyId: string, siteId: string) {
   return useQuery({
-    queryKey: ['occurrences', 'siteId', siteId],
+    queryKey: ['occurrences', 'siteId', companyId, siteId],
     queryFn: async (): Promise<Occorrence[]> => {
-      const { data } = await api.get('/occorrence/getBySiteId', { params: { siteId } });
-      return data?.data ?? data;
+      if (!companyId || !siteId) return [];
+      const { data } = await api.get(`/occorrence/getBySiteId/${companyId}/${siteId}`);
+      return data?.data ?? data ?? [];
     },
-    enabled: Boolean(siteId),
+    enabled: !!companyId && !!siteId,
   });
 }
 
-export function useOccurrencesByStatus(status: string) {
+export function useOccurrencesByStatus(companyId: string, status: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['occurrences', 'status', status],
+    queryKey: ['occurrences', 'status', companyId, status],
     queryFn: async (): Promise<Occorrence[]> => {
-      const { data } = await api.get('/occorrence/getByStatus', { params: { status } });
-      return data?.data ?? data;
+      if (!companyId || !status) return [];
+      const { data } = await api.get(`/occorrence/getByStatus/${companyId}/${status}`);
+      return data?.data ?? data ?? [];
     },
-    enabled: Boolean(status),
+    enabled: !!companyId && !!status && (options?.enabled ?? true),
   });
 }
 

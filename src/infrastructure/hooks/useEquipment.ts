@@ -32,29 +32,33 @@ export function useEquipment(
 ) {
   return useQuery({
     queryKey: [...QUERY_KEY, customerId, options?.companyId],
-    queryFn: async (): Promise<Equipment[]> => {
+    queryFn: async () => {
       const companyId = options?.companyId;
       if (companyId) {
         const response = await api.get("/equipment/getByCompanyId", {
           params: { companyId },
         });
-        const list = (response.data?.data ?? response.data ?? []) as Equipment[];
 
-      
+        const rawData = response.data;
+        
+        if (Array.isArray(rawData)) {
+          return rawData;
+        }
+        
+        // Handle common pagination/wrapping structures
+        if (rawData && typeof rawData === "object") {
+          if (Array.isArray((rawData as any).content)) return (rawData as any).content;
+          if (Array.isArray((rawData as any).data)) return (rawData as any).data;
+        }
 
-        return list;
+        return [];
       }
-
-      const response = await api.get("/equipment/getAll");
-      const allEquipment = (response.data?.data ?? response.data ?? []) as Equipment[];
-
-
-      return allEquipment;
+      return [];
     },
 
     refetchOnReconnect: true,
     enabled: options?.enabled ?? true,
-    retry: 1,
+  
   });
 }
 
@@ -67,8 +71,7 @@ export function useEquipmentById(id?: string, companyId?: string) {
       return data || null;
     },
     enabled: !!id && !!companyId,
-    refetchOnReconnect: true,
-    retry: 1,
+   
   });
 }
 

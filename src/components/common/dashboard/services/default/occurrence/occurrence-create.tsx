@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { TypeOccorrenceSelect } from "@/components/common/base-ui/selects/type-occorrence-select"
 import { z } from "zod"
 import type { Occorrence } from "@/infrastructure/types/domain"
+import type { Occurrence } from "@/infrastructure/schema/schema-occurrence"
 import { createOccurrenceSchema } from "@/infrastructure/schema/schema-occurrence"
 import {
   Dialog,
@@ -29,23 +30,23 @@ import {
 
 type CreateOccurrenceFormValues = z.infer<typeof createOccurrenceSchema>
 
-const timeFormatter: Intl.DateTimeFormatOptions = {
+const TIME_FORMATTER: Intl.DateTimeFormatOptions = {
   hour: "2-digit",
   minute: "2-digit",
   hour12: false,
 }
 
-const toInputTime = (value?: string) => {
+const toInputTime = (value?: string): string => {
   if (!value) return ""
   if (value.includes("T")) {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value.slice(11, 16)
-    return date.toLocaleTimeString("pt-BR", timeFormatter).replace(".", ":")
+    return date.toLocaleTimeString("pt-BR", TIME_FORMATTER).replace(".", ":")
   }
   return value.slice(0, 5)
 }
 
-const toIsoFromTime = (value: string) => {
+const toIsoFromTime = (value: string): string => {
   if (!value) return ""
   if (value.includes("T") && !Number.isNaN(Date.parse(value))) return value
   const normalized = value.length === 5 ? `${value}:00` : value
@@ -59,7 +60,7 @@ const toIsoFromTime = (value: string) => {
 interface OccurrenceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  occurrenceToEdit?: any
+  occurrenceToEdit?: Occurrence
 }
 
 export function OccurrenceDialog({
@@ -72,7 +73,7 @@ export function OccurrenceDialog({
   const createMutation = useCreateOccurrenceMutation()
   const updateMutation = useUpdateOccurrenceMutation()
 
-  const defaultValues = React.useMemo(() => ({
+  const defaultValues = React.useMemo((): CreateOccurrenceFormValues => ({
     cod: "",
     description: "",
     companyId,
@@ -82,9 +83,9 @@ export function OccurrenceDialog({
     siteId: "",
     time: "",
     correctiveAction: "",
-    gravity: undefined,
+    gravity: "Baixa",
     status: "Ativo" as const,
-  }), [companyId]);
+  }), [companyId])
 
   const form = useForm<CreateOccurrenceFormValues>({
     resolver: zodResolver(createOccurrenceSchema) as Resolver<CreateOccurrenceFormValues>,
@@ -98,14 +99,14 @@ export function OccurrenceDialog({
         cod: occurrenceToEdit.cod || "",
         description: occurrenceToEdit.description || "",
         companyId: occurrenceToEdit.companyId || companyId,
-        typeOccorrenceId: occurrenceToEdit.typeOccorrenceId || occurrenceToEdit.typeOccurrenceId || "",
+        typeOccorrenceId: occurrenceToEdit.typeOccorrenceId || "",
         equipmentId: occurrenceToEdit.equipmentId || "",
         employeeId: occurrenceToEdit.employeeId || "",
         siteId: occurrenceToEdit.siteId || "",
         time: toInputTime(occurrenceToEdit.time),
         correctiveAction: occurrenceToEdit.correctiveAction || "",
-        gravity: occurrenceToEdit.gravity || undefined,
-        status: (occurrenceToEdit.status as "Ativo" | "Inativo" | "Em Andamento" | "Fechado") || "Ativo",
+        gravity: occurrenceToEdit.gravity as CreateOccurrenceFormValues["gravity"] || undefined,
+        status: (occurrenceToEdit.status as CreateOccurrenceFormValues["status"]) || "Ativo",
       })
     } else if (open) {
       form.reset(defaultValues)
@@ -131,29 +132,43 @@ export function OccurrenceDialog({
         siteId: basePayload.siteId,
         time: basePayload.time,
         correctiveAction: basePayload.correctiveAction ?? "",
-        gravity: (basePayload.gravity ) ?? "Baixa",
-        status: (basePayload.status ) ?? "Ativo",
-      };
+        gravity: basePayload.gravity ?? "Baixa",
+        status: basePayload.status ?? "Ativo",
+      }
 
       updateMutation.mutate(updatePayload, {
         onSuccess: () => {
           onOpenChange(false)
         },
-      });
+      })
     } else {
-      createMutation.mutate(basePayload as any, {
+      const createPayload: Omit<Occorrence, 'id' | 'createdAt' | 'updatedAt'> = {
+        cod: basePayload.cod,
+        companyId: basePayload.companyId,
+        description: basePayload.description ?? "",
+        typeOccorrenceId: basePayload.typeOccorrenceId ?? "",
+        equipmentId: basePayload.equipmentId ?? "",
+        employeeId: basePayload.employeeId,
+        siteId: basePayload.siteId,
+        time: basePayload.time,
+        correctiveAction: basePayload.correctiveAction ?? "",
+        gravity: basePayload.gravity ?? "Baixa",
+        status: basePayload.status ?? "Ativo",
+      }
+
+      createMutation.mutate(createPayload, {
         onSuccess: () => {
           onOpenChange(false)
         },
-      });
+      })
     }
   }
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden  dark:bg-slate-950">
+      <DialogContent className="max-w-4xl p-0 overflow-hidden dark:bg-slate-950">
         <DialogHeader className="pt-6 px-6 pb-2 border-b border-gray-100 bg-white dark:bg-slate-900/50">
           <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {occurrenceToEdit ? "Editar Ocorrência" : "Nova Ocorrência"}
@@ -361,6 +376,5 @@ export function OccurrenceDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
-

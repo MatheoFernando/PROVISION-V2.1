@@ -5,7 +5,17 @@ import { useRouter } from "next/navigation";
 import {
   useCompaniesQuery,
   useDeleteCompanyMutation,
+  useCompaniesByNameQuery,
+  useCompanyByCodQuery,
 } from "@/infrastructure/hooks/useCompanies";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getFileUrl } from "@/infrastructure/utils/file-utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Company } from "@/infrastructure/types/domain";
@@ -16,11 +26,11 @@ import { DeleteModal } from "@/components/ui/delete-modal";
 import { CompanyView } from "./company-view";
 
 
-function getPrimaryAddress(company: any) {
+function getPrimaryAddress(company) {
   return company?.address ?? company?.addresses?.[0] ?? undefined;
 }
 
-function getPrimaryContact(company: any) {
+function getPrimaryContact(company) {
   return company?.contact ?? company?.contacts?.[0] ?? undefined;
 }
 
@@ -36,7 +46,7 @@ const columns: ColumnDef<Company, unknown>[] = [
             <AvatarImage
               src={getFileUrl(company.photo)}
               alt={company.businessName}
-              className="rounded-sm"
+              className="rounded-sm object-contain"
             />
             <AvatarFallback className="bg-primary/10 text-primary font-medium text-base rounded-sm">
               {company.businessName.charAt(0).toUpperCase()}
@@ -119,7 +129,35 @@ const columns: ColumnDef<Company, unknown>[] = [
 
 function ListCompany() {
   const router = useRouter();
-  const { data, isLoading, refetch } = useCompaniesQuery();
+  const [searchType, setSearchType] = React.useState<"businessName" | "cod">("businessName");
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState("");
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: allData, isLoading: isLoadingAll, refetch: refetchAll } = useCompaniesQuery({
+    enabled: !debouncedSearchTerm
+  });
+
+  const { data: nameData, isLoading: isLoadingName } = useCompaniesByNameQuery(debouncedSearchTerm);
+  
+  const { data: codData, isLoading: isLoadingCod } = useCompanyByCodQuery(debouncedSearchTerm);
+
+  const data = React.useMemo(() => {
+    if (!debouncedSearchTerm) return allData ?? [];
+    if (searchType === "businessName") return nameData ?? [];
+    if (searchType === "cod") return codData ? [codData] : [];
+    return [];
+  }, [debouncedSearchTerm, searchType, allData, nameData, codData]);
+
+  const isLoading = !debouncedSearchTerm ? isLoadingAll : (searchType === "businessName" ? isLoadingName : isLoadingCod);
+  const refetch = !debouncedSearchTerm ? refetchAll : () => {};
+
   const { mutateAsync: deleteAsync } = useDeleteCompanyMutation();
 
   const [viewOpen, setViewOpen] = React.useState(false);
@@ -147,12 +185,39 @@ function ListCompany() {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder={searchType === "businessName" ? "Pesquisar por nome..." : "Pesquisar por código..."}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-10"
+          />
+        </div>
+        <div className="w-full sm:w-[200px]">
+          <Select
+            value={searchType}
+            onValueChange={(value: "businessName" | "cod") => {
+              setSearchType(value);
+              setSearchTerm(""); 
+            }}
+          >
+            <SelectTrigger className="h-10">
+              <SelectValue placeholder="Tipo de filtro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="businessName">Nome</SelectItem>
+              <SelectItem value="cod">Código</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <DataTableGeneric
         data={data ?? []}
         columns={columns}
         onRefetch={refetch}
-        searchKey="businessName"
-        placeholder="Pesquisar empresa..."
+        // searchKey="businessName" // Search is handled externally now
         isLoading={isLoading}
         actionButton={{
           label: "Nova Empresa",

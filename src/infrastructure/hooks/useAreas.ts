@@ -4,13 +4,29 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Area } from "../types/domain";
 
-export function useAreas() {
+interface AreasQueryOptions {
+  enabled?: boolean;
+  companyId?: string;
+}
+
+export function useAreas(options?: AreasQueryOptions) {
+  const { enabled = true, companyId } = options ?? {};
+
   return useQuery({
-    queryKey: ["areas"],
-    queryFn: async (): Promise<Area[]> => {
-      const { data } = await api.get("/area/getAll");
-      return (data?.data ?? data) as Area[];
+    queryKey: ["areas", companyId],
+    queryFn: async () => { 
+      const targetCompanyId = companyId;
+
+      if (targetCompanyId) {
+        const { data } = await api.get(
+          `/area/getAllbyCompany/${targetCompanyId}`,
+        );
+        return (data?.data ?? data) as Area[];
+      }
+
+ 
     },
+    enabled,
   });
 }
 

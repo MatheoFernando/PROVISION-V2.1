@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Loader2, Plus } from "lucide-react";
-import { useCreateTypeOccorrence, useTypeOccorrence } from "@/infrastructure/hooks/useTypeOccorrence";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { z } from "zod";
@@ -19,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useCreateTypeOccurrenceMutation, useTypeOccorrences } from "@/infrastructure/hooks/useTypeOccurrences";
 
 interface TypeOccorrenceSelectProps {
   value?: string;
@@ -29,10 +29,10 @@ interface TypeOccorrenceSelectProps {
 export function TypeOccorrenceSelect({ value, onChange, companyId }: TypeOccorrenceSelectProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const { data: list = [], isLoading } = useTypeOccorrence();
   const authCompanyId = useAuthStore((s) => s.companyId);
   const effectiveCompanyId = companyId ?? authCompanyId ?? undefined;
-  const createMutation = useCreateTypeOccorrence();
+  const { data: list = [], isLoading } = useTypeOccorrences(effectiveCompanyId);
+  const createMutation = useCreateTypeOccurrenceMutation();
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: { cod: "", description: "" },
@@ -119,7 +119,9 @@ export function TypeOccorrenceSelect({ value, onChange, companyId }: TypeOccorre
             <form
               onSubmit={(e) => { e.preventDefault(); form.handleSubmit(async (values) => {
                 const created = await createMutation.mutateAsync({ ...values, companyId: effectiveCompanyId } as any);
-                onChange((created as any)?.id);
+                if (created?.id) {
+                  onChange(created.id);
+                }
                 form.reset({ cod: "", description: "" });
                 setOpen(false);
               })(); }}
@@ -167,7 +169,9 @@ export function TypeOccorrenceSelect({ value, onChange, companyId }: TypeOccorre
                   disabled={createMutation.isPending}
                   onClick={() => form.handleSubmit(async (values) => {
                     const created = await createMutation.mutateAsync({ ...values, companyId: effectiveCompanyId } as any);
-                    onChange((created as any)?.id);
+                    if (created?.id) {
+                      onChange(created.id);
+                    }
                     form.reset({ cod: "", description: "" });
                     setOpen(false);
                   })()}

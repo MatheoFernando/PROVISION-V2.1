@@ -37,6 +37,7 @@ import {
   useAngolaProvinces,
 } from "@/infrastructure/hooks/useAngolaLocations";
 import { PhoneField } from "@/components/common/base-ui/phone-field";
+import Image from "next/image";
 
 function CompanyFormPage() {
   const params = useSearchParams();
@@ -88,7 +89,10 @@ function CompanyFormPage() {
     [provincesData, provinceValue]
   );
 
-  const municipalities = selectedProvince?.municipalities ?? [];
+  const municipalities = useMemo(
+    () => selectedProvince?.municipalities ?? [],
+    [selectedProvince]
+  );
 
   const selectedMunicipality = useMemo(
     () =>
@@ -123,7 +127,7 @@ function CompanyFormPage() {
 
   useEffect(() => {
     if (!existingCompany) return;
-    const ec: any = existingCompany as any
+    const ec = existingCompany 
     const primaryAddress = ec?.address ?? ec?.addresses?.[0] ?? {
       houseHold: "",
       commune: "",
@@ -177,6 +181,17 @@ function CompanyFormPage() {
           addressId: values.addressId,
           status: values.status ?? true,
           hasExistedSince: values.hasExistedSince,
+          address: values.address ? {
+            houseHold: values.address.houseHold ?? "",
+            commune: values.address.commune ?? "",
+            municipality: values.address.municipality ?? "",
+            province: values.address.province ?? "",
+            country: values.address.country ?? "",
+          } : undefined,
+          contact: values.contact ? {
+            email: values.contact.email ?? "",
+            phoneNumbers: values.contact.phoneNumbers ?? [],
+          } : undefined,
         });
         toast.success("Empresa atualizada com sucesso");
       } else {
@@ -203,7 +218,6 @@ function CompanyFormPage() {
         toast.success("Empresa criada com sucesso");
       }
 
-      // Check if we should return to user creation
       const shouldReturnToUserCreate = sessionStorage.getItem('returnToUserCreate');
       if (shouldReturnToUserCreate === 'true') {
         sessionStorage.removeItem('returnToUserCreate');
@@ -254,7 +268,7 @@ function CompanyFormPage() {
 
           <Form {...form}>
             <div className="p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
                   <FormField
                     control={form.control}
@@ -265,9 +279,11 @@ function CompanyFormPage() {
                           <div className="mt-2">
                             {photoValue ? (
                               <div className="relative aspect-square w-full h-60 rounded-lg border-2 border-slate-200 overflow-hidden bg-slate-50">
-                                <img
+                                <Image
                                   src={photoValue}
                                   alt="Logo"
+                                  width={176}
+                                  height={176}
                                   className="w-44 h-44 object-contain text-center mx-auto"
                                 />
                                 <button

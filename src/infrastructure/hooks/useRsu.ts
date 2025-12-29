@@ -31,18 +31,19 @@ const normalizeResponse = <T,>(payload: any): T => {
   return ((payload?.data ?? payload?.items ?? payload) as T) ?? ([] as T);
 };
 
-export function useRsuQuery() {
+export function useRsus(companyId?: string) {
   return useQuery({
-    queryKey: LIST_KEY,
+    queryKey: [...LIST_KEY, companyId],
     queryFn: async (): Promise<Rsu[]> => {
-      const { data } = await api.get("/rsu/getAll");
+      if (!companyId) return [];
+      const { data } = await api.get(`/rsu/getAll/${companyId}`);
       return normalizeResponse<Rsu[]>(data);
     },
-    staleTime: 5 * 60 * 1000,
+    enabled: !!companyId,
   });
 }
 
-export function useRsuByDateQuery(date?: Date) {
+export function useRsuByDateQuery(companyId?: string, date?: Date) {
   const dateParam = React.useMemo(() => {
     if (!date) return undefined;
     const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -50,43 +51,40 @@ export function useRsuByDateQuery(date?: Date) {
   }, [date]);
 
   return useQuery({
-    queryKey: ["rsu", "byDate", dateParam],
-    enabled: Boolean(dateParam),
+    queryKey: ["rsu", "byDate", companyId, dateParam],
+    enabled: Boolean(companyId) && Boolean(dateParam),
     queryFn: async (): Promise<Rsu[]> => {
-      const { data } = await api.get("/rsu/getByDate", {
-        params: { date: dateParam },
-      });
+      const { data } = await api.get(
+        `/rsu/getByDate/${companyId}/${dateParam}`
+      );
       return normalizeResponse<Rsu[]>(data);
     },
-    staleTime: 60 * 1000,
   });
 }
 
-export function useRsuBySiteQuery(siteId?: string) {
+export function useRsuBySiteQuery(companyId?: string, siteId?: string) {
   return useQuery({
-    queryKey: ["rsu", "bySite", siteId ?? "all"],
-    enabled: Boolean(siteId),
+    queryKey: ["rsu", "bySite", companyId, siteId ?? "all"],
+    enabled: Boolean(companyId) && Boolean(siteId),
     queryFn: async (): Promise<Rsu[]> => {
-      const { data } = await api.get("/rsu/getBySiteId", {
-        params: { siteId },
-      });
+      const { data } = await api.get(
+        `/rsu/getBySiteId/${companyId}/${siteId}`
+      );
       return normalizeResponse<Rsu[]>(data);
     },
-    staleTime: 60 * 1000,
   });
 }
 
-export function useRsuByStatusQuery(status?: string) {
+export function useRsuByStatusQuery(companyId?: string, status?: string) {
   return useQuery({
-    queryKey: ["rsu", "byStatus", status ?? "all"],
-    enabled: Boolean(status),
+    queryKey: ["rsu", "byStatus", companyId, status ?? "all"],
+    enabled: Boolean(companyId) && Boolean(status),
     queryFn: async (): Promise<Rsu[]> => {
-      const { data } = await api.get("/rsu/getByStatus", {
-        params: { status },
-      });
+      const { data } = await api.get(
+        `/rsu/getByStatus/${companyId}/${status}`
+      );
       return normalizeResponse<Rsu[]>(data);
     },
-    staleTime: 60 * 1000,
   });
 }
 
@@ -98,7 +96,7 @@ export function useRsuDetailQuery(id?: string) {
       const { data } = await api.get(`/rsu/${id}`);
       return (data?.data ?? data) as Rsu;
     },
-    staleTime: 5 * 60 * 1000,
+
   });
 }
 
@@ -118,9 +116,9 @@ export function useCreateRsuMutation() {
       setDetailCache(queryClient, created);
       toast.success(t("create.success"));
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const message =
-        error?.response?.data?.message || "Erro ao criar RSU";
+        (error as any)?.response?.data?.message || "Erro ao criar RSU";
       toast.error(message);
     },
   });
@@ -140,9 +138,9 @@ export function useUpdateRsuMutation() {
       setDetailCache(queryClient, updated);
       toast.success(t("update.success"));
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const message =
-        error?.response?.data?.message || "Erro ao atualizar RSU";
+        (error as any)?.response?.data?.message || "Erro ao atualizar RSU";
       toast.error(message);
     },
   });
@@ -161,9 +159,9 @@ export function useDeleteRsuMutation() {
       syncRsuLists(queryClient);
       toast.success(t("delete.success"));
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const message =
-        error?.response?.data?.message || "Erro ao eliminar RSU";
+        (error as any)?.response?.data?.message || "Erro ao eliminar RSU";
       toast.error(message);
     },
   });

@@ -32,6 +32,7 @@ export function EquipmentSelect({ value, onChange }: EquipmentSelectProps) {
   const { data: equipmentsData, isLoading } = useEquipment(undefined, {
     companyId: companyId || undefined,
   });
+  console.log(equipmentsData , "equipa" );
 
   const equipmentList = React.useMemo<EquipmentWithMeta[]>(() => {
     const baseList = (() => {

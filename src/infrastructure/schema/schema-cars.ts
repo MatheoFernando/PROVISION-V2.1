@@ -18,6 +18,9 @@ export const createGrossCarSchema = z.object({
       error: "Capacidade é obrigatória",
     })
     .nonnegative("Capacidade deve ser positiva"),
+  codContainer: z.string().min(1, "Código do container é obrigatório"),
+  geoLocationId: z.string().optional(),
+  companyId: z.string(),
 });
 
 export type CreateGrossCarPayload = z.infer<typeof createGrossCarSchema>;

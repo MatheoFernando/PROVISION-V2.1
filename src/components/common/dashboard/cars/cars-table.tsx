@@ -172,6 +172,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
           { key: "model", label: "Modelo", required: true },
           { key: "capacity", label: "Capacidade", required: true },
           { key: "codContainer", label: "Código do container", required: true },
+          { key: "geoLocationId", label: "Localização", required: true },
         ]}
         mapRawToInput={(raw) => {
           const capacity = parseCapacity(raw.capacity);
@@ -180,6 +181,7 @@ export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }:
             mark: raw.mark ?? "",
             model: raw.model ?? "",
             capacity,
+            geoLocationId: raw.geoLocationId ?? "",
             codContainer: raw.codContainer ?? "",
             companyId: raw.companyId || companyId,
           };

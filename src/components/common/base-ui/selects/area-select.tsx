@@ -38,7 +38,12 @@ export function AreaSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
-  const { data: areas = [], isLoading, isFetching, refetch } = useAreas();
+  const {
+    data: areas = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useAreas({ companyId });
 
   const form = useForm<AreaForm>({
     resolver: zodResolver(

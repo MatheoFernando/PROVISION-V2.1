@@ -1,16 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useContainer, useCreateContainer } from "@/infrastructure/hooks/useContainers";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2, Plus } from "lucide-react";
 import { createContainerSchema } from "@/infrastructure/schema/schema-containers";
 import type { Container } from "@/infrastructure/types/domain";

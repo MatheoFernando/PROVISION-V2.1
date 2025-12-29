@@ -5,16 +5,18 @@ import type { DateRange } from "react-day-picker";
 import { RsuTable } from "./rsu-table";
 import {
   useRsuByDateQuery,
-  useRsuQuery,
+  useRsus,
   useRsuByStatusQuery,
 } from "@/infrastructure/hooks/useRsu";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import type { Rsu } from "@/infrastructure/types/domain";
 
 export function Rsu() {
   const [range, setRange] = React.useState<DateRange | undefined>(undefined);
   const [status, setStatus] = React.useState<string | undefined>(undefined);
 
-  const { data: allRsu = [], isLoading: loadingAll } = useRsuQuery();
+  const companyId = useAuthStore((state) => state.companyId);
+  const { data: allRsu = [], isLoading: loadingAll } = useRsus(companyId ?? undefined);
 
   const singleDay = React.useMemo(() => {
     if (!range?.from || !range.to) return undefined;
@@ -27,8 +29,8 @@ export function Rsu() {
     return from.getTime() === to.getTime() ? from : undefined;
   }, [range]);
 
-  const { data: rsuByDate = [], isLoading: loadingByDate } = useRsuByDateQuery(singleDay);
-  const { data: rsuByStatus = [], isLoading: loadingByStatus } = useRsuByStatusQuery(status);
+  const { data: rsuByDate = [], isLoading: loadingByDate } = useRsuByDateQuery(companyId ?? undefined, singleDay);
+  const { data: rsuByStatus = [], isLoading: loadingByStatus } = useRsuByStatusQuery(companyId ?? undefined, status);
 
   const baseData = status
     ? rsuByStatus
@@ -38,7 +40,7 @@ export function Rsu() {
 
 
   const data = React.useMemo(() => {
-    let current: Rsu[] = baseData ?? [];
+    const current: Rsu[] = baseData ?? [];
     return current;
   }, [baseData]);
 

@@ -12,7 +12,7 @@ import {
 } from "@/infrastructure/hooks/useSites";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
-import { Site } from "@/infrastructure/types/domain";
+import type { Site, Customer, Area, Zone, Sector, Contact } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { toast } from "sonner";
@@ -32,6 +32,16 @@ import {
 } from "@/infrastructure/schema/schema-sites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
+function getNestedEntity<T extends { name?: string }>(
+  arrayOrObject: T | T[] | null | undefined,
+): T | undefined {
+  if (!arrayOrObject) return undefined;
+  if (Array.isArray(arrayOrObject)) {
+    return arrayOrObject.find((item) => item && item.name);
+  }
+  return arrayOrObject;
+}
+
 const columns: ColumnDef<Site>[] = [
   {
     accessorKey: "cod",
@@ -50,79 +60,70 @@ const columns: ColumnDef<Site>[] = [
       return <div>{name}</div>;
     },
   },
-
   {
     accessorKey: "customerId",
     header: "Cliente",
     cell: ({ row }) => {
-      const original = row.original as Site;
-      const customer = Array.isArray(original.customers)
-        ? original.customers.find((c) => c && (c as any).name)
-        : (original.customers as any) || (original as any).customer;
-      const name = customer?.name ?? "-";
-      return <div>{name}</div>;
+      const original = row.original;
+      const customer = getNestedEntity<Customer>(
+        original.customers as Customer | Customer[] | null | undefined
+      ) ?? original.customer;
+      return <div>{customer?.name ?? "-"}</div>;
     },
   },
   {
     accessorKey: "areaId",
     header: "Área",
     cell: ({ row }) => {
-      const original = row.original as Site;
-      const area = Array.isArray(original.areas)
-        ? original.areas.find((a) => a && (a as any).name)
-        : (original.areas as any) || (original as any).area;
-      const name = area?.name ?? "-";
-      return <div>{name}</div>;
+      const original = row.original;
+      const area = getNestedEntity<Area>(
+        original.areas as Area | Area[] | null | undefined
+      ) ?? original.area;
+      return <div>{area?.name ?? "-"}</div>;
     },
   },
   {
     accessorKey: "zoneId",
     header: "Zona",
     cell: ({ row }) => {
-      const original = row.original as Site;
-      const zone = Array.isArray(original.zones)
-        ? original.zones.find((z) => z && (z as any).name)
-        : (original.zones as any) || (original as any).zone;
-      const name = zone?.name ?? "-";
-      return <div>{name}</div>;
+      const original = row.original;
+      const zone = getNestedEntity<Zone>(
+        original.zones as Zone | Zone[] | null | undefined
+      ) ?? original.zone;
+      return <div>{zone?.name ?? "-"}</div>;
     },
   },
-
   {
     accessorKey: "sectorId",
     header: "Setor",
     cell: ({ row }) => {
-      const original = row.original as Site;
-      const sector = Array.isArray(original.sectors)
-        ? original.sectors.find((s) => s && (s as any).name)
-        : (original.sectors as any) || (original as any).sector;
-      const name = sector?.name ?? "-";
-      return <div>{name}</div>;
+      const original = row.original;
+      const sector = getNestedEntity<Sector>(
+        original.sectors as Sector | Sector[] | null | undefined
+      ) ?? original.sector;
+      return <div>{sector?.name ?? "-"}</div>;
     },
   },
   {
     accessorKey: "contactId",
     header: "Contato",
     cell: ({ row }) => {
-      const original = row.original as Site;
-      const contact = Array.isArray(original.contacts)
-        ? original.contacts.find((c) => c && ((c as any).email || (c as any).phoneNumbers?.length))
-        : (original.contacts as any) || (original as any).contact;
+      const original = row.original;
+      const contact = getNestedEntity<Contact>(
+        original.contacts as Contact | Contact[] | null | undefined
+      ) ?? original.contact;
 
-      const email = contact?.email || "";
       const phone = contact?.phoneNumbers?.[0]?.phone || "";
 
-      if (!email && !phone) return <div className="text-muted-foreground">-</div>;
+      if (!phone) return <div className="text-muted-foreground">-</div>;
 
       return (
-        <div className="flex flex-col">
-          {email && <span className="truncate max-w-[200px]" title={email}>{email}</span>}
-          {phone && <span className="text-xs text-muted-foreground">{phone}</span>}
+        <div>
+          {phone && <span className="">{phone}</span>}
         </div>
       );
     },
   },
-
   {
     accessorKey: "numberWorkersContract",
     header: "Trabalhadores",
@@ -131,7 +132,6 @@ const columns: ColumnDef<Site>[] = [
       return <div>{numberWorkersContract}</div>;
     },
   },
-
 ];
 
 interface SitesTableProps {
@@ -143,8 +143,7 @@ interface SitesTableProps {
   isLoadingOverride?: boolean;
 }
 
-
-function parseWorkersCount(rawValue: string | undefined) {
+function parseWorkersCount(rawValue: string | undefined): number {
   if (!rawValue) return 0;
   const normalized = rawValue.replace(/[^\d]/g, "");
   if (!normalized) return 0;
@@ -164,7 +163,12 @@ export function SitesTable({
   const companyId = companyIdProp || authCompanyId || "";
   const deleteSite = useDeleteSite();
   const createGrossSite = useCreateGrossSite();
-const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, companyId }); 
+  
+  const { data: sites = [], isLoading: isLoadingSites } = useSites(undefined, { 
+    enabled: shouldFetch && !!companyId, 
+    companyId 
+  });
+  
   const { data: sitesByCompanyAndCustomer = [], isLoading: isLoadingByCompanyAndCustomer } = useSitesByCompanyAndCustomer(
     companyId,
     customerId,
@@ -172,7 +176,8 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
   );
 
   const finalSites = companyId && customerId ? sitesByCompanyAndCustomer : sites;
-  const finalIsLoading = isLoadingByCompanyAndCustomer;
+  const finalIsLoading = companyId && customerId ? isLoadingByCompanyAndCustomer : isLoadingSites;
+  
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
@@ -195,21 +200,20 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedSite || !selectedSite.id) return;
+    if (!selectedSite?.id) return;
 
     try {
-      await deleteSite.mutateAsync(selectedSite.id as string);
+      await deleteSite.mutateAsync(selectedSite.id);
       toast.success("Site excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedSite(undefined);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao eliminar site");
     }
   };
 
   const resolvedData = data ?? finalSites;
   const resolvedIsLoading = isLoadingOverride ?? finalIsLoading;
-
 
   const { data: allEmployees = [] } = useEmployees(companyId, {
     enabled: !!companyId,
@@ -219,8 +223,12 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
     companyId,
   });
 
-  const sitesWithEmployees = new Set(allEmployees.map((emp) => emp.siteId).filter(Boolean));
-  const sitesWithEquipment = new Set(allEquipment.map((eq) => eq.siteId).filter(Boolean));
+  const sitesWithEmployees = new Set(
+    (Array.isArray(allEmployees) ? allEmployees : []).map((emp) => emp.siteId).filter(Boolean)
+  );
+  const sitesWithEquipment = new Set(
+    (Array.isArray(allEquipment) ? allEquipment : []).map((eq) => eq.siteId).filter(Boolean)
+  );
 
   return (
     <div className="space-y-4">
@@ -240,7 +248,6 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
           label: "Importar sites",
           onClick: () => setIsBulkOpen(true),
         }}
-
         dateKey={"createdAt" as keyof Site}
         rowActions={[
           {
@@ -268,8 +275,7 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
                     <TooltipTrigger asChild>
                       <span tabIndex={0} className="w-full outline-none">
                         <DropdownMenuItem
-                          className={`w-full cursor-pointer ${isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
+                          className={`w-full cursor-pointer ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                           onClick={(e) => {
                             if (isDisabled) {
                               e.preventDefault();
@@ -302,8 +308,6 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
           },
         ]}
       />
-
-
 
       <SiteDialog
         open={isCreateOpen}
@@ -351,7 +355,6 @@ const { data: sites = [] } = useSites(undefined, { enabled: !!companyId, company
           { key: "addressMunicipality", label: "Município", required: true },
           { key: "addressProvince", label: "Província", required: true },
           { key: "addressCountry", label: "País", required: true },
-
         ]}
         templateFilename="modelo-sites.csv"
         schema={createGrossSiteSchema}

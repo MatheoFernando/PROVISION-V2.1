@@ -56,7 +56,6 @@ export function EmployeeDialog({
   const companyId = useAuthStore((s) => s.companyId) ?? "";
   const createEmployee = useCreateEmployee();
   const updateEmployee = useUpdateEmployee()
-  console.log(companyId);
 
   const form = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),

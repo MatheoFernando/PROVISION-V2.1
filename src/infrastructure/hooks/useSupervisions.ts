@@ -25,18 +25,9 @@ const setDetailCache = (
   queryClient.setQueryData(DETAIL_KEY(entity.id), entity);
 };
 
-export function useSupervisionsQuery() {
-  return useQuery({
-    queryKey: ["supervisions"],
-    queryFn: async (): Promise<Supervision[]> => {
-      const response = await api.get("/supervision/getAll");
-      return (response.data?.data ?? response.data) as Supervision[];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
+export function useSupervisions(companyId?: string, filters?: { date?: Date; status?: string }) {
+  const { date, status } = filters || {};
 
-export function useSupervisionsByDayQuery(date?: Date) {
   const dataParam = React.useMemo(() => {
     if (!date) return undefined;
     const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -44,27 +35,63 @@ export function useSupervisionsByDayQuery(date?: Date) {
   }, [date]);
 
   return useQuery({
-    queryKey: ["supervisions", "byDate", dataParam],
-    enabled: !!dataParam,
+    queryKey: ["supervisions", companyId, filters],
     queryFn: async (): Promise<Supervision[]> => {
-      const response = await api.get("/supervision/getByDate", { params: { data: dataParam } });
+      if (!companyId) return [];
+
+      if (status && status !== "all") {
+        const { data } = await api.get(
+          `/supervision/getByStatus/${companyId}/${status}`
+        );
+        return (data?.data ?? data) as Supervision[];
+      }
+
+      if (dataParam) {
+        const response = await api.get(
+          `/supervision/getByDate/${companyId}/${dataParam}`
+        );
+        return (response.data?.data ?? response.data) as Supervision[];
+      }
+
+      const response = await api.get(`/supervision/getAll/${companyId}`);
       return (response.data?.data ?? response.data) as Supervision[];
     },
-    staleTime: 60 * 1000,
+    enabled: !!companyId,
   });
 }
 
-export function useSupervisionsByStatusQuery(status?: string) {
+export function useSupervisionsByDayQuery(companyId?: string, date?: Date) {
+  const dataParam = React.useMemo(() => {
+    if (!date) return undefined;
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return day.toISOString();
+  }, [date]);
+
   return useQuery({
-    queryKey: ["supervisions", "byStatus", status ?? "all"],
-    enabled: Boolean(status),
+    queryKey: ["supervisions", "byDate", companyId, dataParam],
+    enabled: Boolean(companyId) && Boolean(dataParam),
     queryFn: async (): Promise<Supervision[]> => {
-      const { data } = await api.get("/supervision/getByStatus", {
-        params: { status },
-      });
+      const response = await api.get(
+        `/supervision/getByDate/${companyId}/${dataParam}`
+      );
+      return (response.data?.data ?? response.data) as Supervision[];
+    },
+  });
+}
+
+export function useSupervisionsByStatusQuery(
+  companyId?: string,
+  status?: string
+) {
+  return useQuery({
+    queryKey: ["supervisions", "byStatus", companyId, status ?? "all"],
+    enabled: Boolean(companyId) && Boolean(status),
+    queryFn: async (): Promise<Supervision[]> => {
+      const { data } = await api.get(
+        `/supervision/getByStatus/${companyId}/${status}`
+      );
       return (data?.data ?? data) as Supervision[];
     },
-    staleTime: 60 * 1000,
   });
 }
 
@@ -77,7 +104,7 @@ export function useSupervisionQuery(id: string) {
       return (response.data?.data ?? response.data) as Supervision;
     },
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+
   });
 }
 

@@ -7,8 +7,6 @@ import {
   useCreateGrossEmployee,
   useDeleteEmployee,
   useEmployees,
-  useEmployeeByCod,
-  useEmployeesByName,
 } from "@/infrastructure/hooks/useEmployees";
 import { useAreas } from "@/infrastructure/hooks/useAreas";
 import { useZones } from "@/infrastructure/hooks/useZones";
@@ -20,7 +18,6 @@ import { DeleteModal } from "@/components/ui/delete-modal";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { useDepartments } from "@/infrastructure/hooks/useDepartments";
 import { EmployeeDialog } from "./employee-create";
 import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
 import { type CreateGrossEmployeePayload } from "@/infrastructure/schema/schema-employees";
@@ -39,13 +36,12 @@ interface EmployeesTableProps {
   isLoadingOverride?: boolean;
 }
 
-export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoadingOverride }: EmployeesTableProps = {}) {
+export function EmployeesTable({ companyId: companyIdProp, data, isLoadingOverride }: EmployeesTableProps = {}) {
   const fallbackCompanyId = useAuthStore((state) => state.companyId) ?? "";
   const userId = useAuthStore((state) => state.userId) ?? "";
   const companyId = companyIdProp ?? fallbackCompanyId;
   const shouldFetch = !data;
   const { data: employees = [], isLoading } = useEmployees(companyId, { enabled: shouldFetch });
-  const { data: departments = [] } = useDepartments();
   const { mutateAsync: deleteEmployee, isPending: isDeleting } =
     useDeleteEmployee(companyId);
   const createGrossEmployee = useCreateGrossEmployee();
@@ -58,13 +54,6 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
   const [employeesToDelete, setEmployeesToDelete] =
     React.useState<Employee[]>([]);
   const [isBulkOpen, setIsBulkOpen] = React.useState(false);
-
-  const departmentIdToName = React.useMemo(() => {
-    return Object.fromEntries(
-      (departments ?? []).map((department) => [department.id, department.name])
-    ) as Record<string, string>;
-  }, [departments]);
-
   const columns = React.useMemo<ColumnDef<Employee>[]>(
     () => [
       {
@@ -90,13 +79,10 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
       },
 
       {
-        accessorKey: "departmentId",
+        accessorKey: "department",
         header: "Departamento",
         cell: ({ row }) => {
-          const departmentId = row.getValue("departmentId") as string;
-          const departmentName =
-            departmentIdToName[departmentId] ?? "Não informado";
-          return <div>{departmentName}</div>;
+          return <div>{row.original.department?.name ?? "Não informado"}</div>;
         },
       },
       {
@@ -108,7 +94,7 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
         },
       },
     ],
-    [departmentIdToName]
+    []
   );
 
   const resetDeletionState = React.useCallback(() => {
@@ -187,12 +173,10 @@ export function EmployeesTable({ companyId: companyIdProp, siteIds, data, isLoad
     [data, employees],
   );
 
+  const { data: areas = [] } = useAreas({ companyId });
+  const { data: zones = [] } = useZones({ companyId });
+  const { data: sectors = [] } = useSectors({ companyId });
 
-
-
-  const { data: areas = [] } = useAreas();
-  const { data: zones = [] } = useZones();
-  const { data: sectors = [] } = useSectors();
 
   const employeesWithDependencies = React.useMemo(() => {
     const ids = new Set<string>();

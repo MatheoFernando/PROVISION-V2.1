@@ -3,16 +3,6 @@ import { api } from "../utils/api";
 import { toast } from "sonner";
 import { Department } from "../types/domain";
 
-export function useDepartments() {
-  return useQuery({
-    queryKey: ["departments"],
-    queryFn: async (): Promise<Department[]> => {
-      const { data } = await api.get("/department/GetAll");
-      return (data?.data ?? data) as Department[];
-    },
-
-  });
-}
 
 export function useDepartmentsByCompanyId(companyId?: string) {
   return useQuery({

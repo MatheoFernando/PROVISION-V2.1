@@ -16,19 +16,15 @@ interface CarsQueryOptions {
 export function useCars(options?: CarsQueryOptions & { companyId?: string }) {
   return useQuery({
     queryKey: ["cars", options?.companyId],
-    queryFn: async (): Promise<Car[]> => {
+    queryFn: async () => {
       try {
         if (options?.companyId) {
-          const response = await api.get("/car/getByCompanyId", {
-            params: { companyId: options.companyId },
-          });
+          const response = await api.get(`/car/getByCompanyId/${options.companyId}`);
           const data = response.data.data
           return data as Car[];
         }
 
-        const response = await api.get("/car/getAll");
-        const data = response.data.data
-        return data as Car[];
+
       } catch (err) {
         toast.error("Falha ao carregar viaturas");
         throw err as unknown;
@@ -44,23 +40,17 @@ export function useCarById(id?: string) {
   return useQuery({
     queryKey: ["car", id],
     enabled: !!id,
-    queryFn: async (): Promise<Car | null> => {
+    queryFn: async () => {
       if (!id) return null;
       try {
         const response = await api.get(`/car/getById/${id}`);
         const data = response.data;
         return (data?.data ?? data) as Car | null;
-      } catch {
-        try {
-          const response = await api.get("/car/getAll");
-          const data = response.data.data;
-          return data
-        } catch {
-          return null;
-        }
+      } catch (error) {
+        return null;
       }
     },
-    retry: 1,
+    
   });
 }
 

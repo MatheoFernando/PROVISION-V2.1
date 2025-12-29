@@ -15,23 +15,28 @@ import {
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { OccurrenceViewDrawer } from "./occurrence-view";
 import { OccurrenceDialog } from "./occurrence-create";
-import { useDeleteOccurrenceMutation, useOccurrences } from "@/infrastructure/hooks/useOccurrences";
-import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";;
-import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
+import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { Trash } from "phosphor-react";
 import type { DateRange } from "react-day-picker";
 
-function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
+interface ActionsButtonsProps {
+  occurrence: Occurrence;
+}
+
+function ActionsButtons({ occurrence }: ActionsButtonsProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const deleteMutation = useDeleteOccurrenceMutation();
-  const occurrences = useOccurrences();
+
   const handleConfirmDelete = () => {
-    deleteMutation.mutate(occurrence.id!, {
-      onSuccess: () => setIsDeleteOpen(false),
-    });
+    if (occurrence.id) {
+      deleteMutation.mutate(occurrence.id, {
+        onSuccess: () => setIsDeleteOpen(false),
+      });
+    }
   };
 
   return (
@@ -86,7 +91,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
 
       <OccurrenceDialog
         open={isEditOpen}
-        onOpenChange={(open) => setIsEditOpen(open)}
+        onOpenChange={setIsEditOpen}
         occurrenceToEdit={occurrence}
       />
 
@@ -102,7 +107,7 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
   );
 }
 
-const formatHour = (value?: string) => {
+const formatHour = (value?: string): string => {
   if (!value) return "--";
   if (value.includes("T") && Number.isNaN(Date.parse(value))) {
     const fallback = value.includes(":") ? value : `${value}:00`;
@@ -120,11 +125,12 @@ const formatHour = (value?: string) => {
     .replace(".", ":");
 };
 
-type OccurrenceWithNames = Occurrence & {
+/** Extended occurrence type with flattened display names for table columns */
+interface OccurrenceWithNames extends Occurrence {
   employeeName?: string;
   equipmentName?: string;
   siteName?: string;
-};
+}
 
 const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
   {
@@ -133,7 +139,6 @@ const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
     size: 40,
     cell: ({ row }) => <div>{row.original.cod}</div>,
   },
-
   {
     accessorKey: "equipmentName",
     header: "Equipamento",
@@ -149,7 +154,6 @@ const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
     header: "Site",
     cell: ({ row }) => <div>{row.original.siteName || "—"}</div>,
   },
-
   {
     accessorKey: "correctiveAction",
     header: "Ação Corretiva",
@@ -217,7 +221,6 @@ const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
       return <div className="text-center">{hhmm}</div>;
     },
   },
-
   {
     id: "actions",
     header: "Ações",
@@ -242,16 +245,17 @@ export function OccurrenceTable({
   onStatusFilterChange,
 }: OccurrenceTableProps) {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+
   const transformedData: OccurrenceWithNames[] = React.useMemo(() => {
     return data.map((occurrence) => ({
       ...occurrence,
-      employeeName: (occurrence )?.employees?.fullName,
-      equipmentName: (occurrence )?.equipments?.cod,
-      siteName: (occurrence )?.sites?.name,
+      employeeName: occurrence.employees?.fullName,
+      equipmentName: occurrence.equipments?.cod,
+      siteName: occurrence.sites?.name,
     }));
   }, [data]);
 
-  const onCreateClick = () => {
+  const handleCreateClick = () => {
     setIsCreateOpen(true);
   };
 
@@ -266,7 +270,7 @@ export function OccurrenceTable({
         isLoading={isLoading}
         actionButton={{
           label: "Nova Ocorrência",
-          onClick: onCreateClick
+          onClick: handleCreateClick
         }}
         statusOptions={[
           { label: "Ativo", value: "Ativo" },

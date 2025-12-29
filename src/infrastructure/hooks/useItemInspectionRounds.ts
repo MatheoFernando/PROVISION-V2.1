@@ -4,13 +4,30 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
 import type { ItemInspectionRound } from '@/infrastructure/types/domain';
 
-export function useItemInspectionRounds() {
+interface ItemInspectionRoundsQueryOptions {
+    enabled?: boolean;
+}
+
+export function useItemInspectionRounds(companyId?: string, options?: ItemInspectionRoundsQueryOptions) {
     return useQuery({
-        queryKey: ['item-inspection-rounds'],
+        queryKey: ['item-inspection-rounds', companyId],
         queryFn: async (): Promise<ItemInspectionRound[]> => {
-            const { data } = await api.get('/item-inspection-round/getAll');
-            return data?.data ?? data;
+            if (!companyId) return [];
+            const { data } = await api.get(`/item-inspection-round/GetAllbyCompany/${companyId}`);
+            return data?.data ?? data ?? [];
         },
+        enabled: (options?.enabled ?? true) && !!companyId,
+    });
+}
+
+export function useItemInspectionRound(id: string) {
+    return useQuery({
+        queryKey: ['item-inspection-round', id],
+        queryFn: async (): Promise<ItemInspectionRound | null> => {
+            const { data } = await api.get(`/item-inspection-round/getById/${id}`);
+            return data?.data ?? data ?? null;
+        },
+        enabled: !!id,
     });
 }
 

@@ -1,4 +1,5 @@
 "use client";
+// Refactored RsuTable
 
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -21,11 +22,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
-import { useEmployees } from "@/infrastructure/hooks/useEmployees";
-import { useSites } from "@/infrastructure/hooks/useSites";
-import { useCars } from "@/infrastructure/hooks/useCars";
-import { useContainers } from "@/infrastructure/hooks/useContainers";
 import type { Rsu } from "@/infrastructure/types/domain";
 import { RsuDialog } from "./rsu-create";
 import { RsuDrawer } from "./rsu-view";
@@ -110,89 +106,11 @@ function ActionsButtons({ rsu, onEdit }: ActionsButtonsProps) {
   );
 }
 
-const createColumns = (maps: {
-  employeeById: Record<string, string>;
-  siteById: Record<string, string>;
-  carById: Record<string, string>;
-  containerById: Record<string, string>;
-  onEdit?: (rsu: Rsu) => void;
-}): ColumnDef<Rsu>[] => [
-    {
-      accessorKey: "cod",
-      header: "Código",
-      cell: ({ row }) => <span>{row.getValue("cod")}</span>,
-    },
-    {
-      accessorKey: "quantity",
-      header: "Quantidade",
-      size: 60,
-      cell: ({ row }) => <span>{row.getValue("quantity")}</span>,
-    },
-    {
-      id: "container",
-      header: "Contentor",
-      cell: ({ row }) => (
-        <span>{maps.containerById[row.original.containerId || ""] || "—"}</span>
-      ),
-    },
-    {
-      id: "car",
-      header: "Viatura",
-      cell: ({ row }) => (
-        <span>{maps.carById[row.original.carId || ""] || "—"}</span>
-      ),
-    },
-    {
-      id: "employee",
-      header: "Funcionário",
-      cell: ({ row }) => (
-        <span>{maps.employeeById[row.original.employeeId || ""] || "—"}</span>
-      ),
-    },
-    {
-      id: "site",
-      header: "Site",
-      cell: ({ row }) => (
-        <span>{maps.siteById[row.original.siteId || ""] || "—"}</span>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Estado",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        const isDone = status === "Finalizado";
-        return (
-          <Badge
-            variant={isDone ? "default" : "secondary"}
-            className={isDone ? "bg-emerald-500" : "bg-amber-100 text-amber-800"}
-          >
-            {status}
-          </Badge>
-        );
-      },
-    },
-
-    {
-      id: "actions",
-      header: "Ações",
-      size: 48,
-      cell: ({ row }) => (
-        <ActionsButtons
-          rsu={row.original}
-          onEdit={maps.onEdit}
-        />
-      ),
-    },
-  ];
-
 interface RsuTableProps {
   data: Rsu[];
   isLoading?: boolean;
   onDateRangeChange?: (range?: DateRange) => void;
-  siteFilter?: string;
   statusFilter?: string;
-  onSiteFilterChange?: (siteId?: string) => void;
   onStatusFilterChange?: (status?: string) => void;
 }
 
@@ -203,61 +121,80 @@ export function RsuTable({
   statusFilter,
   onStatusFilterChange,
 }: RsuTableProps) {
-  const companyId = useAuthStore((state) => state.companyId || undefined);
-  const { data: employees = [] } = useEmployees(companyId);
-  const { data: sites = [] } = useSites();
-  const { data: cars = [] } = useCars();
-  const { data: containers = [] } = useContainers();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [selectedRsu, setSelectedRsu] = React.useState<Rsu | null>(null);
 
-  const employeeById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (employees as any[]).forEach((employee: any) => {
-      if (employee?.id) map[employee.id] = employee.fullName || employee.name || "";
-    });
-    return map;
-  }, [employees]);
-
-  const siteById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (sites as any[]).forEach((site: any) => {
-      if (site?.id) map[site.id] = site.name || site.cod || "";
-    });
-    return map;
-  }, [sites]);
-
-  const carById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (cars as any[]).forEach((car: any) => {
-      if (car?.id) map[car.id] = `${car.cod ?? ""} ${car.mark ?? ""}`.trim();
-    });
-    return map;
-  }, [cars]);
-
-  const containerById = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    (containers as any[]).forEach((container: any) => {
-      if (container?.id) {
-        map[container.id] = `${container.cod ?? ""} ${container.mark ?? container.model ?? ""}`.trim();
-      }
-    });
-    return map;
-  }, [containers]);
-
-  const columns = React.useMemo(
-    () =>
-      createColumns({
-        employeeById,
-        siteById,
-        carById,
-        containerById,
-        onEdit: (rsu) => {
-          setSelectedRsu(rsu);
-          setIsFormOpen(true);
+  const columns: ColumnDef<Rsu>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "cod",
+        header: "Código",
+        cell: ({ row }) => <span>{row.original.cod}</span>,
+      },
+      {
+        accessorKey: "quantity",
+        header: "Quantidade",
+        size: 60,
+        cell: ({ row }) => <span>{row.original.quantity}</span>,
+      },
+      {
+        id: "container",
+        header: "Contentor",
+        cell: ({ row }) => {
+          const container = row.original.container;
+          return <span>{container ? `${container.cod ?? ""} ${container.name ?? ""}`.trim() : "—"}</span>;
         },
-      }),
-    [employeeById, siteById, carById, containerById]
+      },
+      {
+        id: "car",
+        header: "Viatura",
+        cell: ({ row }) => {
+          const car = row.original.car;
+          return <span>{car ? `${car.cod ?? ""} ${car.mark ?? ""}`.trim() : "—"}</span>;
+        },
+      },
+      {
+        id: "employee",
+        header: "Funcionário",
+        cell: ({ row }) => <span>{row.original.employee?.fullName ?? "—"}</span>,
+      },
+      {
+        id: "site",
+        header: "Site",
+        cell: ({ row }) => <span>{row.original.site?.name ?? "—"}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: "Estado",
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const isDone = status === "Finalizado";
+          return (
+            <Badge
+              variant={isDone ? "default" : "secondary"}
+              className={isDone ? "bg-emerald-500" : "bg-amber-100 text-amber-800"}
+            >
+              {status}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Ações",
+        size: 48,
+        cell: ({ row }) => (
+          <ActionsButtons
+            rsu={row.original}
+            onEdit={(rsu) => {
+              setSelectedRsu(rsu);
+              setIsFormOpen(true);
+            }}
+          />
+        ),
+      },
+    ],
+    []
   );
 
   const handleCreate = () => {
@@ -288,6 +225,7 @@ export function RsuTable({
         }}
         statusOptions={[
           { label: "Pendente", value: "Pendente" },
+          { label: "Em andamento", value: "Em andamento" },
           { label: "Finalizado", value: "Finalizado" },
         ]}
         statusFilter={statusFilter}
@@ -304,10 +242,4 @@ export function RsuTable({
   );
 }
 
-function formatDate(value?: string) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("pt-PT");
-}
 

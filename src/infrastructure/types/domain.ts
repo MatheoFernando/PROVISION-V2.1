@@ -104,6 +104,8 @@ export interface UpdateCompanyPayload {
     addressId?: string;
     status: boolean;
     hasExistedSince?: string;
+    address?: Address;
+    contact?: Contact;
 }
 
 export interface User {

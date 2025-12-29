@@ -12,6 +12,7 @@ import { AreaColumn } from "./area-column";
 import { ZoneColumn } from "./zone-column";
 import { SectorColumn } from "./sector-column";
 import { SiteColumn } from "./site-column";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
 interface OrgKanbanViewProps {
     onAdd: (data: any) => void;
@@ -19,10 +20,20 @@ interface OrgKanbanViewProps {
 
 export function OperationalView({ onAdd }: OrgKanbanViewProps) {
     const t = useTranslations("OrganizationalStructure");
-    const { data: areas = [], isLoading: isLoadingAreas } = useAreas();
-    const { data: zones = [], isLoading: isLoadingZones } = useZones();
-    const { data: sectors = [], isLoading: isLoadingSectors } = useSectors();
-    const { data: sites = [], isLoading: isLoadingSites } = useSites();
+    const companyId = useAuthStore((state) => state.companyId ?? undefined);
+
+    const { data: areas = [], isLoading: isLoadingAreas } = useAreas({
+        companyId,
+    });
+    const { data: zones = [], isLoading: isLoadingZones } = useZones({
+        companyId,
+    });
+    const { data: sectors = [], isLoading: isLoadingSectors } = useSectors({
+        companyId,
+    });
+    const { data: sites = [], isLoading: isLoadingSites } = useSites(undefined, {
+        companyId,
+    });
     const { data: employees = [] } = useEmployees();
 
     const queryClient = useQueryClient();
@@ -46,13 +57,7 @@ export function OperationalView({ onAdd }: OrgKanbanViewProps) {
             
             if (hasZones || hasSites) {
                 toast.error(t("messages.cannotDeleteAreaWithRelations")); // Assuming this key exists or I should use a raw string if I can't check en.json
-                // Fallback to raw string since I am not sure about the key existence without checking en.json, 
-                // but user asked for "elimir ,aria , e zona o sector ja esta a fazer , isso , mais para isso ve as relacoes e eleminar ela"
-                // I will use a safe fallback if translation key is missing, or just a generic message.
-                // Actually, I'll use a direct string for safety now, or checking if I can add the key. 
-                // Let's use a hardcoded message for now if I don't want to edit translations files yet, but best practice is translation.
-                // Given the constraints, I'll use a hardcoded Portuguese string as requested by the user context "quero poder elimir..." implies PT.
-                toast.error("Não é possível eliminar uma Área com Zonas ou Locais associados.");
+                       toast.error("Não é possível eliminar uma Área com Zonas ou Locais associados.");
                 return; 
             }
         }
@@ -77,7 +82,6 @@ export function OperationalView({ onAdd }: OrgKanbanViewProps) {
         const { type, id } = itemToDelete;
 
         const onSuccess = () => {
-             // Invalidate specific queries based on what was deleted to be efficient, or just all related ones
              if (type === 'AREA') {
                  queryClient.invalidateQueries({ queryKey: ['areas'] });
                  if (selectedAreaId === id) setSelectedAreaId(null);

@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {  Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useZones } from "@/infrastructure/hooks/useZones";
 import { Zone } from "@/infrastructure/types/domain";
@@ -27,10 +27,14 @@ export function ZoneSelect({
   employeeId,
   areaId,
 }: ZoneSelectProps) {
-  const [open, setOpen] = useState(false);
+
   const [query, setQuery] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const { data: zones = [], isLoading  , refetch } = useZones();
+  const {
+    data: zones = [],
+    isLoading,
+    refetch,
+  } = useZones({ companyId });
 
   
   useEffect(() => {

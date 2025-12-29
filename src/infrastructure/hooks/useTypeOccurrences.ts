@@ -4,18 +4,19 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
 import type { TypeOccurrence } from '@/infrastructure/schema/schema-type-occurrence';
 
-export function useTypeOccurrences() {
+export function useTypeOccorrences(companyId?: string) {
   return useQuery({
-    queryKey: ['type-occurrences'],
+    queryKey: ['type-occurrences', companyId],
     queryFn: async (): Promise<TypeOccurrence[]> => {
+      if (!companyId) return [];
       try {
-        const { data } = await api.get('/type-occurrence/GetAll');
-        return data?.data ?? [];
+        const { data } = await api.get(`/typeOccorrence/getAllbyCompany/${companyId}`);
+        return data?.data ?? data ?? [];
       } catch {
         return [];
       }
     },
-
+    enabled: !!companyId,
   });
 }
 
@@ -23,7 +24,7 @@ export function useTypeOccurrence(id: string) {
   return useQuery({
     queryKey: ['type-occurrence', id],
     queryFn: async (): Promise<TypeOccurrence | null> => {
-      const { data } = await api.get(`/type-occurrence/GetById/${id}`);
+      const { data } = await api.get(`/typeOccorrence/getById?id=${id}`);
       return data?.data ?? null;
     },
     enabled: !!id,
@@ -36,11 +37,12 @@ export function useCreateTypeOccurrenceMutation() {
 
   return useMutation({
     mutationFn: async (data: TypeOccurrence): Promise<TypeOccurrence> => {
-      const { data: response } = await api.post('/type-occurrence/Create', data);
-      return response?.data;
+      const { data: response } = await api.post('/typeOccorrence/create', data);
+      return response.data; // Retorna o objeto data que contém id, cod, description, etc
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['type-occurrences'] });
+    onSuccess: (createdData, variables) => {
+      // Invalida a query específica da empresa para forçar refetch
+      queryClient.invalidateQueries({ queryKey: ['type-occurrences', variables.companyId] });
       toast.success(t('create.success'));
     },
     onError: (error) => {
@@ -55,13 +57,12 @@ export function useUpdateTypeOccurrenceMutation() {
   const t = useTranslations("Hooks.TypeOccurrence");
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: TypeOccurrence }): Promise<TypeOccurrence> => {
-      const { data: response } = await api.put(`/type-occurrence/Update/${id}`, data);
+    mutationFn: async ( data: TypeOccurrence): Promise<TypeOccurrence> => {
+      const { data: response } = await api.put(`/typeOccorrence`, data);
       return response?.data;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['type-occurrences'] });
-      queryClient.invalidateQueries({ queryKey: ['type-occurrence', id] });
       toast.success(t('update.success'));
     },
     onError: (error) => {
@@ -77,7 +78,7 @@ export function useDeleteTypeOccurrenceMutation() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/type-occurrence/Delete/${id}`);
+      await api.delete(`/typeOccorrence/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['type-occurrences'] });

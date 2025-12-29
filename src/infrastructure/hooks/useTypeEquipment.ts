@@ -6,15 +6,15 @@ import { useTranslations } from "next-intl";
 
 const QUERY_KEY = ["type-equipment"] as const;
 
-export function useTypeEquipment() {
+export function useTypeEquipment(companyId?: string) {
   return useQuery({
-    queryKey: QUERY_KEY,
+    queryKey: [...QUERY_KEY, companyId],
     queryFn: async (): Promise<TypeEquipment[]> => {
-      const { data } = await api.get("/typeEquipment/getAll");
+      if (!companyId) return [];
+      const { data } = await api.get(`/typeEquipment/getAllbyCompany/${companyId}`);
       return (data?.data ?? data) as TypeEquipment[];
     },
-    refetchOnWindowFocus: false,
-    staleTime: 30_000,
+    enabled: !!companyId,
   });
 }
 

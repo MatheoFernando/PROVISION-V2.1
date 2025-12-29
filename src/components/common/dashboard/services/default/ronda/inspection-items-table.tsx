@@ -3,22 +3,21 @@
 import { useState } from "react";
 import {
     useItemInspectionRounds,
-    useUpdateItemInspectionRoundMutation,
     useDeleteItemInspectionRoundMutation,
 } from "@/infrastructure/hooks/useItemInspectionRounds";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { ItemInspectionRound } from "@/infrastructure/types/domain";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Settings } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { Pencil, Trash2 } from "lucide-react";
 import { ChecklistManager } from "./checklist-manager";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { format } from "date-fns";
 
 export function InspectionItemsTable() {
-    const t = useTranslations("Ronda");
-    const { data: items = [], isLoading, refetch } = useItemInspectionRounds();
+    const { companyId } = useAuthStore();
+    const { data: items = [], isLoading, refetch } = useItemInspectionRounds(companyId || undefined);
     const { mutate: deleteItem, isPending: isDeleting } = useDeleteItemInspectionRoundMutation();
 
     const [isManagerOpen, setIsManagerOpen] = useState(false);
@@ -61,7 +60,7 @@ export function InspectionItemsTable() {
             cell: ({ row }) => (
                 <Badge
                     variant="secondary"
-                    className="font-normal bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className=" dark:bg-slate-800"
                 >
                     {row.original.category}
                 </Badge>
@@ -71,7 +70,7 @@ export function InspectionItemsTable() {
             accessorKey: "description",
             header: "Descrição",
             cell: ({ row }) => (
-                <span className="text-slate-700 dark:text-slate-300">
+                <span >
                     {row.original.description}
                 </span>
             ),
@@ -80,7 +79,7 @@ export function InspectionItemsTable() {
             id: "createdAt",
             header: "Criado em",
             cell: ({ row }) => (
-                <span className="text-sm text-slate-500 dark:text-slate-400">
+                <span>
                     {formatDate(row.original.createdAt)}
                 </span>
             ),

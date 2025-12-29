@@ -55,10 +55,7 @@ export function useCompanyModules(options: UseCompanyModulesOptions = {}) {
       return modules;
     },
     enabled: isEnabled,
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+   
   });
 }
 
@@ -82,8 +79,6 @@ export function useAllCompanyModules(options: UseAllCompanyModulesOptions = {}) 
       return (data.data ?? data ?? []) as CompanyModuleWithDetails[];
     },
     enabled,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 }

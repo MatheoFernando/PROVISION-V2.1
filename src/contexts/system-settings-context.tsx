@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useTheme } from "next-themes";
 import Cookies from 'js-cookie';
 
 export interface SystemSettings {
@@ -30,7 +29,7 @@ export interface SystemSettings {
 const defaultSettings: SystemSettings = {
     branding: {
         appName: "Provision V2",
-        primaryColor: "#0f4c81", 
+        primaryColor: "oklch(0.552 0.231 251.365)", 
         radius: 0.625,
     },
     localization: {
@@ -65,7 +64,6 @@ export function SystemSettingsProvider({
     children: React.ReactNode;
 }) {
     const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
-    const { setTheme } = useTheme();
 
     useEffect(() => {
         const savedSettings = localStorage.getItem("system-settings");

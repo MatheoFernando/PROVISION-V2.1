@@ -4,16 +4,30 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
 import type { CheckListRoundGroup } from '@/infrastructure/types/domain';
 
-export function useCheckListRoundGroups(roundId?: string) {
+export function useCheckListRoundGroups(companyId?: string, roundId?: string) {
     return useQuery({
-        queryKey: ['checklist-round-groups', roundId],
+        queryKey: ['checklist-round-groups', companyId, roundId],
         queryFn: async (): Promise<CheckListRoundGroup[]> => {
-            const { data } = await api.get('/checklist-round-group/getAll', {
-                params: roundId ? { roundId } : {}
-            });
-            return data?.data ?? data;
+            if (!companyId) return [];
+            const { data } = await api.get(`/checklist-round-group/GetAllbyCompany/${companyId}`);
+            const list = data?.data ?? data ?? [];
+            if (roundId) {
+                return list.filter((item: CheckListRoundGroup) => item.roundId === roundId);
+            }
+            return list;
         },
-        enabled: !!roundId
+        enabled: !!companyId
+    });
+}
+
+export function useCheckListRoundGroup(id: string) {
+    return useQuery({
+        queryKey: ['checklist-round-group', id],
+        queryFn: async (): Promise<CheckListRoundGroup | null> => {
+            const { data } = await api.get(`/checklist-round-group/${id}`);
+            return data?.data ?? data ?? null;
+        },
+        enabled: !!id,
     });
 }
 

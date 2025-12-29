@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    useItemInspectionRounds,
     useCreateItemInspectionRoundMutation,
     useUpdateItemInspectionRoundMutation,
     useDeleteItemInspectionRoundMutation,
@@ -42,7 +41,6 @@ interface ChecklistManagerProps {
 
 export function ChecklistManager({ open, onOpenChange, initialItemToEdit, defaultOpenForm = false }: ChecklistManagerProps) {
     const companyId = useAuthStore((state) => state.companyId || "");
-    const { data: items = [], isLoading, refetch } = useItemInspectionRounds();
     const { mutate: createItem, isPending: isCreating } = useCreateItemInspectionRoundMutation();
     const { mutate: updateItem, isPending: isUpdating } = useUpdateItemInspectionRoundMutation();
     const { mutate: deleteItem, isPending: isDeleting } = useDeleteItemInspectionRoundMutation();

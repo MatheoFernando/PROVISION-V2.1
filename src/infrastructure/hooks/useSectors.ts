@@ -3,13 +3,29 @@ import { api } from "../utils/api";
 import { toast } from "sonner";
 import { Sector } from "../types/domain";
 
-export function useSectors() {
+interface SectorsQueryOptions {
+  enabled?: boolean;
+  companyId?: string;
+}
+
+export function useSectors(options?: SectorsQueryOptions) {
+  const { enabled = true, companyId } = options ?? {};
+
   return useQuery({
-    queryKey: ["sectors"],
-    queryFn: async (): Promise<Sector[]> => {
-      const { data } = await api.get("/sector/getAll");
-      return (data?.data ?? data) as Sector[];
+    queryKey: ["sectors", companyId],
+    queryFn: async () => {
+      const targetCompanyId = companyId;
+
+      if (targetCompanyId) {
+        const { data } = await api.get(
+          `/sector/getAllByCompany/${targetCompanyId}`,
+        );
+        return (data?.data ?? data) as Sector[];
+      }
+
+    
     },
+    enabled,
   });
 }
 
@@ -28,7 +44,7 @@ export function useSectorById(id?: string) {
       }
     },
     enabled: !!id,
-    retry: 1,
+    
   });
 }
 
@@ -82,7 +98,7 @@ export function useDeleteSector() {
       toast.success("Setor excluído com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao eliminar setor");
+      toast.error(error?.response?.data?.message || "Erro do servidor");
     },
   });
 }

@@ -73,7 +73,7 @@ export function DefaultServices() {
     } else if (view) {
       setSelectedService(view);
     }
-  }, [view]);
+  }, []);
 
   const baseServices = [
     {

@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {  Loader2 } from "lucide-react";
-import {useSectors } from "@/infrastructure/hooks/useSectors";
+import { Loader2 } from "lucide-react";
+import { useSectors } from "@/infrastructure/hooks/useSectors";
 import { Sector } from "@/infrastructure/types/domain";
 import { Input } from "@/components/ui/input";
 
@@ -29,7 +29,11 @@ export function SectorSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
-  const { data: sectors = [], isLoading , refetch } = useSectors();
+  const {
+    data: sectors = [],
+    isLoading,
+    refetch,
+  } = useSectors({ companyId });
   
   useEffect(() => {
     if (value) {

@@ -26,9 +26,7 @@ export function useCompaniesQuery(options?: { enabled?: boolean }) {
       return data?.data ?? data ?? [];
     },
     enabled: options?.enabled ?? true,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
-    retry: 1,
+   
   });
 }
 
@@ -41,8 +39,6 @@ export function useCompanyByIdQuery(id?: string) {
       return data?.data ?? data ?? null;
     },
     enabled: !!id,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
   });
 }
 
@@ -57,8 +53,6 @@ export function useCompanyByCodQuery(cod?: string) {
       return parsed.data as Company;
     },
     enabled: !!cod,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
   });
 }
 
@@ -75,8 +69,6 @@ export function useCompaniesByNameQuery(name?: string) {
       return parsed.data as Company[];
     },
     enabled: !!name,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
   });
 }
 
@@ -88,8 +80,6 @@ export function useCompanyModulesByModuleQuery(moduleId: string) {
       return response.data;
     },
     enabled: !!moduleId,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
   });
 }
 
@@ -102,8 +92,6 @@ export function useCompanyModuleByIdQuery(companyModuleId?: string | null) {
       return (data?.data ?? data ?? null) as CompanyModuleWithDetails | null;
     },
     enabled: Boolean(companyModuleId),
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
   });
 }
 

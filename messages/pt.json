@@ -777,5 +777,36 @@
             "moduleTitle": "Módulo:",
             "moduleContent": "O conteúdo deste módulo será carregado aqui."
         }
+    },
+    "CompanyView": {
+        "title": "Detalhes da Empresa",
+        "description": "Visualize as informações detalhadas desta empresa",
+        "tabs": {
+            "details": "Detalhes",
+            "contacts": "Contatos",
+            "address": "Morada"
+        },
+        "sections": {
+            "generalInfo": "Informações Gerais",
+            "contact": "Contato",
+            "address": "Morada"
+        },
+        "fields": {
+            "code": "Código",
+            "nif": "NIF",
+            "foundationDate": "Data de Fundação",
+            "municipality": "Município",
+            "commune": "Comuna",
+            "province": "Província",
+            "country": "País"
+        },
+        "status": {
+            "active": "Ativa",
+            "inactive": "Inativa"
+        },
+        "messages": {
+            "noAddress": "Nenhuma morada registada.",
+            "noContact": "Nenhum contacto registado."
+        }
     }
 }

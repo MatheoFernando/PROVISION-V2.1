@@ -22,11 +22,7 @@ export function useContainers() {
         throw err as unknown;
       }
     },
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    retry: 1,
+
   });
 }
 
@@ -36,28 +32,14 @@ export function useContainer(id?: string) {
     queryFn: async (): Promise<Container | null> => {
       if (!id) return null;
       try {
-        const response = await api.get(`/container/${id}`);
+        const response = await api.get(`/container/getById/${id}`);
         return response.data?.data || response.data;
       } catch {
-        try {
-          const response = await api.get("/container/getAll");
-          const data = response.data as unknown;
-          let list: Container[] = [];
-          if (Array.isArray(data)) {
-            list = data as Container[];
-          } else {
-            const payload = data as { items?: Container[]; data?: Container[] };
-            list = payload.items ?? payload.data ?? [];
-          }
-          return list.find((c) => c.id === id) || null;
-        } catch {
-          return null;
-        }
+        return null;
       }
     },
     enabled: !!id,
-    staleTime: 2 * 60 * 1000,
-    retry: 1,
+
   });
 }
 

@@ -14,24 +14,7 @@ interface ApiItemResponse<T> {
   success?: boolean;
 }
 
-export function useAddresses(companyId?: string) {
-  return useQuery({
-    queryKey: ["addresses", companyId],
-    queryFn: async (): Promise<Address[]> => {
-      if (!companyId) return [];
 
-      const response = await api.get<ApiListResponse<Address[]>>(
-        "/address/getAll"
-      );
-
-      const payload = response.data;
-      if (Array.isArray(payload)) return payload as Address[];
-
-      return (payload?.data ?? []) as Address[];
-    },
-    enabled: !!companyId,
-  });
-}
 
 export function useAddressesByHouseHold(houseHold: string) {
   return useQuery({
@@ -49,15 +32,16 @@ export function useAddressesByHouseHold(houseHold: string) {
   });
 }
 
-export function useAddressById(id?: string) {
+export function useAddressById(id?: string, companyId?: string) {
   return useQuery({
-    queryKey: ["address", id],
+    queryKey: ["address", id, companyId],
     queryFn: async (): Promise<Address | null> => {
       if (!id) return null;
 
       try {
         const { data } = await api.get<ApiItemResponse<Address> | Address>(
-          `/address/getById/${id}`
+          `/address/getById`,
+          { params: { id } }
         );
 
         if (data && (data as ApiItemResponse<Address>).data) {
@@ -66,21 +50,23 @@ export function useAddressById(id?: string) {
 
         return (data as Address) ?? null;
       } catch (error) {
-        const response = await api.get<ApiListResponse<Address[]>>(
-          "/address/getAll"
+        if(!companyId) return null;
+        const { data } = await api.get<ApiListResponse<Address[]> | Address[]>(
+            `/address/getAllbyCompany/${companyId}`
         );
-        const payload = response.data;
+        
         let addresses: Address[] = [];
-        if (Array.isArray(payload)) {
-          addresses = payload;
+        if(Array.isArray(data)){
+             addresses = data;
         } else {
-          addresses = (payload?.data ?? []) as Address[];
+             addresses = (data as ApiListResponse<Address[]>).data || [];
         }
+
         return addresses.find((a) => a.id === id) || null;
       }
     },
     enabled: !!id,
-    retry: 1,
+    
   });
 }
 

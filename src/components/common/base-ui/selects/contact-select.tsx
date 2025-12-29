@@ -56,7 +56,6 @@ export function ContactSelect({
     name: "phoneNumbers",
   });
 
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (selectedContact) {

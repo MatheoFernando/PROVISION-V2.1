@@ -14,16 +14,14 @@ export function useSites(customerId?: string, options?: SitesQueryOptions & { co
   return useQuery({
     queryKey: ["sites", customerId, options?.companyId],
     queryFn: async (): Promise<Site[]> => {
-      if (options?.companyId) {
-        const response = await api.get(`/site/getByCompanyId:${options.companyId}`);
-        return response.data.data;
-      }
-      const response = await api.get("/site/getAll");
-      return response.data.data ?? response.data ?? [];
+      if (!options?.companyId) return [];
+      const response = await api.get(`/site/getByCompanyId/${options.companyId}`);
+      const data = response.data?.data ?? response.data;
+      return Array.isArray(data) ? data : [];
     },
     refetchOnReconnect: true,
     retry: 1,
-    enabled: options?.enabled ?? true,
+    enabled: (options?.enabled ?? true) && !!options?.companyId,
   });
 }
 
@@ -41,8 +39,7 @@ export function useSitesByCompanyAndCustomer(
       );
       return response.data.data ?? response.data ?? [];
     },
-    refetchOnReconnect: true,
-    retry: 1,
+ 
     enabled: (options?.enabled ?? true) && Boolean(companyId && customerId),
   });
 }
@@ -56,8 +53,7 @@ export function useSiteById(id?: string, options?: SitesQueryOptions) {
       const data = response.data?.data ?? response.data ?? null;
       return (data as Site) ?? null;
     },
-    refetchOnReconnect: true,
-    retry: 1,
+
     enabled: (options?.enabled ?? true) && Boolean(id),
   });
 }

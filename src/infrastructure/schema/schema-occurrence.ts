@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { Employee, Equipment, Site, Company, TypeOccorrence } from '@/infrastructure/types/domain'
 
 export const occurrenceSchema = z.object({
   id: z.string().optional(),
@@ -6,7 +7,7 @@ export const occurrenceSchema = z.object({
   description: z.string().optional(),
   companyId: z.string().min(1, 'Empresa é obrigatória'),
   typeOccorrenceId: z.string().min(1, 'Tipo de ocorrência é obrigatório'),
-  equipmentId: z.string().min(1, 'Equipamento é obrigatório'),
+  equipmentId: z.string().optional(),
   employeeId: z.string().min(1, 'Funcionário é obrigatório'),
   siteId: z.string().min(1, 'Site é obrigatório'),
   time: z.string().min(1, 'Horário é obrigatório'),
@@ -31,9 +32,21 @@ export const updateOccurrenceSchema = occurrenceSchema
     updatedAt: true,
   })
 
-export interface Occurrence extends z.infer<typeof occurrenceSchema> {}
-export interface CreateOccurrence extends z.infer<typeof createOccurrenceSchema> {}
-export interface UpdateOccurrence extends z.infer<typeof updateOccurrenceSchema> {}
+/** Base occurrence type from schema */
+export type OccurrenceBase = z.infer<typeof occurrenceSchema>
+
+/** Occurrence with nested relations returned from API */
+export interface Occurrence extends OccurrenceBase {
+  employees?: Employee | null;
+  equipments?: Equipment | null;
+  sites?: Site | null;
+  companies?: Company | null;
+  typeOccorence?: TypeOccorrence | null;
+}
+
+export type CreateOccurrence = z.infer<typeof createOccurrenceSchema>
+export type UpdateOccurrence = z.infer<typeof updateOccurrenceSchema>
+
 
 
 

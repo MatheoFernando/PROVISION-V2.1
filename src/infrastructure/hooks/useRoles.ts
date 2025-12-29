@@ -25,10 +25,7 @@ export function useRoles(name?: string, options: UseRolesOptions = {}) {
       return (data?.data ?? data) as Role[];
     },
     enabled: isEnabled,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
+ 
   });
 }
 
@@ -40,10 +37,8 @@ export function useRolesAll(options: UseRolesAllOptions = {}) {
       return (data?.data) as Role[];
     },
     enabled: options.enabled ?? true,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
+ 
+
   });
 }
 

@@ -59,12 +59,11 @@ export function CarDialog({ open, onOpenChange, carToEdit }: CarDialogProps) {
         cod: carToEdit.cod || "",
         mark: carToEdit.mark || "",
         model: carToEdit.model || "",
-        capacity: (carToEdit as any).capacity ? Number((carToEdit as any).capacity) : 0,
+        capacity: (carToEdit).capacity ? Number((carToEdit).capacity) : 0,
         companyId: carToEdit.companyId || companyId || "",
-        geoLocationId: (carToEdit as any).geoLocationId || "",
-      } as any);
+        geoLocationId: (carToEdit).geoLocationId || "",
+      });
     } else if (open) {
-      // Reset to default when opening for creation
       form.reset({
         cod: "",
         mark: "",
@@ -79,12 +78,17 @@ export function CarDialog({ open, onOpenChange, carToEdit }: CarDialogProps) {
   const onSubmit = async (data: CreateCarInput) => {
     try {
       setIsSubmitting(true);
+      
+      const payload = {
+        ...data,
+        companyId: data.companyId || companyId || "",
+        geoLocationId: data.geoLocationId || null,
+      };
+
       if (carToEdit && carToEdit.id) {
-        const { containerId, geoLocationId, ...updatePayload } = data as any;
-        await updateCar.mutateAsync({ id: carToEdit.id, data: updatePayload as any });
+        await updateCar.mutateAsync({ id: carToEdit.id, data: payload });
       } else {
-        const { containerId, geoLocationId, ...createPayload } = data as any;
-        await createCar.mutateAsync({ ...createPayload, companyId: companyId || (data as any).companyId } as any);
+        await createCar.mutateAsync(payload );
       }
       onOpenChange(false);
       form.reset();

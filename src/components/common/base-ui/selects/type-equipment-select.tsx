@@ -34,7 +34,7 @@ export function TypeEquipmentSelect({ value, onChange, companyId }: TypeEquipmen
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const { data: list = [], isLoading } = useTypeEquipment();
+  const { data: list = [], isLoading } = useTypeEquipment(companyId);
   const createTypeEquipment = useCreateTypeEquipment();
 
   const form = useForm<CreateTypeEquipment>({

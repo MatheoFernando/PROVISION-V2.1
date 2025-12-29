@@ -32,10 +32,14 @@ export function useEmployees(
       const response = await api.get("/employee/getByCompanyId", {
         params: { companyId },
       });
-      return response.data.data ?? response.data ?? [];
+      
+      const rawData = response.data.data
+      if (Array.isArray(rawData)) return rawData;
+      
+    
+      return [];
     },
-    refetchOnReconnect: true,
-    retry: 1,
+   
   });
 }
 
@@ -56,8 +60,7 @@ export function useEmployeeById(id?: string, companyId?: string) {
         return (list || []).find((e: any) => e?.id === id) ?? null;
       }
     },
-    refetchOnReconnect: true,
-    retry: 1,
+   
   });
 }
 
@@ -74,8 +77,7 @@ export function useEmployeeByCod(cod?: string, companyId?: string) {
       return (data as Employee) ?? null;
     },
 
-    refetchOnReconnect: true,
-    retry: 1,
+ 
   });
 }
 
@@ -92,8 +94,7 @@ export function useEmployeesByName(name?: string, companyId?: string) {
       return (data as Employee[]) ?? [];
     },
 
-    refetchOnReconnect: true,
-    retry: 1,
+   
   });
 }
 

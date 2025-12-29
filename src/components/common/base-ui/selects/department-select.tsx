@@ -44,7 +44,7 @@ export function DepartmentSelect({
     Array<Department & { createdAt?: string }>
   >([]);
   const normalizedCompanyId = companyId ?? "";
-  const { data: departments = [], isLoading, isFetching, refetch } = useDepartmentsByCompanyId(normalizedCompanyId);
+  const { data: departments = [], isLoading, isFetching } = useDepartmentsByCompanyId(normalizedCompanyId);
   const createDepartment = useCreateDepartment();
   const isCompanyUnavailable = !normalizedCompanyId;
   const form = useForm<DepartmentForm>({
@@ -92,7 +92,7 @@ export function DepartmentSelect({
             }, 0);
           }
           form.reset({ name: "", companyId: normalizedCompanyId });
-          void refetch();
+        
         },
       }
     );
@@ -154,7 +154,7 @@ export function DepartmentSelect({
 
     const exists = departmentsList.some(dept => dept.id === normalizedValue);
     return exists ? normalizedValue : undefined;
-  }, [value, departmentsList, selectedDepartmentId]);
+  }, [value, departmentsList]);
 
   return (
     <div className="flex items-end gap-2 w-full">
@@ -166,7 +166,7 @@ export function DepartmentSelect({
             onChange(selected);
           }}
           disabled={isLoadingOptions}
-          onOpenChange={() => refetch()}
+        
         >
           <SelectTrigger className="w-full " >
             <SelectValue

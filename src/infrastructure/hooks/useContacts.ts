@@ -31,16 +31,17 @@ export function useContactsByEmail(email: string) {
   });
 }
 
-export function useContactById(id?: string) {
+export function useContactById(id?: string, companyId?: string) {
   return useQuery({
-    queryKey: ["contact", id],
+    queryKey: ["contact", id, companyId],
     queryFn: async (): Promise<Contact | null> => {
       if (!id) return null;
       try {
-        const { data } = await api.get(`/contact/getById/${id}`);
+        const { data } = await api.get(`/contact/getById`, { params: { id } });
         return data?.data || data || null;
       } catch (error) {
-        const { data } = await api.get("/contact/getAll");
+        if (!companyId) return null;
+        const { data } = await api.get("/contact/getAllByCompany", { params: { companyId } });
         const contacts = (data?.data ?? data ?? []) as Contact[];
         return contacts.find((c) => c.id === id) || null;
       }

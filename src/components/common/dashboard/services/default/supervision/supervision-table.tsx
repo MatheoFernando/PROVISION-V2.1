@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ColumnDef, CellContext } from "@tanstack/react-table"
-import { Eye, PencilSimple, Trash, DotsThree, X } from "phosphor-react"
+import { ColumnDef} from "@tanstack/react-table"
+import { Eye, PencilSimple, Trash, DotsThree} from "phosphor-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -118,131 +118,7 @@ const formatHour = (value?: string) => {
     .replace(".", ":")
 }
 
-const createSupervisionColumns = (
-  options: {
-    isGlobalAdmin?: boolean
-    onEdit?: (supervision: Supervision) => void
-  }
-): ColumnDef<Supervision>[] => [
-  {
-    accessorKey: "cod",
-    header: "Código",
-    size: 50,
-    cell: ({ row }: CellContext<Supervision, unknown>) => (
-      <div>{row.original.cod}</div>
-    ),
-  },
-  {
-    accessorKey: "desiredNumberWorkers",
-    header: "Desejado",
-    size: 20,
-    cell: ({ row }: CellContext<Supervision, unknown>) => (
-      <div>{row.original.desiredNumberWorkers}</div>
-    ),
-  },
-  {
-    accessorKey: "numberWorkerPresent",
-    header: "Presente",
-    size: 20,
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const present = Number(row.original.numberWorkerPresent) || 0
-      const desired = Number(row.original.desiredNumberWorkers) || 0
-      const isEqual = present === desired
-      const isLess = present < desired
-      const difference = present - desired
 
-      return (
-        <div className={isEqual ? 'text-green-600 font-medium' : isLess ? 'text-red-600 font-medium' : ''}>
-          {isLess ? `${difference}` : present}
-        </div>
-      )
-    },
-  },
-  {
-    accessorFn: (row: Supervision) => {
-        const eq = row.equipments;
-        return eq ? `${eq.mark || ''} ${eq.model || ''}`.trim() || 'N/A' : 'N/A';
-    },
-    id: "equipment",
-    header: `Equipamentos`,
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-        const eq = row.original.equipments;
-        const name = eq ? `${eq.cod || ''}`.trim() : 'N/A';
-        return <div>{name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorFn: (row: Supervision) => row.employees?.fullName || 'N/A',
-    id: "employee",
-    header: "Funcionário",
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      return <div>{row.original.employees?.fullName || 'N/A'}</div>
-    },
-  },
-  {
-    accessorFn: (row: Supervision) => row.sites?.name || 'N/A',
-    id: "site",
-    header: "Site",
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      return <div>{row.original.sites?.name || 'N/A'}</div>
-    },
-  },
-  options.isGlobalAdmin
-    ? {
-      accessorFn: (row: Supervision) => row.company?.businessName || "N/A",
-      id: "company",
-      header: "Empresa",
-      cell: ({ row }: CellContext<Supervision, unknown>) => {
-        return <div>{row.original.company?.businessName || "N/A"}</div>
-      },
-    }
-    : null,
-  {
-    accessorFn: (row: Supervision) => formatHour(row.time),
-    id: "time",
-    header: "Horário",
-    size: 20,
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const hhmm = formatHour(row.original.time)
-      return <div>{hhmm}</div>
-    },
-  },
-  {
-    accessorFn: (row: Supervision) => row.department?.name || 'N/A',
-    id: "department",
-    header: "Departamento",
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      return <div>{row.original.departments?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Estado",
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      const isActive = row.original.status === 'Finalizado'
-      return (
-        <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {row.original.status}
-        </Badge>
-      )
-    },
-  },
-
-  {
-    id: "actions",
-    header: "Ações",
-    size: 50,
-    cell: ({ row }: CellContext<Supervision, unknown>) => {
-      return (
-        <ActionsButtons
-          supervision={row.original}
-          equipmentCode={row.original.equipments?.cod}
-          onEdit={options.onEdit}
-        />
-      )
-    },
-  },
-].filter(Boolean) as ColumnDef<Supervision>[]
 
 interface SupervisionTableProps {
   data: Supervision[]
@@ -265,15 +141,113 @@ export function SupervisionTable({
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
 
-  
+  const columns: ColumnDef<Supervision>[] = React.useMemo(() => [
+    {
+      accessorKey: "cod",
+      header: "Código",
+      size: 50,
+      cell: ({ row }) => (
+        <div>{row.original.cod}</div>
+      ),
+    },
+    {
+      accessorKey: "desiredNumberWorkers",
+      header: "Desejado",
+      size: 20,
+      cell: ({ row }) => (
+        <div>{row.original.desiredNumberWorkers}</div>
+      ),
+    },
+    {
+      accessorKey: "numberWorkerPresent",
+      header: "Presente",
+      size: 20,
+      cell: ({ row }) => {
+        const present = Number(row.original.numberWorkerPresent) || 0
+        const desired = Number(row.original.desiredNumberWorkers) || 0
+        const isEqual = present === desired
+        const isLess = present < desired
+        const difference = present - desired
+
+        return (
+          <div className={isEqual ? 'text-green-600 font-medium' : isLess ? 'text-red-600 font-medium' : ''}>
+            {isLess ? `${difference}` : present}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "equipment",
+      header: `Equipamentos`,
+      cell: ({ row }) => {
+          const eq = row.original.equipments;
+          const name = eq ? `${eq.cod || ''}`.trim() : 'N/A';
+          return <div>{name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "employee",
+      header: "Funcionário",
+      cell: ({ row }) => {
+        return <div>{row.original.employees?.fullName || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "site",
+      header: "Site",
+      cell: ({ row }) => {
+        return <div>{row.original.sites?.name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "time",
+      header: "Horário",
+      size: 20,
+      cell: ({ row }) => {
+        const hhmm = formatHour(row.original.time)
+        return <div>{hhmm}</div>
+      },
+    },
+    {
+      accessorKey: "department",
+      header: "Departamento",
+      cell: ({ row }) => {
+        return <div>{row.original.departments?.name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Estado",
+      cell: ({ row }) => {
+        const isActive = row.original.status === 'Finalizado'
+        return (
+          <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
+            {row.original.status}
+          </Badge>
+        )
+      },
+    },
+    {
+      id: "actions",
+      header: "Ações",
+      size: 50,
+      cell: ({ row }) => {
+        return (
+          <ActionsButtons
+            supervision={row.original}
+            equipmentCode={row.original.equipments?.cod}
+            onEdit={(supervision) => {
+              setSelectedSupervision(supervision)
+              setIsFormOpen(true)
+            }}
+          />
+        )
+      },
+    },
+  ], []);
 
   const handleCreate = () => {
     setSelectedSupervision(null)
-    setIsFormOpen(true)
-  }
-
-  const handleEdit = (supervision: Supervision) => {
-    setSelectedSupervision(supervision)
     setIsFormOpen(true)
   }
 
@@ -286,21 +260,18 @@ export function SupervisionTable({
     <div className="w-full">
       <DataTableGeneric
         data={data}
-        columns={createSupervisionColumns({
-          onEdit: handleEdit,
-        })}
-
+        columns={columns}
         searchKey="cod"
         placeholder="Pesquisar..."
         isLoading={isLoading}
-        dateKey="createdAt"
+        dateKey="time"
         onDateRangeChange={onDateRangeChange}
         actionButton={{
           label: "Nova Supervisão",
           onClick: handleCreate,
         }}
         statusOptions={[
-          { label: "Pendente", value: "Pendente" },
+          { label: "Em andamento", value: "Em andamento" },
           { label: "Finalizado", value: "Finalizado" },
         ]}
         statusFilter={statusFilter}

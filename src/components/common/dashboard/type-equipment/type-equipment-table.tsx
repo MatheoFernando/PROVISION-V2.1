@@ -49,8 +49,11 @@ const columns: ColumnDef<TypeEquipment>[] = [
 
 
 
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
 export function TypeEquipmentTable() {
-  const { data: typeEquipment = [], isLoading } = useTypeEquipment();
+  const companyId = useAuthStore((state) => state.companyId);
+  const { data: typeEquipment = [], isLoading } = useTypeEquipment(companyId ?? undefined);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

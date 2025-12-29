@@ -1,16 +1,17 @@
-"use client";
-
 import { useState } from "react";
-import { useRounds, useUpdateRoundMutation, useDeleteRoundMutation } from "@/infrastructure/hooks/useRounds";
+import { Input } from "@/components/ui/input";
+import { useRounds, useDeleteRoundMutation, useRoundsByDate, useRoundsByNumber } from "@/infrastructure/hooks/useRounds";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { Round } from "@/infrastructure/types/domain";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pencil, Trash2, CheckCircle } from "lucide-react";
+import { Eye, Pencil, Trash2, CheckCircle, Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { RondaCreate } from "./ronda-create";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 interface RondaTableProps {
     onView: (round: Round) => void;
@@ -19,7 +20,34 @@ interface RondaTableProps {
 
 export function RondaTable({ onView, onCreate }: RondaTableProps) {
     const t = useTranslations("Ronda");
-    const { data: rounds = [], isLoading, refetch } = useRounds();
+    const { companyId } = useAuthStore();
+    
+    const [filterDate, setFilterDate] = useState<string>("");
+    const [filterNumber, setFilterNumber] = useState<string>("");
+
+    const { data: allRounds = [], isLoading: isLoadingAll, refetch: refetchAll } = useRounds(companyId || undefined, { enabled: !filterDate && !filterNumber });
+    
+    const { data: roundByDate, isLoading: isLoadingDate } = useRoundsByDate(
+        companyId || "", 
+        filterDate ? new Date(filterDate).toISOString() : "", 
+        { enabled: !!companyId && !!filterDate }
+    );
+
+    const { data: roundByNumber, isLoading: isLoadingNumber } = useRoundsByNumber(
+        companyId || "", 
+        parseInt(filterNumber), 
+        { enabled: !!companyId && !!filterNumber && !isNaN(parseInt(filterNumber)) }
+    );
+
+    const rounds = filterDate && roundByDate 
+        ? [roundByDate] 
+        : filterNumber && roundByNumber 
+            ? [roundByNumber] 
+            : allRounds;
+
+    const isLoading = isLoadingAll || isLoadingDate || isLoadingNumber;
+    const refetch = refetchAll; // Main refetch logic
+
     const { mutate: deleteRound, isPending: isDeleting } = useDeleteRoundMutation();
     const router = useRouter();
     const [editingRound, setEditingRound] = useState<Round | null>(null);
@@ -138,6 +166,55 @@ export function RondaTable({ onView, onCreate }: RondaTableProps) {
 
     return (
         <>
+            <div className="flex gap-4 mb-4">
+                <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="date"
+                        placeholder="Filtrar por data"
+                        className="pl-9"
+                        value={filterDate}
+                        onChange={(e) => {
+                            setFilterDate(e.target.value);
+                            setFilterNumber("");
+                        }}
+                    />
+                    {filterDate && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 h-7 w-7"
+                            onClick={() => setFilterDate("")}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+                <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="number"
+                        placeholder="Filtrar por número da ronda"
+                        className="pl-9"
+                        value={filterNumber}
+                        onChange={(e) => {
+                            setFilterNumber(e.target.value);
+                            setFilterDate("");
+                        }}
+                    />
+                     {filterNumber && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 h-7 w-7"
+                            onClick={() => setFilterNumber("")}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            </div>
+
             <DataTableGeneric
                 data={rounds}
                 columns={columns}

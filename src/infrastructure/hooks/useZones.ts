@@ -3,13 +3,28 @@ import { api } from "../utils/api";
 import { toast } from "sonner";
 import { Zone, CreateZonePayload } from "../types/domain";
 
-export function useZones() {
+interface ZonesQueryOptions {
+  enabled?: boolean;
+  companyId?: string;
+}
+
+export function useZones(options?: ZonesQueryOptions) {
+  const { enabled = true, companyId } = options ?? {};
+
   return useQuery({
-    queryKey: ["zones"],
-    queryFn: async (): Promise<Zone[]> => {
-      const { data } = await api.get("/zone/getAll");
-      return (data?.data ?? data) as Zone[];
+    queryKey: ["zones", companyId],
+    queryFn: async () => {
+      const targetCompanyId = companyId;
+
+      if (targetCompanyId) {
+        const { data } = await api.get(
+          `/zone/getAllByCompany/${targetCompanyId}`,
+        );
+        return (data?.data ?? data) as Zone[];
+      }
+
     },
+    enabled,
   });
 }
 
