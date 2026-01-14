@@ -15,6 +15,7 @@ import {
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { OccurrenceViewDrawer } from "./occurrence-view";
 import { OccurrenceDialog } from "./occurrence-create";
+import { TypeOccurrenceCreateDialog } from "./type-occurrence-create-dialog";
 import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
 import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
 import { DeleteModal } from "@/components/ui/delete-modal";
@@ -245,6 +246,7 @@ export function OccurrenceTable({
   onStatusFilterChange,
 }: OccurrenceTableProps) {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const [isTypeOccurrenceDialogOpen, setIsTypeOccurrenceDialogOpen] = React.useState(false);
 
   const transformedData: OccurrenceWithNames[] = React.useMemo(() => {
     return data.map((occurrence) => ({
@@ -272,6 +274,10 @@ export function OccurrenceTable({
           label: "Nova Ocorrência",
           onClick: handleCreateClick
         }}
+        secondaryActionButton={{
+          label: "Tipo de Ocorrência",
+          onClick: () => setIsTypeOccurrenceDialogOpen(true)
+        }}
         statusOptions={[
           { label: "Ativo", value: "Ativo" },
           { label: "Inativo", value: "Inativo" },
@@ -285,6 +291,11 @@ export function OccurrenceTable({
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         occurrenceToEdit={undefined}
+      />
+
+      <TypeOccurrenceCreateDialog
+        open={isTypeOccurrenceDialogOpen}
+        onOpenChange={setIsTypeOccurrenceDialogOpen}
       />
     </div>
   );

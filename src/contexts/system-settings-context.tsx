@@ -30,7 +30,7 @@ const defaultSettings: SystemSettings = {
     branding: {
         appName: "Provision V2",
         primaryColor: "oklch(0.552 0.231 251.365)", 
-        radius: 0.625,
+        radius: 0.50,
     },
     localization: {
         language: "pt",

@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { useSiteById } from "@/infrastructure/hooks/useSites";
 import { useCustomerById } from "@/infrastructure/hooks/useCustomers";
 import { useEmployeeById } from "@/infrastructure/hooks/useEmployees";
+import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
 
 export function BreadcrumbClient(): React.ReactElement {
   const pathname = usePathname();
@@ -58,6 +59,35 @@ export function BreadcrumbClient(): React.ReactElement {
   const { data: customer, isLoading: isLoadingCustomer } = useCustomerById(customerIdFromPath);
   const companyId = useAuthStore((state) => state.companyId) ?? "";
   const { data: employee, isLoading: isLoadingEmployee } = useEmployeeById(employeeIdFromPath, companyId);
+  
+  const companySlugFromPath = React.useMemo(() => {
+    const empresaIndex = parts.indexOf("empresa");
+    if (empresaIndex !== -1 && parts[empresaIndex + 1]) {
+      return parts[empresaIndex + 1];
+    }
+    return undefined;
+  }, [parts]);
+
+  const { data: companies, isLoading: isLoadingCompanies } = useCompaniesQuery({ enabled: !!companySlugFromPath });
+  
+  const companyFromSlug = React.useMemo(() => {
+    if (!companies || !companySlugFromPath) return null;
+    const slugify = (text: string): string => {
+      return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+    };
+    return companies.find(c => {
+      const companySlug = slugify(c.businessName);
+      return companySlug === companySlugFromPath || c.id === companySlugFromPath;
+    }) || null;
+  }, [companies, companySlugFromPath]);
 
 
   const mapTitle = React.useMemo(() => {
@@ -142,6 +172,13 @@ export function BreadcrumbClient(): React.ReactElement {
               label = p;
             }
           }
+        } else if (p === companySlugFromPath) {
+          if (isLoadingCompanies || !companyFromSlug) {
+            isLoading = true;
+            label = "";
+          } else {
+            label = companyFromSlug.businessName;
+          }
         } else {
           if (p.length > 20 && p.includes('-')) {
             label = p.substring(0, 8) + '...';
@@ -155,7 +192,7 @@ export function BreadcrumbClient(): React.ReactElement {
       acc.push({ href: current, label: label || p, Icon: meta?.icon, isLoading });
     });
     return acc;
-  }, [parts, mapTitle, siteIdFromPath, site, client, isLoadingSite, t, customerIdFromPath, customer, isLoadingCustomer, employeeIdFromPath, employee, isLoadingEmployee]);
+  }, [parts, mapTitle, siteIdFromPath, site, client, isLoadingSite, t, customerIdFromPath, customer, isLoadingCustomer, employeeIdFromPath, employee, isLoadingEmployee, companySlugFromPath, companyFromSlug]);
 
 
   return (

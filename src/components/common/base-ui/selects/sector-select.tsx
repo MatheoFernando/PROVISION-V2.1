@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 interface SectorSelectProps {
   value?: string;
   onChange: (value: string) => void;
+  onSelectName?: (name: string) => void;
   companyId: string;
   employeeId?: string;
   zoneId?: string;
@@ -22,6 +23,7 @@ interface SectorSelectProps {
 export function SectorSelect({
   value,
   onChange,
+  onSelectName,
   companyId,
   employeeId,
   zoneId,
@@ -76,6 +78,14 @@ export function SectorSelect({
           onValueChange={(selected) => {
             setSelectedSectorId(selected);
             onChange(selected);
+            if (onSelectName) {
+              const selectedSector = list.find((s) => s.id === selected);
+              if (selectedSector?.name) {
+                onSelectName(selectedSector.name);
+              } else {
+                onSelectName("");
+              }
+            }
           }}
           disabled={isLoading || !hasZone}
           onOpenChange={() => refetch()}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -22,7 +22,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/infrastructure/utils/api";
 import { companySchema } from "@/infrastructure/schema/schema-company";
@@ -32,6 +32,7 @@ import {
   useCreateCompanyMutation,
   useUpdateCompanyMutation,
 } from "@/infrastructure/hooks/useCompanies";
+import { useCreateUser } from "../../../../infrastructure/hooks/useUsers";
 import {
   useAngolaCountry,
   useAngolaProvinces,
@@ -43,6 +44,9 @@ function CompanyFormPage() {
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get("id") ?? undefined;
+  const isEditing = useMemo(() => !!id, [id]);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const form = useForm({
     resolver: zodResolver(companySchema),
     defaultValues: {
@@ -64,6 +68,10 @@ function CompanyFormPage() {
         province: "",
         country: "",
       },
+      admin: isEditing ? undefined : {
+        phone: "",
+        password: "",
+      },
     },
   });
 
@@ -71,8 +79,8 @@ function CompanyFormPage() {
     useCreateCompanyMutation();
   const { mutateAsync: updateAsync, isPending: updating } =
     useUpdateCompanyMutation();
-
-  const isEditing = useMemo(() => !!id, [id]);
+  const { mutateAsync: createUserAsync, isPending: creatingUser } =
+    useCreateUser({ showToast: false });
 
   const { data: angolaCountry } = useAngolaCountry();
   const {
@@ -128,14 +136,14 @@ function CompanyFormPage() {
   useEffect(() => {
     if (!existingCompany) return;
     const ec = existingCompany 
-    const primaryAddress = ec?.address ?? ec?.addresses?.[0] ?? {
+    const primaryAddress = ec?.address ?? {
       houseHold: "",
       commune: "",
       municipality: "",
       province: "",
       country: "",
     }
-    const primaryContact = ec?.contact ?? ec?.contacts?.[0] ?? { email: "", phoneNumbers: [] }
+    const primaryContact = ec?.contact ?? { email: "", phoneNumbers: [] }
 
     form.reset({
       id: existingCompany.id,
@@ -175,34 +183,33 @@ function CompanyFormPage() {
           id: values.id!,
           taxName: values.taxName ?? "",
           businessName: values.businessName ?? "",
-          nif: values.nif ?? "",
           photo: values.photo,
           contactId: values.contactId,
           addressId: values.addressId,
           status: values.status ?? true,
           hasExistedSince: values.hasExistedSince,
-          address: values.address ? {
-            houseHold: values.address.houseHold ?? "",
-            commune: values.address.commune ?? "",
-            municipality: values.address.municipality ?? "",
-            province: values.address.province ?? "",
-            country: values.address.country ?? "",
-          } : undefined,
-          contact: values.contact ? {
-            email: values.contact.email ?? "",
-            phoneNumbers: values.contact.phoneNumbers ?? [],
-          } : undefined,
+          contact: {
+            email: values.contact?.email ?? "",
+            phoneNumbers: values.contact?.phoneNumbers ?? [],
+          },
+          address: {
+            houseHold: values.address?.houseHold ?? "",
+            commune: values.address?.commune ?? "",
+            municipality: values.address?.municipality ?? "",
+            province: values.address?.province ?? "",
+            country: values.address?.country ?? "",
+          },
         });
         toast.success("Empresa atualizada com sucesso");
       } else {
-        await createAsync({
+        const companyResponse = await createAsync({
           cod: values.cod ?? "",
           taxName: values.taxName ?? "",
           businessName: values.businessName ?? "",
           nif: values.nif ?? "",
           photo: values.photo,
           status: values.status ?? true,
-          hasExistedSince: values.hasExistedSince!,
+          hasExistedSince: new Date().toISOString(),
           address: {
             houseHold: values.address?.houseHold ?? "",
             commune: values.address?.commune ?? "",
@@ -215,7 +222,25 @@ function CompanyFormPage() {
             phoneNumbers: values.contact?.phoneNumbers ?? [],
           },
         });
-        toast.success("Empresa criada com sucesso");
+
+        // Criar o administrador da empresa
+        if (values.admin?.phone && values.admin?.password && companyResponse?.data?.id) {
+          try {
+            await createUserAsync({
+              phone: values.admin.phone,
+              password: values.admin.password,
+              isGlobalAdmin: false,
+              status: true,
+              companyId: companyResponse.data.id,
+            });
+            toast.success("Empresa e administrador criados com sucesso");
+          } catch (userError) {
+            toast.warning("Empresa criada, mas houve erro ao criar o administrador");
+            console.error("Erro ao criar administrador:", userError);
+          }
+        } else {
+          toast.success("Empresa criada com sucesso");
+        }
       }
 
       const shouldReturnToUserCreate = sessionStorage.getItem('returnToUserCreate');
@@ -230,7 +255,7 @@ function CompanyFormPage() {
     }
   };
 
-  const saving = creating || updating;
+  const saving = creating || updating || creatingUser;
   const prefilling = isEditing && loadingCompanies && !existingCompany;
   const photoValue = form.watch("photo");
 
@@ -268,8 +293,8 @@ function CompanyFormPage() {
 
           <Form {...form}>
             <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 gap-4">
                   <FormField
                     control={form.control}
                     name="photo"
@@ -284,7 +309,7 @@ function CompanyFormPage() {
                                   alt="Logo"
                                   width={176}
                                   height={176}
-                                  className="w-44 h-44 object-contain text-center mx-auto"
+                                  className="w-44 h-60 object-contain text-center mx-auto"
                                 />
                                 <button
                                   type="button"
@@ -321,124 +346,117 @@ function CompanyFormPage() {
 
                 <div className="lg:col-span-2 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {!isEditing && (
-                      <FormField
-                        control={form.control}
-                        name="cod"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-slate-700">
-                              Código
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Ex: EMP001"
-                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
 
-                    <FormField
-                      control={form.control}
-                      name="businessName"
-                      render={({ field }) => (
-                        <FormItem className={!isEditing ? "" : "md:col-span-2"}>
-                          <FormLabel className="text-sm font-medium text-slate-700">
-                            Nome da Empresa
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Nome comercial"
-                              className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-10 gap-4">
+                      {!isEditing && (
+                        <div className="md:col-span-3">
+                          <FormField
+                            control={form.control}
+                            name="cod"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium text-slate-700">
+                                  Código
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Ex: EMP001"
+                                    className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       )}
-                    />
 
-                    <FormField
-                      control={form.control}
-                      name="taxName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium text-slate-700">
-                            Nome Fiscal
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Digite o nome fiscal"
-                              className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <div className={!isEditing ? "md:col-span-7" : "md:col-span-10"}>
+                        <FormField
+                          control={form.control}
+                          name="businessName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium text-slate-700">
+                                Nome da Empresa
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Empresa"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="nif"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium text-slate-700">
-                            NIF
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Digite o NIF"
-                              className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasExistedSince"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium text-slate-700">
-                            Data de Fundação
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                              value={
-                                field.value ? field.value.substring(0, 10) : ""
-                              }
-                              onChange={(e) =>
-                                field.onChange(
-                                  new Date(e.target.value).toISOString()
-                                )
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-10 gap-4">
+                      <div className="md:col-span-7">
+                        <FormField
+                          control={form.control}
+                          name="taxName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium text-slate-700">
+                                Nome Fiscal
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Nome Fiscal"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="md:col-span-3">
+                        <FormField
+                          control={form.control}
+                          name="nif"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium text-slate-700">
+                                NIF
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="NIF"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                  disabled={isEditing}
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                  
+                  
+                  </div>
+                   
                     <FormField
                       control={form.control}
                       name="address.houseHold"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-medium text-slate-700">
-                            Morada Completa
+                            Morada
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Rua, número, andar"
+                              placeholder="Morada completa"
                               className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
                               {...field}
                             />
@@ -447,10 +465,9 @@ function CompanyFormPage() {
                         </FormItem>
                       )}
                     />
-                  </div>
 
-                  <div className="pt-6 border-t border-slate-200 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="pt-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="contact.email"
@@ -495,6 +512,43 @@ function CompanyFormPage() {
                         )}
                       />
 
+                      <FormField
+                        control={form.control}
+                        name="address.country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              País
+                            </FormLabel>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 w-full">
+                                  <SelectValue placeholder="Selecione o país" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {[angolaCountry]
+                                  .filter(Boolean)
+                                  .map((country) => (
+                                    <SelectItem
+                                      key={country!.slug || country!.name}
+                                      value={country!.name}
+                                    >
+                                      {country!.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
                       <FormField
                         control={form.control}
                         name="address.province"
@@ -640,49 +694,81 @@ function CompanyFormPage() {
                         )}
                       />
 
+                    </div>
+                    {!isEditing && (
+                <div className=" mt-6 border shadow p-4 rounded-lg bg-gray-50">
+                  <div className=" py-4 border-b border-slate-200">
+                    <h2 className="text-lg font-semibold text-slate-900">
+                     Administrador da empresa
+                    </h2>
+                  
+                  </div>
+
+                  <div className="my-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="address.country"
+                        name="admin.phone"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm font-medium text-slate-700">
-                              País
+                              Telefone do Administrador *
                             </FormLabel>
-                            <Select
-                              value={field.value}
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                              }}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 w-full">
-                                  <SelectValue placeholder="Selecione o país" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {[angolaCountry]
-                                  .filter(Boolean)
-                                  .map((country) => (
-                                    <SelectItem
-                                      key={country!.slug || country!.name}
-                                      value={country!.name}
-                                    >
-                                      {country!.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
+                            <FormControl>
+                              <PhoneField
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                        <FormField
+                        control={form.control}
+                        name="admin.password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              Senha do Administrador *
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  {...field}
+                                  type={showPassword ? "text" : "password"}
+                                  placeholder="Senha"
+                                  className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900 pr-10"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none"
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-
+                  </div>
+                </div>
+              )}
 
                   </div>
                 </div>
               </div>
 
+              
               <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-200">
                 <Button
                   type="button"

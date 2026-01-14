@@ -4,11 +4,11 @@ export const createEmployeeSchema = z.object({
   companyId: z.string(),
   fullName: z.string().min(1, "Nome completo é obrigatório"),
   photo: z.string().optional(),
-  contactId: z.string().min(1, "Contato é obrigatório"),
+  contactId: z.string().optional(),
   siteId: z.string().optional(),
   departmentId: z.string().min(1, "Departamento é obrigatório"),
   cod: z.string().min(1, "Código é obrigatório"),
-  addressId: z.string().min(1, "Morada é obrigatória"),
+  addressId: z.string().optional(),
   function: z.string().min(1, "Função é obrigatória"),
   roleId: z.string().optional(),
 });
@@ -23,7 +23,7 @@ const grossContactSchema = z.object({
       }),
     )
     .optional(),
-});
+}).optional();
 
 const grossAddressSchema = z.object({
   houseHold: z.string().min(1, "Morada é obrigatória"),
@@ -31,7 +31,7 @@ const grossAddressSchema = z.object({
   municipality: z.string().min(1, "Município é obrigatório"),
   province: z.string().min(1, "Província é obrigatória"),
   country: z.string().min(1, "País é obrigatório"),
-});
+}).optional();
 
 export const createGrossEmployeeSchema = z.object({
   cod: z.string().min(1, "Código é obrigatório"),

@@ -4,12 +4,8 @@ import { useState } from "react";
 import * as React from "react";
 import { Eye, PencilSimple, Trash } from "phosphor-react";
 import { DataTableGeneric } from "@/components/common/base-ui/data-table";
-import {
-  useDeleteSite,
-  useCreateGrossSite,
-  useSitesByCompanyAndCustomer,
-  useSites,
-} from "@/infrastructure/hooks/useSites";
+import { useDeleteSite, useCreateGrossSite, useSites } from "@/infrastructure/hooks/useSites";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEmployees } from "@/infrastructure/hooks/useEmployees";
 import { useEquipment } from "@/infrastructure/hooks/useEquipment";
 import type { Site, Customer, Area, Zone, Sector, Contact } from "@/infrastructure/types/domain";
@@ -32,12 +28,11 @@ import {
 } from "@/infrastructure/schema/schema-sites";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 
-function getNestedEntity<T extends { name?: string }>(
-  arrayOrObject: T | T[] | null | undefined,
-): T | undefined {
+function getNestedEntity<T>(arrayOrObject: T | T[] | null | undefined): T | undefined {
   if (!arrayOrObject) return undefined;
   if (Array.isArray(arrayOrObject)) {
-    return arrayOrObject.find((item) => item && item.name);
+    const withName = arrayOrObject.find((item) => (item as any)?.name);
+    return (withName ?? arrayOrObject[0]) as T | undefined;
   }
   return arrayOrObject;
 }
@@ -125,6 +120,14 @@ const columns: ColumnDef<Site>[] = [
     },
   },
   {
+    accessorKey: "employee",
+    header: "Responsável",
+    cell: ({ row }) => {
+      const responsible = (row.original as any)?.employee;
+      return <div>{responsible?.fullName ?? "-"}</div>;
+    },
+  },
+  {
     accessorKey: "numberWorkersContract",
     header: "Trabalhadores",
     cell: ({ row }) => {
@@ -163,20 +166,12 @@ export function SitesTable({
   const companyId = companyIdProp || authCompanyId || "";
   const deleteSite = useDeleteSite();
   const createGrossSite = useCreateGrossSite();
+  const queryClient = useQueryClient();
   
-  const { data: sites = [], isLoading: isLoadingSites } = useSites(undefined, { 
-    enabled: shouldFetch && !!companyId, 
-    companyId 
-  });
-  
-  const { data: sitesByCompanyAndCustomer = [], isLoading: isLoadingByCompanyAndCustomer } = useSitesByCompanyAndCustomer(
+  const { data: sites = [], isLoading: isLoadingSites } = useSites(undefined, {
+    enabled: shouldFetch && !!companyId,
     companyId,
-    customerId,
-    { enabled: shouldFetch && !!companyId && !!customerId }
-  );
-
-  const finalSites = companyId && customerId ? sitesByCompanyAndCustomer : sites;
-  const finalIsLoading = companyId && customerId ? isLoadingByCompanyAndCustomer : isLoadingSites;
+  });
   
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -207,13 +202,17 @@ export function SitesTable({
       toast.success("Site excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedSite(undefined);
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      if (customerId) {
+        await queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+      }
     } catch {
       toast.error("Erro ao eliminar site");
     }
   };
 
-  const resolvedData = data ?? finalSites;
-  const resolvedIsLoading = isLoadingOverride ?? finalIsLoading;
+  const resolvedData = data ?? sites;
+  const resolvedIsLoading = isLoadingOverride ?? isLoadingSites;
 
   const { data: allEmployees = [] } = useEmployees(companyId, {
     enabled: !!companyId,
@@ -322,6 +321,13 @@ export function SitesTable({
         siteToEdit={selectedSite ?? undefined}
         customerId={customerId}
         companyId={companyId}
+        onSuccess={async () => {
+          setSelectedSite(undefined);
+          await queryClient.invalidateQueries({ queryKey: ["sites"] });
+          if (customerId) {
+            await queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+          }
+        }}
       />
 
       <DeleteModal
@@ -367,32 +373,46 @@ export function SitesTable({
             .map((phone) => ({ phone }));
           const numberWorkersContract = parseWorkersCount(raw.numberWorkersContract);
 
-          return {
+          const payload: any = {
             cod: raw.cod ?? "",
             name: raw.name ?? "",
             numberWorkersContract,
             nameArea: raw.nameArea ?? "",
             codCustomer: raw.codCustomer ?? "",
-            contact: {
+            nameZone: raw.nameZone ?? "",
+            nameSector: raw.nameSector ?? "",
+            companyId,
+          };
+
+          const hasContact = (raw.contactEmail && raw.contactEmail.trim()) || phoneNumbers.length > 0;
+          if (hasContact) {
+            payload.contact = {
               phoneNumbers: phoneNumbers.length ? phoneNumbers : undefined,
               email: raw.contactEmail || undefined,
               companyId,
-            },
-            address: {
+            };
+          }
+
+          const hasAddress = raw.addressHouseHold && raw.addressHouseHold.trim();
+          if (hasAddress) {
+            payload.address = {
               houseHold: raw.addressHouseHold ?? "",
               commune: raw.addressCommune ?? "",
               municipality: raw.addressMunicipality ?? "",
               province: raw.addressProvince ?? "",
               country: raw.addressCountry ?? "",
               companyId,
-            },
-            nameZone: raw.nameZone ?? "",
-            nameSector: raw.nameSector ?? "",
-            companyId,
-          };
+            };
+          }
+
+          return payload;
         }}
         onCreate={async (payload) => {
           await createGrossSite.mutateAsync(payload);
+          await queryClient.invalidateQueries({ queryKey: ["sites"] });
+          if (customerId) {
+            await queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+          }
         }}
       />
     </div>

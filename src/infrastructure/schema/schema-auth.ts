@@ -5,15 +5,7 @@ export interface AuthCredentials {
   password: string;
 }
 
-export interface AuthResponse {
-  id: string;
-  phone: string;
-  status: boolean;
-  role: string;
-  permissions: string[];
-  companyId: string;
-  isGlobalAdmin: boolean;
-}
+
 
 export interface ChangePasswordRequest {
   oldPassword: string;
@@ -29,12 +21,12 @@ export const authCredentialsSchema = z.object({
 });
 
 export const authResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   phone: z.string(),
   status: z.boolean(),
   role: z.string(),
   permissions: z.array(z.string()),
-  companyId: z.string().uuid(),
+  companyId: z.string(),
   isGlobalAdmin: z.boolean(),
 });
 
@@ -48,9 +40,29 @@ export const changePasswordRequestSchema = z.object({
     }),
 });
 
-export interface AuthCredentialsEntity extends z.infer<typeof authCredentialsSchema> {}
-export interface AuthResponseEntity extends z.infer<typeof authResponseSchema> {}
-export interface ChangePasswordRequestEntity extends z.infer<typeof changePasswordRequestSchema> {}
+export const meResponseSchema = z.object({
+  id: z.string(),
+  phone: z.string(),
+  status: z.boolean(),
+  role: z.string().nullable(),
+  companyId: z.string().nullable(),
+  isGlobalAdmin: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  departmentId: z.string().nullable(),
+  roleId: z.string().nullable(),
+  fullName: z.string().nullable(),
+  email: z.string().nullable(),
+  companyName: z.string().nullable(),
+  departmentName: z.string().nullable(),
+  companyStatus: z.boolean().nullable(),
+  companyStatusMessage: z.string().nullable(),
+  hasCompany: z.boolean(),
+  phoneNumber: z.string(),
+});
+
+export type MeResponseEntity = z.infer<typeof meResponseSchema>;
+
 
 
 

@@ -41,11 +41,16 @@ function getFirstItem<T>(entity: T | T[] | undefined | null): T | undefined {
     return entity as T;
 }
 
-export function SiteDetailsView() {
+
+interface SiteDetailsViewProps {
+    siteId?: string;
+}
+
+export function SiteDetailsView({ siteId: propId }: SiteDetailsViewProps = {}) {
     const params = useParams<{ siteId: string }>();
     const router = useRouter();
     const t = useTranslations();
-    const { siteId } = params;
+    const siteId = propId || params.siteId;
     const queryClient = useQueryClient();
 
     const { data: site, isLoading } = useSiteById(siteId);
@@ -249,7 +254,7 @@ function DetailRow({ label, value, className }: { label: string, value?: string,
     )
 }
 
-function SiteDetailsSkeleton() {
+export function SiteDetailsSkeleton() {
     return (
         <div className="min-h-screen bg-background/50 pb-20">
             <div className="w-full bg-background/60 border-b border-border/40 h-16">
@@ -341,9 +346,7 @@ function ToolsTabContent({ equipments, t, onAddEquipment, siteId }: { equipments
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold tracking-tight">{t('SiteDetails.sections.equipmentsAndTools')}</h3>
-            </div>
+       
 
             <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm">
                 <DataTableGeneric
@@ -430,10 +433,7 @@ function EmployeesTabContent({ site, t, isLimitReached }: { site: Site | null | 
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold tracking-tight">{t('Sidebar.employees')}</h3>
-            </div>
-
+   
             <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm">
                 <DataTableGeneric
                     data={employees}

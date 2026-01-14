@@ -20,6 +20,7 @@ export type LoginData = {
   };
 };
 
+
 export type LoginEnvelope = {
   data: LoginData;
   success: boolean;
@@ -37,9 +38,6 @@ export async function login(request: LoginRequest): Promise<LoginEnvelope> {
 
   if (data?.data?.user) {
     const { id, companyId, isGlobalAdmin } = data.data.user;
-    Cookies.set('isGlobalAdmin', String(isGlobalAdmin));
-    if (companyId) Cookies.set('companyId', companyId);
-    Cookies.set('userId', id);
 
     useAuthStore.getState().setSession({
       token: data.data.accessToken,

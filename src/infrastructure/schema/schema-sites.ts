@@ -9,8 +9,8 @@ export const createSiteSchema = z.object({
     .nonnegative("Deve ser zero ou positivo"),
   customerId: z.string().min(1, "Cliente é obrigatório"),
   areaId: z.string().min(1, "Área é obrigatória"),
-  contactId: z.string().min(1, "Contato é obrigatório"),
-  addressId: z.string().min(1, "Morada é obrigatória"),
+  contactId: z.string().optional(),
+  addressId: z.string().optional(),
   sectorId: z.string().min(1, "Setor é obrigatório"),
   zoneId: z.string().default(""),
   companyId: z.string().default(""),
@@ -48,8 +48,8 @@ const grossSiteCoreSchema = z.object({
 export const createGrossSiteSchema = grossSiteCoreSchema.extend({
   nameArea: z.string().min(1, "Área é obrigatória"),
   codCustomer: z.string().min(1, "Código do cliente é obrigatório"),
-  contact: grossSiteContactSchema,
-  address: grossSiteAddressSchema,
+  contact: grossSiteContactSchema.optional(),
+  address: grossSiteAddressSchema.optional(),
   nameZone: z.string().min(1, "Zona é obrigatória"),
   nameSector: z.string().min(1, "Setor é obrigatório"),
 });

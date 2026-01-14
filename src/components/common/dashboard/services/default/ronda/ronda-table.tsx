@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { useRounds, useDeleteRoundMutation, useRoundsByDate, useRoundsByNumber } from "@/infrastructure/hooks/useRounds";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
@@ -46,7 +47,7 @@ export function RondaTable({ onView, onCreate }: RondaTableProps) {
             : allRounds;
 
     const isLoading = isLoadingAll || isLoadingDate || isLoadingNumber;
-    const refetch = refetchAll; // Main refetch logic
+    const refetch = refetchAll; 
 
     const { mutate: deleteRound, isPending: isDeleting } = useDeleteRoundMutation();
     const router = useRouter();
@@ -164,64 +165,71 @@ export function RondaTable({ onView, onCreate }: RondaTableProps) {
         },
     ];
 
+    const filteredRounds = React.useMemo(() => {
+        if (filterDate && roundByDate) return [roundByDate];
+        if (filterNumber && roundByNumber) return [roundByNumber];
+        return rounds;
+    }, [rounds, filterDate, roundByDate, filterNumber, roundByNumber]);
+
     return (
         <>
-            <div className="flex gap-4 mb-4">
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="date"
-                        placeholder="Filtrar por data"
-                        className="pl-9"
-                        value={filterDate}
-                        onChange={(e) => {
-                            setFilterDate(e.target.value);
-                            setFilterNumber("");
-                        }}
-                    />
-                    {filterDate && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1 h-7 w-7"
-                            onClick={() => setFilterDate("")}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="number"
-                        placeholder="Filtrar por número da ronda"
-                        className="pl-9"
-                        value={filterNumber}
-                        onChange={(e) => {
-                            setFilterNumber(e.target.value);
-                            setFilterDate("");
-                        }}
-                    />
-                     {filterNumber && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1 h-7 w-7"
-                            onClick={() => setFilterNumber("")}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-            </div>
-
             <DataTableGeneric
-                data={rounds}
+                data={filteredRounds}
                 columns={columns}
                 isLoading={isLoading}
                 onRefetch={refetch}
                 searchKey="position"
                 placeholder="Pesquisar por posição..."
+                toolbar={(table) => (
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="date"
+                                placeholder="Filtrar por data"
+                                className="pl-9 h-9"
+                                value={filterDate}
+                                onChange={(e) => {
+                                    setFilterDate(e.target.value);
+                                    setFilterNumber("");
+                                }}
+                            />
+                            {filterDate && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1 h-7 w-7"
+                                    onClick={() => setFilterDate("")}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                        <div className="relative w-full sm:w-[200px]">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="number"
+                                placeholder="Filtrar por número"
+                                className="pl-9 h-9"
+                                value={filterNumber}
+                                onChange={(e) => {
+                                    setFilterNumber(e.target.value);
+                                    setFilterDate("");
+                                }}
+                            />
+                            {filterNumber && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1 h-7 w-7"
+                                    onClick={() => setFilterNumber("")}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                )}
                 rowActions={[
                     {
                         label: "Ver Detalhes",

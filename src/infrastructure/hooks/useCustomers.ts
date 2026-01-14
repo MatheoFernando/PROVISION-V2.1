@@ -10,16 +10,7 @@ import { useTranslations } from "next-intl";
 
 const CUSTOMERS_QUERY_KEY = ["customers"] as const;
 
-export function useCustomers() {
-  return useQuery({
-    queryKey: CUSTOMERS_QUERY_KEY,
-    queryFn: async (): Promise<Customer[]> => {
-      const response = await api.get("/customer/getAll");
-      return response.data.data ?? response.data ?? [];
-    },
 
-  });
-}
 
 export function useCustomersByCompanyId(companyId: string, options?: { enabled?: boolean }) {
   return useQuery({
@@ -35,30 +26,6 @@ export function useCustomersByCompanyId(companyId: string, options?: { enabled?:
   });
 }
 
-export function useCreateCustomer() {
-  const queryClient = useQueryClient();
-  const t = useTranslations("Hooks.Customers");
-
-  return useMutation({
-    mutationFn: async (data: CreateCustomerPayload): Promise<Customer> => {
-      const response = await api.post("/customer/create", data);
-      const createdCustomer = response.data?.data || response.data;
-      return createdCustomer as Customer;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: CUSTOMERS_QUERY_KEY });
-      await queryClient.refetchQueries({
-        queryKey: CUSTOMERS_QUERY_KEY,
-        type: "active",
-      });
-      toast.success(t("create.success"));
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || "Erro desconhecido ao criar cliente";
-      toast.error(message);
-    },
-  });
-}
 
 export function useCreateGrossCustomer() {
   const queryClient = useQueryClient();
@@ -68,7 +35,14 @@ export function useCreateGrossCustomer() {
     mutationFn: async (
       data: CreateGrossCustomerPayload
     ): Promise<Customer> => {
-      const response = await api.post("/customer/AddGrossCustomer", data);
+      const payload: any = { ...data };
+      if (!payload.contact || (!payload.contact.email && (!payload.contact.phoneNumbers || payload.contact.phoneNumbers.length === 0))) {
+        delete payload.contact;
+      }
+      if (!payload.address || !payload.address.houseHold) {
+        delete payload.address;
+      }
+      const response = await api.post("/customer/AddGrossCustomer", payload);
       const createdCustomer = response.data?.data || response.data;
       return createdCustomer as Customer;
     },
@@ -159,14 +133,8 @@ export function useCustomerById(id?: string) {
     queryKey: [...CUSTOMERS_QUERY_KEY, id],
     queryFn: async (): Promise<Customer | null> => {
       if (!id) return null;
-      try {
-        const response = await api.get(`/customer/${id}`);
-        return response.data.data ?? response.data ?? null;
-      } catch {
-        const response = await api.get("/customer/getAll");
-        const customers = response.data.data ?? [];
-        return (customers as Customer[]).find((c) => c.id === id) ?? null;
-      }
+      const response = await api.get("/customer/getById", { params: { id } });
+      return response.data.data ?? response.data ?? null;
     },
     enabled: Boolean(id),
     refetchOnReconnect: true,

@@ -25,6 +25,7 @@ import { DeleteModal } from "@/components/ui/delete-modal";
 import type { Rsu } from "@/infrastructure/types/domain";
 import { RsuDialog } from "./rsu-create";
 import { RsuDrawer } from "./rsu-view";
+import { ContainerCreateDialog } from "./container-create-dialog";
 import { useDeleteRsuMutation } from "@/infrastructure/hooks/useRsu";
 
 
@@ -123,6 +124,7 @@ export function RsuTable({
 }: RsuTableProps) {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [selectedRsu, setSelectedRsu] = React.useState<Rsu | null>(null);
+  const [isContainerDialogOpen, setIsContainerDialogOpen] = React.useState(false);
 
   const columns: ColumnDef<Rsu>[] = React.useMemo(
     () => [
@@ -223,6 +225,10 @@ export function RsuTable({
           label: "Novo RSU",
           onClick: handleCreate,
         }}
+        secondaryActionButton={{
+          label: "Contentor",
+          onClick: () => setIsContainerDialogOpen(true)
+        }}
         statusOptions={[
           { label: "Pendente", value: "Pendente" },
           { label: "Em andamento", value: "Em andamento" },
@@ -237,6 +243,11 @@ export function RsuTable({
         onOpenChange={setIsFormOpen}
         rsuToEdit={selectedRsu ?? undefined}
         onSuccess={handleCloseForm}
+      />
+
+      <ContainerCreateDialog
+        open={isContainerDialogOpen}
+        onOpenChange={setIsContainerDialogOpen}
       />
     </div>
   );

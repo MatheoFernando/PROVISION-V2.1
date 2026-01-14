@@ -44,8 +44,8 @@ export const createCustomerSchema = z.object({
 
 export const createGrossCustomerSchema = grossCustomerDetailsSchema.extend({
   customer: grossCustomerDetailsSchema,
-  contact: contactDetailsSchema,
-  address: addressDetailsSchema,
+  contact: contactDetailsSchema.optional(),
+  address: addressDetailsSchema.optional(),
 });
 
 export type CreateCustomerPayload = z.infer<typeof createCustomerSchema>;

@@ -34,6 +34,7 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
       iconKey: "Buildings",
       url: "/dashboard/empresa",
       items: [
+    
         {
           title: "Sidebar.equipment",
           url: "/dashboard/equipamentos",
@@ -101,19 +102,49 @@ export const getNavData = (isGlobalAdmin: boolean): NavItemData[] => {
     },
   ];
 
-
-
-
   if (isGlobalAdmin) {
-    const adminList = [...commonNav];
-    return adminList;
+  
+    return [
+      { title: "Sidebar.dashboard", url: "/dashboard", iconKey: "GridFour" },
+      {
+       
+            title: "Sidebar.companys",
+            url: "/dashboard/empresa",
+            iconKey: "Buildings",
+        
+      },
+  
+    ];
   } else {
-    const userList = [...commonNav];
-    return userList;
+   
+    return [...commonNav];
   }
 };
 
-
 export const navData: NavItemData[] = getNavData(false);
 
-export const adminOnlyPaths: string[] = [];
+// Rotas permitidas APENAS para super admin
+export const superAdminOnlyPaths: string[] = [
+  "/dashboard/empresa",
+ 
+];
+
+// Rotas bloqueadas para super admin (só não-admin pode acessar)
+export const blockedForSuperAdminPaths: string[] = [
+  "/dashboard/modulos",
+  "/dashboard/entidades",
+  "/dashboard/clientes",
+  "/dashboard/sites",
+  "/dashboard/equipamentos",
+  "/dashboard/funcionarios",
+  "/dashboard/veiculos",
+  "/dashboard/organizacao-operacional",
+  "/dashboard/configuracoes/modulos-servicos",
+  "/dashboard/configuracoes/definicoes-sistema",
+  "/dashboard/configuracoes/integracoes",
+  "/dashboard/configuracoes/seguranca-logs",
+  "/dashboard/configuracoes/backup-restauro",
+  "/dashboard/analises",
+   "/dashboard/configuracoes/utilizadores-permissoes",
+];
+export const adminOnlyPaths = superAdminOnlyPaths;

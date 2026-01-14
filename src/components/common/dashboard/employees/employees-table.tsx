@@ -306,27 +306,37 @@ export function EmployeesTable({ companyId: companyIdProp, data, isLoadingOverri
             .filter(Boolean)
             .map((phone) => ({ phone }));
 
-          return {
+          const payload: any = {
             cod: raw.cod ?? "",
             companyId,
             fullName: raw.fullName ?? "",
             function: raw.function ?? "",
-            contact: {
+            nameSite: raw.nameSite ?? "",
+            userId,
+            nameDepartment: raw.nameDepartment ?? "",
+          };
+
+          const hasContact = (raw.contactEmail && raw.contactEmail.trim()) || phoneNumbers.length > 0;
+          if (hasContact) {
+            payload.contact = {
               companyId,
               email: raw.contactEmail || undefined,
               phoneNumbers: phoneNumbers.length ? phoneNumbers : undefined,
-            },
-            address: {
+            };
+          }
+
+          const hasAddress = raw.addressHouseHold && raw.addressHouseHold.trim();
+          if (hasAddress) {
+            payload.address = {
               houseHold: raw.addressHouseHold ?? "",
               commune: raw.addressCommune ?? "",
               municipality: raw.addressMunicipality ?? "",
               province: raw.addressProvince ?? "",
               country: raw.addressCountry ?? "",
-            },
-            nameSite: raw.nameSite ?? "",
-            userId,
-            nameDepartment: raw.nameDepartment ?? "",
-          };
+            };
+          }
+
+          return payload;
         }}
         onCreate={async (payload) => {
           await createGrossEmployee.mutateAsync(payload);

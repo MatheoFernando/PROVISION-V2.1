@@ -24,6 +24,19 @@ export function DeleteModal({
 }: DeleteModalProps) {
   const { t: tCommon } = { t: (key: string) => key };
   const t = useTranslations("Components.DeleteModal");
+  const [wasLoading, setWasLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isLoading) {
+      setWasLoading(true);
+    } else if (wasLoading && !isLoading) {
+      const timer = setTimeout(() => {
+        onClose();
+        setWasLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, wasLoading, onClose]);
 
   if (!isOpen) return null;
 

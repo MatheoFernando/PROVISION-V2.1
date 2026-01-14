@@ -46,11 +46,16 @@ const getAddress = (employee: any) => {
     return employee?.address || employee?.addresses || undefined;
 }
 
-export function EmployeeDetailsView() {
+
+interface EmployeeDetailsViewProps {
+    employeeId?: string;
+}
+
+export function EmployeeDetailsView({ employeeId: propId }: EmployeeDetailsViewProps = {}) {
     const params = useParams<{ employeeId: string }>();
     const router = useRouter();
     const t = useTranslations();
-    const { employeeId } = params;
+    const employeeId = propId || params.employeeId;
     const companyId = useAuthStore((state) => state.companyId) ?? "";
 
     const { data: employee, isLoading } = useEmployeeById(employeeId, companyId);
@@ -230,7 +235,7 @@ function DetailRow({
     )
 }
 
-function EmployeeDetailsSkeleton() {
+export function EmployeeDetailsSkeleton() {
     return (
         <div className="min-h-screen bg-background/50 pb-20">
             <div className="w-full bg-background/60 border-b border-border/40 h-16">

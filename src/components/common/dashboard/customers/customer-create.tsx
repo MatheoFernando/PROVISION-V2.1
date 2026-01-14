@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
@@ -15,17 +15,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { AddressSelect } from "@/components/common/base-ui/selects/address-select";
-import { ContactSelect } from "@/components/common/base-ui/selects/contact-select";
 import {
-  createCustomerSchema,
-  type CreateCustomerPayload,
-} from "@/infrastructure/schema/schema-customers";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  useCreateCustomer,
+  useCreateGrossCustomer,
   useUpdateCustomer,
 } from "@/infrastructure/hooks/useCustomers";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useAngolaProvinces } from "@/infrastructure/hooks/useAngolaLocations";
 import type { Customer } from "@/infrastructure/types/domain";
 import {
   Dialog,
@@ -34,19 +36,32 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
-type CustomerFormSchema = typeof createCustomerSchema;
-type CustomerFormInput = z.input<CustomerFormSchema>;
-type CustomerFormValues = z.output<CustomerFormSchema>;
+const grossCustomerSchema = z.object({
+  cod: z.string().min(1, "Código é obrigatório"),
+  name: z.string().min(1, "Nome é obrigatório"),
+  taxName: z.string().min(1, "Nome fiscal é obrigatório"),
+  nif: z.string().min(1, "NIF é obrigatório"),
+  photo: z.string().optional().or(z.literal("")),
+  companyId: z.string().optional().or(z.literal("")),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
+  houseHold: z.string().optional().or(z.literal("")),
+  commune: z.string().optional().or(z.literal("")),
+  municipality: z.string().optional().or(z.literal("")),
+  province: z.string().optional().or(z.literal("")),
+  country: z.string().optional().or(z.literal("")),
+});
+
+type GrossCustomerInput = z.infer<typeof grossCustomerSchema>;
 
 interface CustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customerToEdit?: Customer;
 }
-
-import { toast } from "sonner";
-import { useTranslations } from "next-intl";
 
 export function CustomerDialog({
   open,
@@ -55,81 +70,152 @@ export function CustomerDialog({
 }: CustomerDialogProps) {
   const t = useTranslations("Customers");
   const tCommon = useTranslations("Common");
-  const createCustomer = useCreateCustomer();
+  const createGrossCustomer = useCreateGrossCustomer();
   const updateCustomer = useUpdateCustomer();
+  
   const authCompanyId = useAuthStore((state) => state.companyId) || "";
-
-  const buildDefaults = useCallback(
-    (
-      overrides?: Partial<CustomerFormInput>
-    ): CustomerFormInput => ({
+  
+  const form = useForm<GrossCustomerInput>({
+    resolver: zodResolver(grossCustomerSchema),
+    defaultValues: {
       cod: "",
       name: "",
       taxName: "",
       nif: "",
-      contactId: "",
-      addressId: "",
+      photo: "",
       companyId: authCompanyId,
-      ...overrides,
-    }),
-    [authCompanyId]
-  );
-
-  const form = useForm<CustomerFormInput>({
-    resolver: zodResolver(createCustomerSchema),
-    defaultValues: buildDefaults(),
+      email: "",
+      phone: "",
+      houseHold: "",
+      commune: "",
+      municipality: "",
+      province: "",
+      country: "Angola",
+    },
   });
 
   const isEditing = Boolean(customerToEdit?.id);
-  const isSaving = createCustomer.isPending || updateCustomer.isPending;
+  const isSaving = createGrossCustomer.isPending || updateCustomer.isPending;
+
+  const { data: provincesData = [], isPending: loadingProvinces } = useAngolaProvinces();
+  const provinceValue = form.watch("province");
+  const municipalityValue = form.watch("municipality");
+
+  const selectedProvince = useMemo(
+    () => provincesData.find((province) => province.name === provinceValue) ?? null,
+    [provincesData, provinceValue]
+  );
+
+  const municipalities = useMemo(
+    () => selectedProvince?.municipalities ?? [],
+    [selectedProvince]
+  );
+
+  const selectedMunicipality = useMemo(
+    () => municipalities.find((municipality) => municipality.name === municipalityValue) ?? null,
+    [municipalities, municipalityValue]
+  );
+
+  const communes = selectedMunicipality?.communes ?? [];
+
+  useEffect(() => {
+    if (authCompanyId && form.getValues("companyId") !== authCompanyId) {
+      form.setValue("companyId", authCompanyId);
+    }
+  }, [authCompanyId, form]);
 
   useEffect(() => {
     if (customerToEdit && open) {
-      form.reset(
-        buildDefaults({
-          cod: customerToEdit.cod ?? "",
-          name: customerToEdit.name ?? "",
-          taxName: customerToEdit.taxName ?? "",
-          nif: customerToEdit.nif ?? "",
-          contactId: customerToEdit.contactId ?? customerToEdit.contact?.id ?? "",
-          addressId: customerToEdit.addressId ?? customerToEdit.address?.id ?? "",
-          companyId: customerToEdit.companyId ?? authCompanyId,
-        })
-      );
+      form.reset({
+        cod: customerToEdit.cod ?? "",
+        name: customerToEdit.name ?? "",
+        taxName: customerToEdit.taxName ?? "",
+        nif: customerToEdit.nif ?? "",
+        photo: customerToEdit.photo ?? "",
+        companyId: customerToEdit.companyId ?? authCompanyId,
+        email: customerToEdit.contact?.email ?? "",
+        phone: customerToEdit.contact?.phoneNumbers?.[0]?.phone ?? "",
+        houseHold: customerToEdit.address?.houseHold ?? "",
+        commune: customerToEdit.address?.commune ?? "",
+        municipality: customerToEdit.address?.municipality ?? "",
+        province: customerToEdit.address?.province ?? "",
+        country: customerToEdit.address?.country ?? "",
+      });
     } else if (open) {
-      form.reset(buildDefaults());
+      form.reset({
+        cod: "",
+        name: "",
+        taxName: "",
+        nif: "",
+        photo: "",
+        companyId: authCompanyId,
+        email: "",
+        phone: "",
+        houseHold: "",
+        commune: "",
+        municipality: "",
+        province: "",
+        country: "Angola",
+      });
     }
-  }, [customerToEdit, open, form, buildDefaults, authCompanyId]);
+  }, [customerToEdit, open, form, authCompanyId]);
 
-  const handleSubmit = async (data: CustomerFormInput) => {
-    const parsed: CustomerFormValues = createCustomerSchema.parse({
-      ...data,
-      companyId: data.companyId || authCompanyId,
-    });
-
-    const payload: CreateCustomerPayload = {
-      ...parsed,
-      companyId: parsed.companyId || authCompanyId,
-    };
-
+  const handleSubmit = async (data: GrossCustomerInput) => {
     try {
       if (customerToEdit?.id) {
-        const { ...updateOnly } = payload;
+        // Para edição, manter a lógica atual
         await updateCustomer.mutateAsync({
           id: customerToEdit.id,
-          ...updateOnly,
-        });
+          cod: data.cod,
+          name: data.name,
+          taxName: data.taxName,
+          nif: data.nif,
+        } );
       } else {
-        await createCustomer.mutateAsync(payload);
+        const storeCompanyId = useAuthStore.getState().companyId;
+        const userDataCompanyId = useAuthStore.getState().userData?.companyId;
+        const currentCompanyId = storeCompanyId || userDataCompanyId || authCompanyId || "";
+        
+        if (!currentCompanyId) {
+          toast.error("Erro: ID da empresa não encontrado. Tente recarregar a página.");
+          return;
+        }
+        
+        const customerData = {
+          cod: data.cod,
+          name: data.name,
+          taxName: data.taxName,
+          nif: data.nif,
+          companyId: currentCompanyId,
+        };
+        
+        const grossPayload = {
+          ...customerData,
+          customer: customerData,
+          ...(data.email || data.phone ? {
+            contact: {
+              companyId: currentCompanyId,
+              email: data.email || undefined,
+              phoneNumbers: data.phone ? [{ phone: data.phone }] : undefined,
+            }
+          } : {}),
+          ...(data.houseHold || data.commune || data.municipality || data.province || data.country ? {
+            address: {
+              houseHold: data.houseHold || "",
+              commune: data.commune || "",
+              municipality: data.municipality || "",
+              province: data.province || "",
+              country: data.country || "Angola",
+              companyId: currentCompanyId,
+            }
+          } : {}),
+        };
+
+        await createGrossCustomer.mutateAsync(grossPayload);
       }
       onOpenChange(false);
-      if (customerToEdit?.id) {
-        toast.success(t("toasts.updateSuccess"));
-      } else {
-        toast.success(t("toasts.createSuccess"));
-      }
-    } catch (error) {
-      console.error("[CustomerDialog] erro ao salvar cliente:", error);
+      toast.success(isEditing ? t("toasts.updateSuccess") : t("toasts.createSuccess"));
+    } catch {
       toast.error(t("toasts.error"));
     }
   };
@@ -145,120 +231,291 @@ export function CustomerDialog({
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(handleSubmit)}
+            onSubmit={form.handleSubmit(handleSubmit, () => {
+              toast.error("Por favor, preencha todos os campos obrigatórios");
+            })}
             className="flex flex-col"
           >
-            <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6 ">
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("fields.name")} *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("placeholders.name")}
-                          className="rounded-lg"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+            
+              <div>
+               
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("fields.name")} *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t("placeholders.name")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="cod"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("fields.cod")} *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("placeholders.cod")}
-                          className="rounded-lg"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="cod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("fields.cod")} *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t("placeholders.cod")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="taxName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("fields.taxName")} *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("placeholders.taxName")}
-                          className="rounded-lg"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="taxName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("fields.taxName")} *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t("placeholders.taxName")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="nif"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("fields.nif")} *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("placeholders.nif")}
-                          className="rounded-lg"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="nif"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("fields.nif")} *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t("placeholders.nif")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="contactId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("fields.contact")} *</FormLabel>
-                      <FormControl>
-                        <ContactSelect
-                          value={field.value}
-                          onChange={(value) => field.onChange(value)}
-                          companyId={authCompanyId}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div>
+             
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="email"
+                            placeholder="exemplo@email.com"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="addressId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("fields.address")} *</FormLabel>
-                      <FormControl>
-                        <AddressSelect
-                          value={field.value}
-                          onChange={(value) => field.onChange(value)}
-                          companyId={authCompanyId}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            placeholder="+244 000 000 000"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div>
+               
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="houseHold"
+                    render={({ field }) => (
+                      <FormItem >
+                        <FormLabel>Domicílio</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Ex: Casa 123, Rua X"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>País</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Angola"
+                            readOnly
+                            className="bg-gray-50 cursor-not-allowed"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="province"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Província</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              form.setValue("municipality", "");
+                              form.setValue("commune", "");
+                            }}
+                            disabled={loadingProvinces || isSaving}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  loadingProvinces
+                                    ? "Carregando províncias..."
+                                    : "Selecione uma província"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60 overflow-y-auto">
+                              {provincesData.map((province) => (
+                                <SelectItem
+                                  key={province.slug || province.name}
+                                  value={province.name}
+                                >
+                                  {province.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="municipality"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Município</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              form.setValue("commune", "");
+                            }}
+                            disabled={municipalities.length === 0 || isSaving}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  loadingProvinces
+                                    ? "Carregando municípios..."
+                                    : municipalities.length === 0
+                                    ? "Selecione a província"
+                                    : "Selecione um município"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60 overflow-y-auto">
+                              {municipalities.map((municipality) => (
+                                <SelectItem
+                                  key={municipality.slug || municipality.name}
+                                  value={municipality.name}
+                                >
+                                  {municipality.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="commune"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comuna</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={communes.length === 0 || isSaving}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  selectedMunicipality
+                                    ? communes.length === 0
+                                      ? "Sem comunas disponíveis"
+                                      : "Selecione uma comuna"
+                                    : "Selecione o município"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60 overflow-y-auto">
+                              {communes.map((commune) => (
+                                <SelectItem
+                                  key={commune.slug || commune.name}
+                                  value={commune.name}
+                                >
+                                  {commune.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
 
@@ -268,14 +525,14 @@ export function CustomerDialog({
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
                 disabled={isSaving}
-                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 "
               >
                 {tCommon("cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="shadow-lg rounded-xl px-6"
+                className="shadow-lg  px-6"
               >
                 {isSaving ? (
                   <>
@@ -283,7 +540,7 @@ export function CustomerDialog({
                     {tCommon("save")}...
                   </>
                 ) : (
-                  (isEditing ? tCommon("save") : tCommon("create"))
+                  isEditing ? tCommon("save") : "Criar Cliente"
                 )}
               </Button>
             </DialogFooter>

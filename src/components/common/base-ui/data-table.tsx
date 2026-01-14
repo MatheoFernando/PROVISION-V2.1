@@ -27,8 +27,8 @@ import {
 import { DotsThree } from "phosphor-react";
 
 interface ActionButton<TData> {
-  label: string;
-  icon?: React.ReactNode;
+  label: string | ((row: TData) => string);
+  icon?: React.ReactNode | ((row: TData) => React.ReactNode);
   onClick: (row: TData) => void;
   variant?:
   | "default"
@@ -38,6 +38,7 @@ interface ActionButton<TData> {
   | "ghost"
   | "link";
   render?: (row: TData, action: ActionButton<TData>) => React.ReactNode;
+  disabled?: boolean | ((row: TData) => boolean);
 }
 
 interface DataTableProps<TData extends RowData, TValue> {
@@ -47,6 +48,11 @@ interface DataTableProps<TData extends RowData, TValue> {
   onRefetch?: () => void;
   placeholder?: string;
   actionButton?: {
+    label: string;
+    onClick?: () => void;
+    component?: React.ReactNode;
+  };
+  secondaryActionButton?: {
     label: string;
     onClick?: () => void;
     component?: React.ReactNode;
@@ -63,6 +69,8 @@ interface DataTableProps<TData extends RowData, TValue> {
   statusOptions?: { label: string; value: string }[];
   statusFilter?: string;
   onStatusFilterChange?: (status?: string) => void;
+  pageSize?: number;
+  getRowClassName?: (row: TData) => string;
 }
 
 export function DataTableGeneric<TData extends RowData, TValue>({
@@ -72,6 +80,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   searchKey,
   placeholder = "Pesquisar...",
   actionButton,
+  secondaryActionButton,
   bulkImportButton,
   rowActions,
   toolbar,
@@ -81,6 +90,8 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   statusOptions,
   statusFilter,
   onStatusFilterChange,
+  pageSize = 5,
+  getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const hasDateColumn = React.useMemo(() => {
     if (!dateKey) return false;
@@ -104,7 +115,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
-    pageSize: 15,
+    pageSize,
   });
   const [viewAsCard, setViewAsCard] = React.useState(false);
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
@@ -216,6 +227,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
         actionButton={actionButton}
+        secondaryActionButton={secondaryActionButton}
         bulkImportButton={bulkImportButton}
         toolbar={toolbar}
         view={viewAsCard ? "cards" : "table"}
@@ -247,6 +259,7 @@ export function DataTableGeneric<TData extends RowData, TValue>({
         isLoading={isLoading}
         onRefetch={onRefetch}
         colSpan={tableColumns.length}
+        getRowClassName={getRowClassName}
       />
 
       <div className="flex items-center justify-end px-4 pt-4 border-t border-border">
@@ -323,6 +336,12 @@ export function createActionsColumn<TData extends RowData>(
                 </React.Fragment>
               );
             }
+
+            const label = typeof action.label === "function" ? action.label(row.original) : action.label;
+            const icon = typeof action.icon === "function" ? action.icon(row.original) : action.icon;
+
+            const disabled = typeof action.disabled === "function" ? action.disabled(row.original) : action.disabled;
+
             return (
               <DropdownMenuItem
                 key={index}
@@ -330,12 +349,15 @@ export function createActionsColumn<TData extends RowData>(
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  action.onClick(row.original);
+                  if (!disabled) {
+                    action.onClick(row.original);
+                  }
                 }}
-                className="cursor-pointer"
+                disabled={disabled}
+                className={`cursor-pointer ${disabled ? "opacity-50 pointer-events-none" : ""}`}
               >
-                {action.icon && <span className="mr-2">{action.icon}</span>}
-                <span>{action.label}</span>
+                {icon && <span className="mr-2">{icon}</span>}
+                <span>{label}</span>
               </DropdownMenuItem>
             );
           })}

@@ -15,6 +15,7 @@ import { Zone } from "@/infrastructure/types/domain";
 interface ZoneSelectProps {
   value?: string;
   onChange: (value: string) => void;
+  onSelectName?: (name: string) => void;
   companyId: string;
   employeeId?: string;
   areaId?: string;
@@ -23,6 +24,7 @@ interface ZoneSelectProps {
 export function ZoneSelect({
   value,
   onChange,
+  onSelectName,
   companyId,
   employeeId,
   areaId,
@@ -83,6 +85,14 @@ export function ZoneSelect({
           onValueChange={(selected) => {
             setSelectedZoneId(selected);
             onChange(selected);
+            if (onSelectName) {
+              const selectedZone = list.find((z) => z.id === selected);
+              if (selectedZone?.name) {
+                onSelectName(selectedZone.name);
+              } else {
+                onSelectName("");
+              }
+            }
           }}
           disabled={isLoading || !hasArea}
           onOpenChange={() => refetch()}

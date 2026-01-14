@@ -20,6 +20,7 @@ interface TableViewProps<TData extends RowData> {
   isLoading?: boolean;
   colSpan: number;
   onRefetch?: () => void;
+  getRowClassName?: (row: TData) => string;
 }
 
 export function TableView<TData extends RowData>({
@@ -27,6 +28,7 @@ export function TableView<TData extends RowData>({
   isLoading = false,
   colSpan,
   onRefetch,
+  getRowClassName,
 }: TableViewProps<TData>) {
   return (
     <div className="w-full overflow-x-auto pb-0 mb-0">
@@ -70,7 +72,7 @@ export function TableView<TData extends RowData>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-b border-border  dark:hover:bg-muted/30 "
+                className={`border-b border-border dark:hover:bg-muted/30 ${getRowClassName ? getRowClassName(row.original) : ""}`}
                 onClick={() => onRefetch?.()}
               >
                 {row.getVisibleCells().map((cell) => (

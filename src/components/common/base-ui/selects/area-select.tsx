@@ -23,6 +23,7 @@ type AreaForm = {
 interface AreaSelectProps {
   value?: string;
   onChange: (value: string) => void;
+  onSelectName?: (name: string) => void;
   companyId: string;
   employeeId?: string;
 }
@@ -30,6 +31,7 @@ interface AreaSelectProps {
 export function AreaSelect({
   value: valueProp,
   onChange,
+  onSelectName,
   companyId,
   employeeId,
 }: AreaSelectProps) {
@@ -133,6 +135,14 @@ export function AreaSelect({
           onValueChange={(selected) => {
             setSelectedAreaId(selected);
             onChange(selected);
+            if (onSelectName) {
+              const selectedArea = areasList.find((a) => a.id === selected);
+              if (selectedArea?.name) {
+                onSelectName(selectedArea.name);
+              } else {
+                onSelectName("");
+              }
+            }
           }}
           disabled={isLoadingOptions}
           onOpenChange={() => refetch()}

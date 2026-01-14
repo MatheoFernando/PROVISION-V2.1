@@ -66,13 +66,14 @@
         "integrations": "Integrações",
         "securityAndLogs": "Segurança e Logs",
         "backupAndRestore": "Backup e Restauro",
-        "analytics": "Análises",
+        "analytics": "Analytics",
         "entities": "Entidades",
         "clients": "Clientes",
         "sites": "Sites",
         "modules": "Módulos",
         "company": "Empresa",
         "equipment": "Equipamentos",
+        "companys" : "Empresas",
         "employees": "Funcionários",
         "vehicles": "Veículos",
         "operationalOrganization": "Organização Operacional",
@@ -407,7 +408,7 @@
         "tabs": {
             "overview": "Visão Geral",
             "clients": "Clientes",
-            "tools": "Ferramentas"
+            "tools": "Equipamentos"
         },
         "actions": {
             "associateClient": "Associar Cliente",

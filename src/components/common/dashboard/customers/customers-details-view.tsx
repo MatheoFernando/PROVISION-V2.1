@@ -31,14 +31,22 @@ function getFirstItem<T>(entity: T | T[] | undefined | null): T | undefined {
   return entity as T;
 }
 
-export function CustomersView() {
+
+interface CustomersViewProps {
+  customerId?: string;
+}
+
+export function CustomersView({ customerId: propId }: CustomersViewProps = {}) {
   const params = useParams<{ customerId: string }>();
   const router = useRouter();
   const t = useTranslations();
-  const { customerId } = params;
+  const customerId = propId || params.customerId;
 
   const { data: customer, isLoading } = useCustomerById(customerId);
   const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false);
+  const customerSites = Array.isArray((customer as any)?.sites)
+    ? (customer as any)?.sites
+    : [];
 
   if (isLoading) {
     return <CustomerDetailsSkeleton />;
@@ -74,7 +82,7 @@ export function CustomersView() {
               <ChevronLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <Users className="w-4 h-4" />
               </div>
               <div className="flex gap-2">
@@ -125,7 +133,7 @@ export function CustomersView() {
 
               <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                  <MapPin className="w-5 h-5 text-indigo-500" />
+                  <MapPin className="w-5 h-5 text-blue-500" />
                   {t('CustomerDetails.sections.contactDetails')}
                 </h3>
                 <div className="space-y-3 pt-2">
@@ -154,7 +162,7 @@ export function CustomersView() {
               <div className="bg-card/50 backdrop-blur-sm border border-border/40 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                    <Briefcase className="w-5 h-5 text-indigo-500" />
+                    <Briefcase className="w-5 h-5 text-blue-500" />
                     {t('CustomerDetails.sections.fiscalInfo')}
                   </h3>
                 </div>
@@ -188,11 +196,12 @@ export function CustomersView() {
           <TabsContent value="sites" className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
 
             <div >
-              <h1 className="text-2xl font-semibold mb-4">{t('Sidebar.sites')}</h1>
               {customerId && (
                 <SitesTable
                   customerId={customerId}
                   companyId={(customer)?.companyId}
+                  data={customerSites}
+                  isLoadingOverride={isLoading}
                   shouldNavigateBack={false}
                 />
               )}
@@ -228,7 +237,7 @@ function DetailRow({
   )
 }
 
-function CustomerDetailsSkeleton() {
+export function CustomerDetailsSkeleton() {
   return (
     <div className="min-h-screen bg-background/50 pb-20">
       <div className="w-full bg-background/60 border-b border-border/40 h-16">

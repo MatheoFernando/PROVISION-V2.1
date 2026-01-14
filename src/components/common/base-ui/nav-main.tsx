@@ -45,9 +45,6 @@ function hasActiveChild(item: NavItem, pathname: string): boolean {
 
 function NavMenuItem({ item, pathname, level = 0 }: { item: NavItem; pathname: string; level?: number }) {
   const t = useTranslations();
-  // Note: t is not passed down. We should probably use translations in the parent and pass translated title, 
-  // OR use useTranslations inside this component.
-  // Ideally, if item.title is a key, we translate it.
 
   const title = item.title.includes('.') ? t(item.title) : item.title;
 
@@ -120,7 +117,6 @@ export function NavMain({
   const pathname = usePathname();
   const t = useTranslations();
 
-  // Need to define isActiveUrl here too as it's not exported
   const isActiveUrl = (url?: string) => {
     if (!url) return false;
     if (url === "/dashboard") {
@@ -136,7 +132,7 @@ export function NavMain({
       </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
-          const title = item.title.includes('.') ? t(item.title) : item.title;
+          const title = item.title.includes(".") ? t(item.title) : item.title;
 
           if (item.items?.length) {
             const isActive = hasActiveChild(item, pathname);
@@ -189,3 +185,58 @@ export function NavMain({
     </SidebarGroup>
   );
 }
+
+export function NavConfig({ item, footer }: { item: NavItem; footer?: React.ReactNode }) {
+  const pathname = usePathname();
+  const t = useTranslations();
+
+  const title = item.title.includes(".") ? t(item.title) : item.title;
+  const hasSubItems = item.items && item.items.length > 0;
+  const isActive = hasActiveChild(item, pathname);
+
+  if (!hasSubItems) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="mb-2 text-xs font-medium text-gray-500 tracking-wider">
+        {title}
+      </SidebarGroupLabel>
+      <SidebarMenu>
+        <SidebarMenuItem key={item.title}>
+          <Collapsible
+            defaultOpen={isActive}
+            className="group/collapsible"
+          >
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton tooltip={title}>
+                {item.icon && <item.icon className="size-4" />}
+                <span>{title}</span>
+                <CaretRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {(item.items ?? []).map((subItem) => (
+                  <NavMenuItem
+                    key={subItem.title}
+                    item={subItem}
+                    pathname={pathname}
+                    level={1}
+                  />
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      {footer && (
+        <div className="mt-3">
+          {footer}
+        </div>
+      )}
+    </SidebarGroup>
+  );
+}
+

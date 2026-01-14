@@ -42,6 +42,11 @@ export interface ToolbarProps<TData extends RowData> {
     onClick?: () => void;
     component?: React.ReactNode;
   };
+  secondaryActionButton?: {
+    label: string;
+    onClick?: () => void;
+    component?: React.ReactNode;
+  };
   bulkImportButton?: {
     label: string;
     onClick: () => void;
@@ -67,6 +72,7 @@ export function Toolbar<TData extends RowData>({
   placeholder,
   globalFilter,
   actionButton,
+  secondaryActionButton,
   bulkImportButton,
   toolbar,
   isFilterOpen,
@@ -327,6 +333,18 @@ export function Toolbar<TData extends RowData>({
           </Button>
         )}
 
+        {secondaryActionButton &&
+          (secondaryActionButton.component || (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-11 cursor-pointer"
+              onClick={secondaryActionButton.onClick}
+            >
+              <Plus className="mr-2 size-4" />
+              {secondaryActionButton.label}
+            </Button>
+          ))}
         {actionButton &&
           (actionButton.component || (
             <Button

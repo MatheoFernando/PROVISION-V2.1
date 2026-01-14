@@ -216,7 +216,7 @@ function ListUsers() {
   return (
     <div className="space-y-6">
       <DataTableGeneric
-        data={users}
+        data={users || []}
         columns={columns}
         searchKey="phone"
         placeholder="Pesquisar por telefone..."

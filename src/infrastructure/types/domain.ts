@@ -77,7 +77,9 @@ export interface Company {
     contactId?: string;
     addressId?: string;
     address?: Address;
+    addresses?: Address[];
     contact?: Contact;
+    contacts?: Contact[];
     createdAt?: string;
     updatedAt?: string;
 }
@@ -98,14 +100,13 @@ export interface UpdateCompanyPayload {
     id: string;
     taxName: string;
     businessName: string;
-    nif: string;
     photo?: string;
     contactId?: string;
     addressId?: string;
     status: boolean;
     hasExistedSince?: string;
-    address?: Address;
     contact?: Contact;
+    address?: Address;
 }
 
 export interface User {
@@ -243,6 +244,9 @@ export interface Site {
     companyId: string;
     geoLocationId: string | null | undefined;
     status: string;
+    nameArea?: string;
+    nameZone?: string;
+    nameSector?: string;
     customer?: Customer;
     customers?: Customer | (Customer | null)[];
     address?: Address;

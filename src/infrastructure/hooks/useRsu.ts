@@ -40,6 +40,9 @@ export function useRsus(companyId?: string) {
       return normalizeResponse<Rsu[]>(data);
     },
     enabled: !!companyId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

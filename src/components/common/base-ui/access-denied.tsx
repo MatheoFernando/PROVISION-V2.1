@@ -22,7 +22,7 @@ export function AccessDenied({
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh] p-4">
+    <div className="flex items-center justify-center w-full p-4">
       <div className="w-full max-w-md text-center">
         <div>
           <div className="flex justify-center mb-4">

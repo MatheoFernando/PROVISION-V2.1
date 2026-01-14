@@ -1,112 +1,111 @@
-"use client"
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/infrastructure/utils/api'
-import type { User, CreateUserPayload, UpdateUserPayload } from '@/infrastructure/types/domain'
-import { toast } from 'sonner'
-import { useTranslations } from 'next-intl'
 
-export function useUsersQuery(companyId?: string) {
-  return useQuery<User[]>({
-    queryKey: ['users', companyId ?? 'current-company'],
-    queryFn: async (): Promise<User[]> => {
-      const { data } = await api.get('/users/getAllByCompanyId', companyId ? { params: { companyId } } : undefined)
-      return data?.data ?? data ?? []
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../utils/api";
+import type { User, CreateUserPayload, UpdateUserPayload } from "../types/domain";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { resolveApiErrorPayload } from "../utils/api-response";
+
+const usersKey = (companyId?: string) => ["users", companyId] as const;
+
+
+export function useCreateUser(options?: { showToast?: boolean }) {
+  const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Users");
+  const showToast = options?.showToast ?? true;
+
+  return useMutation({
+    mutationFn: async (payload: CreateUserPayload): Promise<User> => {
+      const response = await api.post("/users/create", payload);
+      return response.data?.data ?? response.data;
     },
-    enabled: true,
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    retry: 1,
-  })
+    onSuccess: (_, variables) => {
+      const key = usersKey(variables.companyId);
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      if (showToast) toast.success(t("create.success"));
+    },
+    onError: (error) => {
+        const resolved = resolveApiErrorPayload(error);
+        const message = resolved.message || t("create.error");
+        if (showToast) toast.error(message);
+    }
+  });
 }
 
-
-export function useCreateUser() {
-  const queryClient = useQueryClient()
+export function useUpdateUser(options?: { showToast?: boolean }) {
+  const queryClient = useQueryClient();
   const t = useTranslations("Hooks.Users");
+  const showToast = options?.showToast ?? true;
 
-  return useMutation<{ message: string; data?: User }, unknown, CreateUserPayload>({
-    mutationKey: ['user-create'],
-    mutationFn: async (payload: CreateUserPayload) => {
-      const { data } = await api.post('/users/create', payload)
-      return data
+  return useMutation({
+    mutationFn: async (payload: UpdateUserPayload): Promise<User> => {
+      const response = await api.put("/users", payload);
+      return response.data;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users'] })
-      await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
-      toast.success(t('create.success'))
+    onSuccess: (updated) => {
+      const key = usersKey(updated.companyId);
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      if (showToast) toast.success(t("update.success"));
     },
-    onError: () => {
-      toast.error(t('create.error'))
-    },
-  })
+    onError: (error) => {
+        const resolved = resolveApiErrorPayload(error);
+        const message = resolved.message || t("update.error");
+        if (showToast) toast.error(message);
+    }
+  });
 }
 
-export function useUpdateUser() {
-  const queryClient = useQueryClient()
+export function useDeleteUser(options?: { showToast?: boolean }) {
+  const queryClient = useQueryClient();
   const t = useTranslations("Hooks.Users");
+  const showToast = options?.showToast ?? true;
 
-  return useMutation<{ message: string; data?: User }, unknown, UpdateUserPayload>({
-    mutationKey: ['user-update'],
-    mutationFn: async (payload: UpdateUserPayload) => {
-      const { data } = await api.put('/users', payload)
-      return data
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      await api.delete(`/users/${id}`);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users'] })
-      await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
-      toast.success(t('update.success'))
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      if (showToast) toast.success(t("delete.success"));
     },
-    onError: () => {
-      toast.error(t('update.error'))
-    },
-  })
-}
-
-export function useDeleteUser() {
-  const queryClient = useQueryClient()
-  const t = useTranslations("Hooks.Users");
-
-  return useMutation<{ message: string }, unknown, string>({
-    mutationKey: ['user-delete'],
-    mutationFn: async (userId: string) => {
-      const { data } = await api.delete(`/users/${userId}`)
-      return data
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users'] })
-      await queryClient.refetchQueries({ queryKey: ['users'], type: 'active' })
-      toast.success(t('delete.success'))
-    },
-    onError: () => {
-      toast.error(t('delete.error'))
-    },
-  })
+    onError: (error) => {
+        const resolved = resolveApiErrorPayload(error);
+        const message = resolved.message || t("delete.error");
+        if (showToast) toast.error(message);
+    }
+  });
 }
 
 export function useUsers(companyId?: string) {
-  const usersQuery = useUsersQuery(companyId)
-  const createUser = useCreateUser()
-  const updateUser = useUpdateUser()
-  const deleteUser = useDeleteUser()
+
+  const query = useQuery({
+    queryKey: usersKey(companyId),
+    enabled: Boolean(companyId),
+    queryFn: async (): Promise<User[]> => {
+      const response = await api.get("/users/getAllByCompanyId", {
+        params: { companyId },
+      });
+      const data = response.data?.data ?? response.data ?? [];
+      return Array.isArray(data) ? data : [];
+    },
+  });
+
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
 
   return {
-    users: usersQuery.data ?? [],
-    isLoading: usersQuery.isLoading,
-    isError: usersQuery.isError,
-    error: usersQuery.error,
-
-    isCreating: createUser.isPending,
-    isUpdating: updateUser.isPending,
-    isDeleting: deleteUser.isPending,
-
-    createUser: createUser.mutateAsync,
-    updateUser: updateUser.mutateAsync,
-    deleteUser: deleteUser.mutateAsync,
-
-    refetch: usersQuery.refetch,
-  }
+    users: query.data,
+    isLoading: query.isLoading,
+    refetch: query.refetch,
+    createUser: createUserMutation.mutateAsync,
+    isCreating: createUserMutation.isPending,
+    updateUser: updateUserMutation.mutateAsync,
+    isUpdating: updateUserMutation.isPending,
+    deleteUser: deleteUserMutation.mutateAsync,
+    isDeleting: deleteUserMutation.isPending,
+  };
 }
-

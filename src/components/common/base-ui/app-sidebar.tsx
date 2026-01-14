@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" variant="sidebar" {...props} className="bg-white dark:bg-background text-sidebar-foreground border-r border-sidebar-border" >
       <SidebarHeader className="md:pt-8">
         <Link href="/dashboard" prefetch>
-          <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto" />
+          <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto" priority style={{ height: "auto" }} />
         </Link>
       </SidebarHeader>
       <SidebarContent>

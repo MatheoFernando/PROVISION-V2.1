@@ -1,18 +1,23 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import {
   clearAccessToken,
   setAccessToken,
 } from "@/infrastructure/utils/api";
+import type { MeResponseEntity } from "@/infrastructure/schema/schema-auth";
 import Cookies from "js-cookie";
 
 interface AuthState {
   isGlobalAdmin: boolean | null;
   userId: string | null;
   companyId: string | null;
+  userData: MeResponseEntity | null;
   setCompanyId: (companyId: string | null) => void;
-  setIsGlobalAdmin: (isGlobalAdmin: boolean) => void;
-  setUserId: (userId: string | null) => void;
+  setUserData: (args: {
+    userId: string;
+    companyId: string | null;
+    isGlobalAdmin: boolean;
+  }) => void;
+  setMeData: (data: MeResponseEntity) => void;
   setSession: (args: {
     token: string;
     userId: string;
@@ -23,88 +28,45 @@ interface AuthState {
   logout: () => void;
 }
 
-function readCompanyId(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem("companyId");
-  } catch {
-    return null;
-  }
-}
-
-function readUserId(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem("userId");
-  } catch {
-    return null;
-  }
-}
-
-function readIsGlobalAdmin(): boolean | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const value = Cookies.get("isGlobalAdmin");
-    if (value === undefined) return null;
-    return value === "true";
-  } catch {
-    return null;
-  }
-}
-
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      isGlobalAdmin: readIsGlobalAdmin(),
-      userId: readUserId(),
-      companyId: readCompanyId(),
-      setCompanyId: (companyId) => {
-        if (typeof window !== "undefined") {
-          if (companyId) window.localStorage.setItem("companyId", companyId);
-          else window.localStorage.removeItem("companyId");
-        }
-        set({ companyId });
-      },
-      setIsGlobalAdmin: (isGlobalAdmin) => {
-        Cookies.set("isGlobalAdmin", String(isGlobalAdmin));
-        set({ isGlobalAdmin });
-      },
-      setUserId: (userId) => {
-        if (typeof window !== "undefined") {
-          if (userId) window.localStorage.setItem("userId", userId);
-          else window.localStorage.removeItem("userId");
-        }
-        set({ userId });
-      },
-      setSession: ({ token, userId, companyId, isGlobalAdmin }) => {
-        setAccessToken(token);
-        if (companyId && typeof window !== "undefined") {
-          window.localStorage.setItem("companyId", companyId);
-        }
-        Cookies.set("isGlobalAdmin", String(isGlobalAdmin));
-        if (companyId) set({ companyId });
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem("userId", userId);
-        }
-        set({ userId, isGlobalAdmin });
-      },
-      setToken: (token) => {
-        if (token) {
-          setAccessToken(token);
-        } else {
-          clearAccessToken();
-        }
-      },
-      logout: () => {
-        clearAccessToken();
-        if (typeof window !== "undefined")
-          window.localStorage.removeItem("companyId");
-        if (typeof window !== "undefined")
-          window.localStorage.removeItem("userId");
-        Cookies.remove("isGlobalAdmin");
-        set({ isGlobalAdmin: null, userId: null, companyId: null });
-      },
-    }),
-    { name: "auth", storage: undefined }
-  )
-);
+export const useAuthStore = create<AuthState>((set) => ({
+  isGlobalAdmin: null,
+  userId: null,
+  companyId: null,
+  userData: null,
+  setCompanyId: (companyId) => {
+    set({ companyId });
+  },
+  setUserData: ({ userId, companyId, isGlobalAdmin }) => {
+    set({ userId, companyId, isGlobalAdmin });
+  },
+  setMeData: (data) => {
+    const { id, companyId, isGlobalAdmin } = data;
+    set({
+      userId: id,
+      companyId: companyId ?? null,
+      isGlobalAdmin,
+      userData: data,
+    });
+  },
+  setSession: ({ token, userId, companyId, isGlobalAdmin }) => {
+    setAccessToken(token);
+    set({ userId, companyId: companyId ?? null, isGlobalAdmin });
+  },
+  setToken: (token) => {
+    if (token) {
+      setAccessToken(token);
+    } else {
+      clearAccessToken();
+    }
+  },
+  logout: () => {
+    clearAccessToken();
+    Cookies.remove('isGlobalAdmin');
+    set({
+      isGlobalAdmin: null,
+      userId: null,
+      companyId: null,
+      userData: null,
+    });
+  },
+}));

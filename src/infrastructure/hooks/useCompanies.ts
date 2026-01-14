@@ -208,8 +208,10 @@ export function useCreateCompanyMutation() {
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.invalidateQueries({ queryKey: ["companies-name"] });
+      await queryClient.invalidateQueries({ queryKey: ["company-cod"] });
       await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
-      toast.success("Empresa criada com sucesso");
+      // Toast será exibido no componente
     },
     onError: (error) => {
       console.log("Erro ao criar empresa", error);
@@ -218,8 +220,9 @@ export function useCreateCompanyMutation() {
   });
 }
 
-export function useUpdateCompanyMutation() {
+export function useUpdateCompanyMutation(options?: { showToast?: boolean }) {
   const queryClient = useQueryClient();
+  const showToast = options?.showToast ?? true;
 
   return useMutation<
     { message: string; data?: Company },
@@ -233,11 +236,13 @@ export function useUpdateCompanyMutation() {
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.invalidateQueries({ queryKey: ["companies-name"] });
+      await queryClient.invalidateQueries({ queryKey: ["company-cod"] });
       await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
-      toast.success("Empresa atualizada com sucesso");
+      if (showToast) toast.success("Empresa atualizada com sucesso");
     },
     onError: (error) => {
-      toast.error("Erro ao atualizar empresa");
+      if (showToast) toast.error("Erro ao atualizar empresa");
     },
   });
 }
@@ -253,6 +258,8 @@ export function useDeleteCompanyMutation() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await queryClient.invalidateQueries({ queryKey: ["companies-name"] });
+      await queryClient.invalidateQueries({ queryKey: ["company-cod"] });
       await queryClient.refetchQueries({ queryKey: ["companies"], type: "active" });
       toast.success("Empresa excluída com sucesso");
     },

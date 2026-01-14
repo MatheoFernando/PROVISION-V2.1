@@ -7,7 +7,9 @@ import {
   useDeleteCompanyMutation,
   useCompaniesByNameQuery,
   useCompanyByCodQuery,
+  useUpdateCompanyMutation,
 } from "@/infrastructure/hooks/useCompanies";
+import { useCurrentUser } from "@/infrastructure/hooks/useCurrentUser";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,17 +23,16 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Company } from "@/infrastructure/types/domain";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DataTableGeneric } from "../../base-ui/data-table";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, Ban, Power } from "lucide-react";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { CompanyView } from "./company-view";
 
 
-function getPrimaryAddress(company) {
-  return company?.address ?? company?.addresses?.[0] ?? undefined;
+function getPrimaryAddress(company: Company) {
+  return company?.address || company?.addresses?.[0];
 }
 
-function getPrimaryContact(company) {
-  return company?.contact ?? company?.contacts?.[0] ?? undefined;
+function getPrimaryContact(company: Company) {
+  return company?.contact || company?.contacts?.[0];
 }
 
 const columns: ColumnDef<Company, unknown>[] = [
@@ -129,6 +130,7 @@ const columns: ColumnDef<Company, unknown>[] = [
 
 function ListCompany() {
   const router = useRouter();
+  const { isGlobalAdmin } = useCurrentUser();
   const [searchType, setSearchType] = React.useState<"businessName" | "cod">("businessName");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState("");
@@ -159,17 +161,31 @@ function ListCompany() {
   const refetch = !debouncedSearchTerm ? refetchAll : () => {};
 
   const { mutateAsync: deleteAsync } = useDeleteCompanyMutation();
+  const { mutateAsync: updateCompany } = useUpdateCompanyMutation({ showToast: false });
 
-  const [viewOpen, setViewOpen] = React.useState(false);
   const [selectedCompany, setSelectedCompany] = React.useState<Company | null>(
     null,
   );
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
 
+  const slugify = (text: string): string => {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  };
+
   const handleView = (company: Company) => {
-    setSelectedCompany(company);
-    setViewOpen(true);
+    if (company.businessName) {
+        const slug = slugify(company.businessName);
+        router.push(`/dashboard/empresa/${slug}`);
+    }
   };
 
   const handleEdit = (company: Company) => {
@@ -179,6 +195,26 @@ function ListCompany() {
   const handleDelete = async (company: Company) => {
     setSelectedCompany(company);
     setDeleteOpen(true);
+  };
+
+  const handleToggleStatus = async (company: Company) => {
+      if (!company.id) return;
+      try {
+        await updateCompany({
+            id: company.id,
+            businessName: company.businessName,
+            taxName: company.taxName,
+            status: !company.status,
+        });
+        toast.success(
+          !company.status
+            ? "Empresa ativada com sucesso"
+            : "Empresa desativada com sucesso"
+        );
+        refetch();
+      } catch (error) {
+        console.error("Failed to toggle status", error);
+      }
   };
 
 
@@ -217,12 +253,17 @@ function ListCompany() {
         data={data ?? []}
         columns={columns}
         onRefetch={refetch}
-        // searchKey="businessName" // Search is handled externally now
         isLoading={isLoading}
-        actionButton={{
-          label: "Nova Empresa",
-          onClick: () => router.push("/dashboard/empresa/create"),
-        }}
+        getRowClassName={(row) => !row.status ? "opacity-50 grayscale" : ""}
+        
+        actionButton={
+          isGlobalAdmin
+            ? {
+                label: "Nova Empresa",
+                onClick: () => router.push("/dashboard/empresa/create"),
+              }
+            : undefined
+        }
         rowActions={[
           {
             label: "Visualizar",
@@ -231,6 +272,7 @@ function ListCompany() {
             ),
             onClick: handleView,
             variant: "ghost",
+            disabled: (company) => !company.status,
           },
           {
             label: "Editar",
@@ -238,6 +280,18 @@ function ListCompany() {
               <Edit className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />
             ),
             onClick: handleEdit,
+            variant: "ghost",
+            disabled: (company) => !company.status,
+          },
+          {
+            label: (company) => (company.status ? "Desativar" : "Ativar"),
+            icon: (company) =>
+              company.status ? (
+                <Ban className="h-2.5 w-2.5 text-rose-600 dark:text-rose-100" />
+              ) : (
+                <Power className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-100" />
+              ),
+            onClick: handleToggleStatus,
             variant: "ghost",
           },
 
@@ -248,21 +302,9 @@ function ListCompany() {
             ),
             onClick: handleDelete,
             variant: "ghost",
+            disabled: (company) => !company.status,
           },
         ]}
-      />
-
-      <CompanyView
-        open={viewOpen}
-        company={selectedCompany}
-        onClose={() => {
-          setViewOpen(false);
-          setSelectedCompany(null);
-        }}
-        onEdit={(company) => {
-          setViewOpen(false);
-          handleEdit(company);
-        }}
       />
 
       <DeleteModal

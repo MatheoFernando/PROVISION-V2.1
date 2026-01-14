@@ -25,19 +25,25 @@ const contactSchema = z.object({
     .transform((arr) => (arr ? arr.filter((p) => p.phone !== "") : undefined)),
 });
 
+const adminSchema = z.object({
+  phone: z.string().min(9, "Telefone do administrador é obrigatório"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+});
+
 export const companySchema = z.object({
   id: z.string().optional(),
-  cod: z.string(),
+  cod: z.string().min(1, "Código é obrigatório"),
   taxName: z.string().min(1, "Nome fiscal é obrigatório"),
   businessName: z.string().min(1, "Nome empresarial é obrigatório"),
   nif: z.string().min(9, "NIF deve ter pelo menos 9 caracteres"),
   photo: z.string().optional(),
   status: z.boolean().default(true),
-  hasExistedSince: z.string().min(1, "Data de existência é obrigatória"),
+  hasExistedSince: z.string().optional(),
   contactId: z.string().optional(),
   addressId: z.string().optional(),
   address: addressSchema,
   contact: contactSchema,
+  admin: adminSchema.optional(),
 });
 
 

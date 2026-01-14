@@ -25,24 +25,7 @@ export function useSites(customerId?: string, options?: SitesQueryOptions & { co
   });
 }
 
-export function useSitesByCompanyAndCustomer(
-  companyId?: string,
-  customerId?: string,
-  options?: SitesQueryOptions,
-) {
-  return useQuery({
-    queryKey: ["sites", "by-company-customer", companyId, customerId],
-    queryFn: async (): Promise<Site[]> => {
-      if (!companyId || !customerId) return [];
-      const response = await api.get(
-        `/site/getByCompanyAndCustomerId:${companyId},${customerId}`,
-      );
-      return response.data.data ?? response.data ?? [];
-    },
- 
-    enabled: (options?.enabled ?? true) && Boolean(companyId && customerId),
-  });
-}
+
 
 export function useSiteById(id?: string, options?: SitesQueryOptions) {
   return useQuery({
@@ -58,25 +41,6 @@ export function useSiteById(id?: string, options?: SitesQueryOptions) {
   });
 }
 
-export function useCreateSite() {
-  const queryClient = useQueryClient();
-  const t = useTranslations("Hooks.Sites");
-
-  return useMutation<Site, unknown, CreateSite>({
-    mutationFn: async (data) => {
-      const response = await api.post("/site/create", data);
-      return response.data;
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.refetchQueries({ queryKey: ["sites"], type: 'active' });
-      toast.success(t("create.success"));
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || t("create.error"));
-    },
-  });
-}
 
 
 
@@ -86,7 +50,14 @@ export function useCreateGrossSite() {
 
   return useMutation<Site, unknown, CreateGrossSitePayload>({
     mutationFn: async payload => {
-      const response = await api.post("/site/AddGrossSite", payload);
+      const requestPayload: any = { ...payload };
+      if (!requestPayload.contact || (!requestPayload.contact.email && (!requestPayload.contact.phoneNumbers || requestPayload.contact.phoneNumbers.length === 0))) {
+        delete requestPayload.contact;
+      }
+      if (!requestPayload.address || !requestPayload.address.houseHold) {
+        delete requestPayload.address;
+      }
+      const response = await api.post("/site/AddGrossSite", requestPayload);
       const result = resolveApiResponse<Site>(response);
       const isSuccess = result.statusCode === 200 || result.statusCode === 201;
 

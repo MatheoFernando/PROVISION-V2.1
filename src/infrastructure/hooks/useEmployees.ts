@@ -50,7 +50,9 @@ export function useEmployeeById(id?: string, companyId?: string) {
     queryFn: async (): Promise<Employee | null> => {
       if (!id) return null;
       try {
-        const response = await api.get(`/employee/getById/${id}`);
+        const response = await api.get("/employee/getById", {
+          params: { id },
+        });
         const data = response.data?.data ?? response.data ?? null;
         return (data as Employee) ?? null;
       } catch {
@@ -98,34 +100,6 @@ export function useEmployeesByName(name?: string, companyId?: string) {
   });
 }
 
-export function useCreateEmployee() {
-  const queryClient = useQueryClient();
-  const t = useTranslations("Hooks.Employees");
-
-  return useMutation<Employee, unknown, CreateEmployeeInput>({
-    mutationFn: async (data: CreateEmployeeInput): Promise<Employee> => {
-      const response = await api.post("/employee/create", data);
-      return response.data;
-    },
-    onSuccess: async (created, variables) => {
-      const key = employeesKey(variables.companyId);
-      queryClient.setQueryData<Employee[]>(key, (current = []) => {
-        const alreadyExists = current.some(
-          (employee) => employee.id === created.id
-        );
-        if (alreadyExists) {
-          return current.map((employee) =>
-            employee.id === created.id ? created : employee
-          );
-        }
-        return [created, ...current];
-      });
-      queryClient.invalidateQueries({ queryKey: key });
-      queryClient.refetchQueries({ queryKey: key, type: "active" });
-      toast.success(t("create.success"));
-    },
-  });
-}
 
 export function useCreateGrossEmployee() {
   const queryClient = useQueryClient();
@@ -133,7 +107,14 @@ export function useCreateGrossEmployee() {
 
   return useMutation<Employee, unknown, CreateGrossEmployeePayload>({
     mutationFn: async (data) => {
-      const response = await api.post("/employee/AddGrossEmployee", data);
+      const payload: any = { ...data };
+      if (!payload.contact || (!payload.contact.email && (!payload.contact.phoneNumbers || payload.contact.phoneNumbers.length === 0))) {
+        delete payload.contact;
+      }
+      if (!payload.address || !payload.address.houseHold) {
+        delete payload.address;
+      }
+      const response = await api.post("/employee/AddGrossEmployee", payload);
       const result = resolveApiResponse<Employee>(response);
       const isSuccess = result.statusCode === 200 || result.statusCode === 201;
 

@@ -96,7 +96,7 @@ export function NotificationBell() {
   return (
     <Drawer direction="right">
       <DrawerTrigger asChild>
-        <div className="relative border rounded-full p-2 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer group">
+        <div className="relative   hover:text-primary transition-colors cursor-pointer group">
           <Bell className="size-4 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />

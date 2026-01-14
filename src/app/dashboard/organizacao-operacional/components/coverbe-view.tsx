@@ -125,11 +125,16 @@ export function OperationalView({ onAdd }: OrgKanbanViewProps) {
                 : [];
 
     const getAreaMetrics = (areaId: string, employeeId?: string) => {
+        const area = areas.find(a => a.id === areaId);
         const areaZones = zones.filter(z => z.areaId === areaId);
         const areaSites = sites.filter(s => s.areaId === areaId);
         const areaZoneIds = areaZones.map(z => z.id);
         const areaSectors = sectors.filter(s => areaZoneIds.includes(s.zoneId));
-        const responsible = employees.find(e => e.id === employeeId)?.fullName || t("messages.noResponsible");
+        const responsibleFromArea = (area as any)?.employee?.fullName as string | undefined;
+        const responsibleFromEmployeeId = employeeId
+            ? employees.find(e => e.id === employeeId)?.fullName
+            : undefined;
+        const responsible = responsibleFromArea || responsibleFromEmployeeId || t("messages.noResponsible");
 
         return {
             zones: areaZones.length,

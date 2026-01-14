@@ -70,7 +70,7 @@ const customerColumns: ColumnDef<Customer>[] = [
 
       return (
         <div className="flex flex-col">
-          {phone && <span className="text-xs text-muted-foreground">{phone}</span>}
+          {phone && <span >{phone}</span>}
         </div>
       );
     },
@@ -308,26 +308,36 @@ export function CustomersTable({
             companyId,
           };
 
-          return {
+          const payload: any = {
             ...baseCustomerData,
             customer: {
               ...baseCustomerData,
               photo: "",
             },
-            contact: {
+          };
+
+          const hasContact = (raw.contactEmail && raw.contactEmail.trim()) || phoneNumbers.length > 0;
+          if (hasContact) {
+            payload.contact = {
               email: raw.contactEmail || undefined,
-              phoneNumbers,
+              phoneNumbers: phoneNumbers.length > 0 ? phoneNumbers : undefined,
               companyId,
-            },
-            address: {
+            };
+          }
+
+          const hasAddress = raw.addressHouseHold && raw.addressHouseHold.trim();
+          if (hasAddress) {
+            payload.address = {
               houseHold: raw.addressHouseHold ?? "",
               commune: raw.addressCommune ?? "",
               municipality: raw.addressMunicipality ?? "",
               province: raw.addressProvince ?? "",
               country: raw.addressCountry ?? "",
               companyId,
-            },
-          };
+            };
+          }
+
+          return payload;
         }}
         onCreate={async (payload) => {
           await createGrossCustomer.mutateAsync(payload);

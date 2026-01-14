@@ -48,7 +48,7 @@ export function PhoneField({
         defaultCountry={defaultCountry ?? "AO"}
         international={international ?? false}
         value={resolvedValue}
-        placeholder="Digite seu telefone"
+        placeholder="Telefone"
         onChange={(nextValue) => onChange?.(nextValue ?? "")}
         className=" flex w-full items-center gap-3 placeholder:text-xs placeholder:text-slate-400"
         countryCallingCodeEditable={countryCallingCodeEditable ?? false}
