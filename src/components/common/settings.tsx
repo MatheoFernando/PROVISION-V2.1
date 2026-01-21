@@ -33,10 +33,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { UserDialog } from "@/components/common/dashboard/users/users-create";
-import { useUsers } from "@/infrastructure/hooks/useUsers";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useCompanyByIdQuery } from "@/infrastructure/hooks/useCompanies";
 import { useChangePasswordMutation } from "@/infrastructure/hooks/useChangePasswordMutation";
+import { useMe } from "@/infrastructure/hooks/useMe";
 import type { User } from "@/infrastructure/types/domain";
 import Link from "next/link";
 
@@ -52,23 +52,31 @@ interface PasswordFormValues extends PasswordSchema { }
 
 export function Settings(): React.ReactElement {
   const router = useRouter();
-  const { companyId, isGlobalAdmin, userId } = useAuthStore();
+  const { companyId, isGlobalAdmin } = useAuthStore();
   const targetCompanyId = companyId ?? undefined;
 
-  const {
-    users,
-    isLoading: isUsersLoading,
-    deleteUser,
-    isDeleting,
-  } = useUsers(targetCompanyId);
+
+  const { data: meData, isLoading: isUsersLoading } = useMe();
+  
   const companyQuery = useCompanyByIdQuery(targetCompanyId);
   const company = companyQuery.data ?? null;
-  const currentUser = React.useMemo(
-    () => users.find((user) => user.id === userId) ?? null,
-    [users, userId]
-  );
+  // Adapt MeResponseEntity to User structure for compatibility
+  const currentUser = React.useMemo(() => {
+      if (!meData) return null;
+      return {
+          ...meData,
+          employee: {
+              fullName: meData.fullName ?? "Utilizador",
+              photo: "/profile.png", 
+              department: {
+                  name: meData.departmentName ?? ""
+              }
+          }
+      } as unknown as User;
+  }, [meData]);
 
   const employeeName = currentUser?.employee?.fullName ?? "Utilizador";
+
   const displayPhone = currentUser?.phone ?? "Telefone não informado";
   const [isUserDialogOpen, setIsUserDialogOpen] = React.useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
@@ -118,20 +126,9 @@ export function Settings(): React.ReactElement {
 
 
   const handleConfirmDelete = React.useCallback(async () => {
-    if (!userToDelete?.id) {
-      setUserToDelete(null);
-      return;
-    }
-
-    try {
-      await deleteUser(userToDelete.id);
-      toast.success("Utilizador removido com sucesso");
-    } catch {
-      toast.error("Não foi possível remover o utilizador");
-    } finally {
-      setUserToDelete(null);
-    }
-  }, [deleteUser, userToDelete]);
+   toast.error("Funcionalidade indisponível");
+   setUserToDelete(null);
+  }, []);
 
 
   return (
@@ -156,9 +153,7 @@ export function Settings(): React.ReactElement {
               Gerencie informações pessoais, credenciais de acesso e dados da
               sua organização num único lugar.
             </p>
-            <div className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400 md:flex-row md:items-center md:gap-4">
-              <span>{displayPhone}</span>
-            </div>
+          
           </div>
         </header>
 
@@ -394,7 +389,7 @@ export function Settings(): React.ReactElement {
             ? `Deseja remover ${userToDelete.employee?.fullName ?? userToDelete.phone}?`
             : ""
         }
-        isLoading={isDeleting}
+        isLoading={false}
       />
     </div>
   );

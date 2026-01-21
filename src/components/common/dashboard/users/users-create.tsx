@@ -18,19 +18,21 @@ import {
   Loader2,
   Phone,
   Lock,
-  Building2,
   UserCog,
   Users,
   ShieldCheck,
   Eye,
   EyeOff,
+  Mail,
+  RefreshCw,
+  UserCircle,
 } from "lucide-react";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
 import type { User } from "@/infrastructure/types/domain";
 
-import { CompanySelect } from "../../base-ui/selects/company-select";
-import { DepartmentSelect } from "../../base-ui/selects/department-select";
 import { RoleSelect } from "../../base-ui/selects/role-select";
+import { EmployeeSelect } from "../../base-ui/selects/employee-select";
+import { CustomerSelect } from "../../base-ui/selects/customer-select";
 import { userSchema } from "@/infrastructure/schema/schema-user";
 import { z } from "zod";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
@@ -47,6 +49,21 @@ import {
 } from "@/components/ui/dialog";
 import { PhoneField } from "@/components/common/base-ui/phone-field";
 import { toast } from "sonner";
+import { api } from "@/infrastructure/utils/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
+
+const STANDARD_DEPARTMENTS = [
+  { code: "DG", name: "Direcção Geral" },
+  { code: "DO", name: "Deptº Operações" },
+  { code: "DRH", name: "Deptº Recursos Humanos" },
+  { code: "DAF", name: "Deptº Admin. e Finanças" },
+  { code: "DC", name: "Deptº Comercial" },
+  { code: "QHSA", name: "Deptº QHSA (Qualidade, Saúde, Segurança e Ambiente)" },
+  { code: "MAN", name: "Deptº Manutenção" },
+  { code: "DL", name: "Deptº Logística" },
+  { code: "APP", name: "Aplicativo" },
+] as const;
 
 interface UserDialogProps {
   userToEdit?: User | null;
@@ -54,8 +71,6 @@ interface UserDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-
-import { useTranslations } from "next-intl";
 
 export function UserDialog({
   userToEdit,
@@ -66,6 +81,9 @@ export function UserDialog({
   const t = useTranslations("Users");
   const tCommon = useTranslations("Common");
   const [showPassword, setShowPassword] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+
 
   const { createUser, updateUser, isCreating, isUpdating } = useUsers();
   const {
@@ -75,25 +93,47 @@ export function UserDialog({
 
   type UserFormSchema = z.infer<typeof userSchema>;
 
+  const getInitialDepartmentValue = React.useCallback(() => {
+    if (!userToEdit) return "";
+    
+    if (userToEdit.employee?.department?.name) {
+       const deptName = userToEdit.employee.department.name;
+       const match = STANDARD_DEPARTMENTS.find(d => 
+          d.name === deptName || `${d.code} ${d.name}` === deptName
+       );
+       if (match) return `${match.code} ${match.name}`;
+    }
+
+    return userToEdit.departmentId ?? userToEdit.employee?.departmentId ?? "";
+  }, [userToEdit]);
+
   const defaultValues = React.useMemo(
     () => ({
       id: userToEdit?.id,
       phone: userToEdit?.phone ?? "",
+      email: "", 
       password: "",
       isGlobalAdmin: userToEdit?.isGlobalAdmin ?? false,
       status: userToEdit?.status ?? true,
       companyId: userToEdit?.companyId ?? authCompanyId ?? "",
-      departmentId:
-        userToEdit?.departmentId ?? userToEdit?.employee?.departmentId ?? undefined,
+      departmentId: getInitialDepartmentValue(),
       roleId: userToEdit?.roleId ?? "",
+      employeeId: userToEdit?.employee?.id ?? "",
+      customerId: "",
     }),
-    [userToEdit, authCompanyId]
+    [userToEdit, authCompanyId, getInitialDepartmentValue]
   );
 
   const form = useForm<UserFormSchema>({
     resolver: zodResolver(userSchema),
     defaultValues,
   });
+  
+  const watchedPhone = form.watch("phone");
+  const watchedPassword = form.watch("password");
+  
+  const hasInvalidPhone = watchedPhone?.includes("/");
+  const hasInvalidPassword = watchedPassword ? watchedPassword.length < 6 && watchedPassword.length > 0 : false;
 
   React.useEffect(() => {
     if (open) {
@@ -101,15 +141,67 @@ export function UserDialog({
     }
   }, [defaultValues, form, open]);
 
+  const generatePassword = React.useCallback(() => {
+    setIsGenerating(true);
+    
+    setTimeout(() => {
+      const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const lowercase = "abcdefghijklmnopqrstuvwxyz";
+      const numbers = "0123456789";
+      const special = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+      const allChars = uppercase + lowercase + numbers + special;
+      
+      let password = "";
+      password += uppercase[Math.floor(Math.random() * uppercase.length)];
+      password += lowercase[Math.floor(Math.random() * lowercase.length)];
+      password += numbers[Math.floor(Math.random() * numbers.length)];
+      password += special[Math.floor(Math.random() * special.length)];
+      
+      for (let i = password.length; i < 12; i++) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+      }
+      
+      // Shuffle the password
+      password = password.split("").sort(() => Math.random() - 0.5).join("");
+      
+      form.setValue("password", password);
+      setIsGenerating(false);
+    }, 300);
+  }, [form]);
+
   const onSubmit = async (data: UserFormSchema) => {
+    setIsProcessing(true);
     const normalize = (value?: string | null) =>
       value && value.trim().length > 0 ? value.trim() : undefined;
-    const company = normalize(data.companyId) ?? authCompanyId ?? undefined;
-    const department = normalize(data.departmentId);
+    
+    const company = authCompanyId; 
+    let finalDepartmentId = normalize(data.departmentId);
     const role = normalize(data.roleId);
-    const password = normalize(data.password);
+    const email = normalize(data.email);
+    const employeeId = normalize(data.employeeId);
+    const customerId = normalize(data.customerId);
+    
+    const password = data.password ? data.password.trim() : undefined;
 
     try {
+      if (finalDepartmentId && company) {
+        const departmentName = finalDepartmentId;
+        
+        try {
+            const { data: newDept } = await api.post("/department/create", {
+              name: departmentName,
+              companyId: company
+            });
+            const created = newDept?.data ?? newDept;
+            finalDepartmentId = created.id;
+        } catch (err) {
+            console.error("Failed to resolve department", err);
+            toast.error("Erro ao processar departamento.");
+            setIsProcessing(false);
+            return;
+        }
+      }
+
       if (userToEdit?.id) {
         const updatePayload: UpdateUserPayload = {
           id: userToEdit.id,
@@ -119,12 +211,11 @@ export function UserDialog({
         };
 
         if (company) updatePayload.companyId = company;
-        if (department) updatePayload.departmentId = department;
+        if (finalDepartmentId) updatePayload.departmentId = finalDepartmentId;
         if (role) updatePayload.roleId = role;
-
-        const shouldUpdatePassword = password;
-        if (shouldUpdatePassword) {
-          updatePayload.password = password!;
+      
+        if (password && password.length > 0) {
+          updatePayload.password = password;
         }
 
         await updateUser(updatePayload);
@@ -135,12 +226,13 @@ export function UserDialog({
             type: "manual",
             message: t("validation.passwordRequired"),
           });
+          setIsProcessing(false);
           return;
         }
 
         const createPayload: CreateUserPayload = {
           phone: data.phone,
-          password,
+          password: password, 
           status: data.status,
         };
 
@@ -149,22 +241,54 @@ export function UserDialog({
         }
 
         if (company) createPayload.companyId = company;
-        if (department) createPayload.departmentId = department;
+        if (finalDepartmentId) createPayload.departmentId = finalDepartmentId;
         if (role) createPayload.roleId = role;
+        if (email) createPayload.email = email;
 
-        await createUser(createPayload);
+        const result = await createUser(createPayload);
+        const createdUserId = result?.id || result?.data?.id;
+        
+        // Link employee to user if employeeId is provided
+        if (employeeId && createdUserId) {
+          try {
+            await api.patch("/employee/update", {
+              id: employeeId,
+              userId: createdUserId,
+            });
+          } catch (err) {
+            console.error("Failed to link employee", err);
+            toast.error("Utilizador criado, mas falhou ao vincular funcionário.");
+          }
+        }
+        
+        // Link customer to user if customerId is provided
+        if (customerId && createdUserId) {
+          try {
+            await api.patch("/customer/update", {
+              id: customerId,
+              userId: createdUserId,
+            });
+          } catch (err) {
+            console.error("Failed to link customer", err);
+            toast.error("Utilizador criado, mas falhou ao vincular cliente.");
+          }
+        }
+        
         toast.success(t("toasts.createSuccess"));
       }
       form.reset();
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
+      console.error(error);
       toast.error(t("toasts.error"));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const isLoading = isCreating || isUpdating;
-  const selectedCompanyId = form.watch("companyId") || authCompanyId || "";
+  const isLoading = isCreating || isUpdating || isProcessing;
+  const selectedCompanyId = authCompanyId || "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,7 +324,32 @@ export function UserDialog({
                           disabled={isLoading}
                           size="lg"
                           maxLength={14}
-                          className="rounded-xl border-gray-200 focus:ring-blue-500 transition-all bg-white"
+                          className={`rounded focus:ring-blue-500 transition-all bg-white ${
+                            hasInvalidPhone 
+                              ? "!border-red-500 !border-2" 
+                              : "border-gray-200"
+                          }`}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5" />
+                        Email
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="exemplo@email.com"
+                          className="rounded border-gray-200 focus:ring-blue-500 transition-all bg-white"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage className="text-xs text-red-500" />
@@ -219,49 +368,50 @@ export function UserDialog({
                         {!userToEdit && <span className="text-red-500">*</span>}
                       </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder={
-                              userToEdit
-                                ? t("placeholders.passwordEdit")
-                                : t("placeholders.passwordCreate")
-                            }
-                            className="rounded-xl border-gray-200 focus:ring-blue-500 transition-all bg-white pr-10"
-                            {...field}
-                          />
-                          <button
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder={
+                                userToEdit
+                                  ? t("placeholders.passwordEdit")
+                                  : t("placeholders.passwordCreate")
+                              }
+                              className={`rounded focus:ring-blue-500 transition-all bg-white pr-10 ${
+                                hasInvalidPassword && !userToEdit
+                                  ? "!border-red-500 !border-2" 
+                                  : "border-gray-200"
+                              }`}
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                          <Button
                             type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                            variant="outline"
+                            size="icon"
+                            onClick={generatePassword}
+                            disabled={isLoading || isGenerating}
+                            className="shrink-0"
+                            title="Gerar palavra-passe"
                           >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
+                            {isGenerating ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Eye className="h-4 w-4" />
+                              <RefreshCw className="h-4 w-4" />
                             )}
-                          </button>
+                          </Button>
                         </div>
-                      </FormControl>
-                      <FormMessage className="text-xs text-red-500" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="companyId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
-                        <Building2 className="h-3.5 w-3.5" />
-                        {t("fields.company")}
-                      </FormLabel>
-                      <FormControl>
-                        <CompanySelect
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
                       </FormControl>
                       <FormMessage className="text-xs text-red-500" />
                     </FormItem>
@@ -278,11 +428,25 @@ export function UserDialog({
                         {t("fields.department")}
                       </FormLabel>
                       <FormControl>
-                        <DepartmentSelect
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
                           value={field.value}
-                          onChange={field.onChange}
-                          companyId={selectedCompanyId}
-                        />
+                        >
+                          <SelectTrigger className="w-full rounded border-gray-200 bg-white">
+                            <SelectValue placeholder={t("fields.department")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STANDARD_DEPARTMENTS.map((dept) => (
+                              <SelectItem 
+                                key={dept.code} 
+                                value={dept.code} 
+                              >
+                                <span className="font-bold">{dept.code}</span> - {dept.name} {/* Display code in bold */}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage className="text-xs text-red-500" />
                     </FormItem>
@@ -312,10 +476,52 @@ export function UserDialog({
 
                 <FormField
                   control={form.control}
+                  name="employeeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <UserCircle className="h-3.5 w-3.5" />
+                        Funcionário
+                      </FormLabel>
+                      <FormControl>
+                        <EmployeeSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          companyId={selectedCompanyId}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customerId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5" />
+                        Cliente
+                      </FormLabel>
+                      <FormControl>
+                        <CustomerSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          companyId={selectedCompanyId}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex flex-row items-center justify-between rounded-xl bg-white p-4 border border-gray-200">
+                      <div className="flex flex-row items-center justify-between rounded bg-white p-4 border border-gray-200">
                         <div className="space-y-0.5">
                           <FormLabel className="text-sm font-semibold text-slate-900 cursor-pointer">
                             {t("fields.status")}
@@ -404,4 +610,3 @@ export function UserDialog({
     </Dialog>
   );
 }
-

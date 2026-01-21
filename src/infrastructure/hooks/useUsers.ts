@@ -85,9 +85,7 @@ export function useUsers(companyId?: string) {
     queryKey: usersKey(companyId),
     enabled: Boolean(companyId),
     queryFn: async (): Promise<User[]> => {
-      const response = await api.get("/users/getAllByCompanyId", {
-        params: { companyId },
-      });
+      const response = await api.get(`/users/getAllByCompanyId/${companyId}`);
       const data = response.data?.data ?? response.data ?? [];
       return Array.isArray(data) ? data : [];
     },

@@ -7,18 +7,22 @@ import ThemeToggle from '../ThemeToggle';
 import { ServicesMenu } from './services-menu';
 import BreadcrumbClient from './breadcrumb-routes';
 import NotificationBell from './notification-bell';
+import { useMe } from '@/infrastructure/hooks/useMe';
+
 
 function Header() {
  
+  const { data: user } = useMe();
+  
   const sidebarData = {
     user: {
-      name: "Provision",
-      email: "admin@provision.com",
+      name: user?.companyName || "Provision",
+      email: user?.email || "admin@provision.com",
       avatarIcon: Building2,
     },
     teams: [
       {
-        name: "Provision",
+        name: user?.companyName || "Provision",
         logoIcon: Building2,
         plan: "Enterprise",
       },

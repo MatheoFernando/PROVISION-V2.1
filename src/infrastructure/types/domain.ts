@@ -128,6 +128,7 @@ export interface User {
 export interface CreateUserPayload {
     phone: string;
     password: string;
+    email?: string;
     isGlobalAdmin?: boolean;
     status: boolean;
     companyId?: string;

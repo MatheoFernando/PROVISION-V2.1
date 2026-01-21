@@ -96,6 +96,7 @@ export function DefaultServices() {
       description: t("rsu.description"),
       status: true,
       imageSrc: "/reciclar.png",
+      statusPresent: "new"
     },
     {
       id: "ronda",
@@ -103,6 +104,7 @@ export function DefaultServices() {
       description: t("ronda.description"),
       status: true,
       imageSrc: "/transparency.png",
+      statusPresent: "new"
     },
   ];
 
@@ -181,6 +183,10 @@ export function DefaultServices() {
                   } border border-transparent`}
               >
                 <div className="flex items-start justify-between">
+                  {service.statusPresent === "new" && (
+                    <div className="absolute top-2 right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Novo</div>
+                  )}
+
                   <div className={`rounded-full p-2.5 `}>
                     <Image
                       src={service.imageSrc}
@@ -336,7 +342,7 @@ export function DefaultServices() {
         <Rsu />
       )}
       {selectedService === "ronda" && (
-        <RondaPage/>
+        <RondaPage />
       )}
 
       {!baseServices.some(s => s.id === selectedService) && selectedService && (

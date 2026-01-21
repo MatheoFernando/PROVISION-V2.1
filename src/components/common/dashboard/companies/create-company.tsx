@@ -71,6 +71,8 @@ function CompanyFormPage() {
       admin: isEditing ? undefined : {
         phone: "",
         password: "",
+        email: "",
+        name: "",
       },
     },
   });
@@ -176,6 +178,14 @@ function CompanyFormPage() {
     }
   }, [angolaCountry, form]);
 
+  const businessName = form.watch("businessName");
+
+  useEffect(() => {
+    if(!isEditing) {
+      form.setValue("admin.name", businessName);
+    }
+  }, [businessName, isEditing, form]);
+
   const onSubmit = async (values: z.infer<typeof companySchema>) => {
     try {
       if (isEditing) {
@@ -229,6 +239,7 @@ function CompanyFormPage() {
             await createUserAsync({
               phone: values.admin.phone,
               password: values.admin.password,
+              email: values.admin.email || undefined,
               isGlobalAdmin: false,
               status: true,
               companyId: companyResponse.data.id,
@@ -706,6 +717,47 @@ function CompanyFormPage() {
 
                   <div className="my-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="admin.name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              Nome 
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Nome do Administrador"
+                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="admin.email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-slate-700">
+                              Email 
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="Email "
+                                className="h-9 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <FormField
                         control={form.control}
                         name="admin.phone"

@@ -135,7 +135,7 @@
     },
     "Employees": {
         "title": {
-            "create": "Novo Funcionário",
+            "create": "Criar Funcionário",
             "edit": "Editar Funcionário"
         },
         "fields": {

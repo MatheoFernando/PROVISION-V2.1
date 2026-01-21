@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { DataTableGeneric } from '../../base-ui/data-table'
 import { UserDialog } from './users-create'
 import { Plus } from "lucide-react";
-import { Bell, ChartLine, PencilSimple, ShieldCheck, Trash, } from "phosphor-react";
+import { ChartLine, PencilSimple, ShieldCheck, Trash, } from "phosphor-react";
 import { DeleteModal } from '@/components/ui/delete-modal'
 import { useUsers } from '../../../../infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
@@ -17,7 +17,6 @@ import { ChangePermissionsDrawer } from './permissions-drawer'
 import { ViewActivityDrawer } from './view-activity-drawer'
 import { Button } from "@/components/ui/button";
 import { Send } from 'lucide-react'
-import { MakeEmployeeUserDrawer } from '@/components/common/dashboard/employees/make-employee-user-drawer'
 
 const resolveName = (value: unknown) => {
   if (!value) return ''
@@ -226,7 +225,6 @@ function ListUsers() {
           label: 'Ações',
           component: (
             <div className="flex flex-wrap gap-2">
-              <MakeEmployeeUserDrawer />
               <Button
                 onClick={() => {
                   setSelectedUser(null);

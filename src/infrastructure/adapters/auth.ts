@@ -3,7 +3,8 @@ import Cookies from 'js-cookie';
 import { useAuthStore } from '@/infrastructure/hooks/useAuthStore';
 
 export type LoginRequest = {
-  phone: string;
+  phone?: string;
+  email?: string;
   password: string;
 };
 
@@ -22,6 +23,7 @@ export type LoginData = {
 
 
 export type LoginEnvelope = {
+  message: string;
   data: LoginData;
   success: boolean;
   statusCode?: number;

@@ -26,6 +26,8 @@ const contactSchema = z.object({
 });
 
 const adminSchema = z.object({
+  name: z.string().min(1, "Nome do administrador é obrigatório").optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().min(9, "Telefone do administrador é obrigatório"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });

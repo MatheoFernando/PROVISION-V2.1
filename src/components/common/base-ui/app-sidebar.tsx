@@ -29,10 +29,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const sidebarData = React.useMemo(() => {
     const company = companyQuery.data ?? null
-    const user = {
-      name: "Provision",
-      avatarIcon: Buildings,
-    }
+  
 
     const teams = [
       {
@@ -42,7 +39,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ]
 
     return {
-      user,
       teams,
       navMain,
     }
@@ -58,8 +54,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={sidebarData.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        V2
+      <SidebarFooter className="text-xl font-bold underline mb-6">
+        V 2.1.0
       </SidebarFooter>
     </Sidebar>
   )
