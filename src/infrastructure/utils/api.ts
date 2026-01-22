@@ -1,24 +1,28 @@
 import axios, { AxiosInstance } from 'axios';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 export const getAccessToken = (): string | undefined => {
   return Cookies.get(ACCESS_TOKEN_KEY);
 };
 
 export const setAccessToken = (token: string): void => {
-  Cookies.set(ACCESS_TOKEN_KEY, token, { sameSite: 'lax', path: '/' });
+  Cookies.set(ACCESS_TOKEN_KEY, token);
 };
 
 export const clearAccessToken = (): void => {
   Cookies.remove(ACCESS_TOKEN_KEY);
 };
 
+export const getRefreshToken = (): string | undefined => {
+  return Cookies.get(REFRESH_TOKEN_KEY);
+};
+
+
 export const api: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL
 });
 
 api.interceptors.request.use((config) => {
@@ -33,10 +37,18 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error?.response?.status === 401) {
-      clearAccessToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
+    const originalRequest = error.config;
+    if (error?.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        await api.post('/authentication/refresh-token', {}, { withCredentials: true });
+        return api(originalRequest);
+      } catch (_) {
+        clearAccessToken();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
+        return Promise.reject(error);
       }
     }
     return Promise.reject(error);

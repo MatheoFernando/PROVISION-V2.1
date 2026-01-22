@@ -1,85 +1,58 @@
 import { z } from "zod";
 
-export const siteSchema = z.object({
-  id: z.string(),
+export const createSiteSchema = z.object({
   cod: z.string().min(1, "Código é obrigatório"),
   name: z.string().min(1, "Nome é obrigatório"),
-  numberWorkersContract: z.number().int().positive("Número de trabalhadores deve ser positivo"),
-  customerId: z.string(),
+  numberWorkersContract: z
+    .number()
+    .int("Informe um número inteiro")
+    .nonnegative("Deve ser zero ou positivo"),
+  customerId: z.string().min(1, "Cliente é obrigatório"),
   areaId: z.string().min(1, "Área é obrigatória"),
-  contactId: z.string().min(1, "Contato é obrigatório"),
-  addressId: z.string().min(1, "Endereço é obrigatório"),
+  contactId: z.string().optional(),
+  addressId: z.string().optional(),
   sectorId: z.string().min(1, "Setor é obrigatório"),
-  zoneId: z.string().min(1, "Zona é obrigatória"),
-  status: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  zoneId: z.string().default(""),
+  companyId: z.string().default(""),
+  geoLocationId: z.string().nullable().optional(),
+});
+
+const grossSiteContactSchema = z.object({
+  phoneNumbers: z
+    .array(
+      z.object({
+        phone: z.string().min(1, "Telefone é obrigatório"),
+      }),
+    )
+    .optional(),
+  email: z.string().optional(),
+  companyId: z.string().min(1, "Empresa do contato é obrigatória"),
+});
+
+const grossSiteAddressSchema = z.object({
+  houseHold: z.string().min(1, "Morada é obrigatória"),
+  commune: z.string().min(1, "Comuna é obrigatória"),
+  municipality: z.string().min(1, "Município é obrigatório"),
+  province: z.string().min(1, "Província é obrigatória"),
+  country: z.string().min(1, "País é obrigatório"),
+  companyId: z.string().min(1, "Empresa do endereço é obrigatória"),
+});
+
+const grossSiteCoreSchema = z.object({
+  cod: z.string().min(1, "Código é obrigatório"),
+  name: z.string().min(1, "Nome é obrigatório"),
+  numberWorkersContract: z.number().nonnegative("Informe um número válido"),
   companyId: z.string().min(1, "Empresa é obrigatória"),
-  siteEntityId: z.string().min(1, "Site é obrigatório"),
-  geoLocationEntityId: z.string().min(1, "Localização é obrigatória"),
 });
 
-export const createSiteSchema = siteSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const createGrossSiteSchema = grossSiteCoreSchema.extend({
+  nameArea: z.string().min(1, "Área é obrigatória"),
+  codCustomer: z.string().min(1, "Código do cliente é obrigatório"),
+  contact: grossSiteContactSchema.optional(),
+  address: grossSiteAddressSchema.optional(),
+  nameZone: z.string().min(1, "Zona é obrigatória"),
+  nameSector: z.string().min(1, "Setor é obrigatório"),
 });
 
-export const updateSiteSchema = createSiteSchema.partial();
-
-export type Site = z.infer<typeof siteSchema>;
 export type CreateSite = z.infer<typeof createSiteSchema>;
-export type UpdateSite = z.infer<typeof updateSiteSchema>;
-
-export const siteTableSchema = siteSchema.pick({
-  id: true,
-  cod: true,
-  name: true,
-  numberWorkersContract: true,
-  customerId: true,
-  contactId: true,
-  addressId: true,
-  sectorId: true,
-  companyId: true,
-  areaId: true,
-  siteEntityId: true,
-  geoLocationEntityId: true,
-  status: true,
-  zoneId: true,
-});
-
-export type SiteTable = z.infer<typeof siteTableSchema>;
-export const defaultSites: SiteTable[] = [
-  {
-    id: "1",
-    cod: "1234567890",
-    name: "Site 1",
-    numberWorkersContract: 10,
-    customerId: "1",
-    contactId: "1",
-    addressId: "1",
-    sectorId: "1",
-    areaId: "1",
-    zoneId: "1",
-    siteEntityId: "1",
-    geoLocationEntityId: "1",
-    status: true,
-    companyId: "1",
-  },
-  {
-    id: "2",
-    cod: "0987654321",
-    name: "Site 2",
-    numberWorkersContract: 20,
-    customerId: "2",
-    contactId: "2",
-    addressId: "2",
-    siteEntityId: "2",
-    geoLocationEntityId: "2",
-    sectorId: "2",
-    zoneId: "2",
-    status: false,
-    companyId: "2",
-    areaId: "2",
-  },
-];
+export type CreateGrossSitePayload = z.infer<typeof createGrossSiteSchema>;

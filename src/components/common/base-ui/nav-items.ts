@@ -1,86 +1,76 @@
-"use client";
-
 import {
-  type LucideIcon,
-  Home,
+  type Icon,
+  SquaresFour,
   Users,
-  Building2,
-  Settings2,
-  User2,
-  Briefcase,
-  Hammer,
+  Buildings,
+  Gear,
   Package,
+  ChartPie,
+  Car,
+  MapPinLine,
+  Wrench,
+  Globe,
+  Lock,
+  Database,
+  Plugs,
+  UsersFour,
   Truck,
-  UserCheck,
-  Building,
-} from "lucide-react";
+  TreeStructure,
+  CirclesThreePlus,
+  GridFour,
+  MapTrifold,
+  UserCircleGear,
+  Sliders,
+  PlugsConnected,
+  ShieldCheck,
+  HardDrives,
+} from "phosphor-react";
+import { getNavData, type NavItemData } from "@/config/nav-data";
 
-export interface NavItem {
-  title: string;
-  url?: string;
-  icon?: LucideIcon;
-  requiresGlobalAdmin?: boolean;
-  items?: NavItem[];
+export interface BaseNavItem extends Omit<NavItemData, "items" | "iconKey"> {
+  icon?: Icon;
+  items?: BaseNavItem[];
 }
 
-export const allNavItems: NavItem[] = [
-  { title: "Início", url: "/dashboard", icon: Home },
-  { title: "Serviço", url: "/dashboard/service", icon: Briefcase },
-  {
-    title: "Clientes",
-    url: "/dashboard/customers",
-    icon: UserCheck,
-    requiresGlobalAdmin: false,
-  },
-  {
-    title: "Sites",
-    url: "/dashboard/sites",
-    icon: Building,
-    requiresGlobalAdmin: false,
-  },
-  {
-    title: "Funcionários",
-    url: "/dashboard/employees",
-    icon: User2,
-    requiresGlobalAdmin: false,
-  },
-  {
-    title: "Utilizadores",
-    url: "/dashboard/users",
-    icon: Users,
-    requiresGlobalAdmin: true,
-  },
-  {
-    title: "Empresas",
-    url: "/dashboard/companies",
-    icon: Building2,
-    requiresGlobalAdmin: true,
-  },
-  {
-    title: "Configurações",
-    url: "/dashboard/settings",
-    icon: Settings2,
-    requiresGlobalAdmin: true,
-  },
-  {
-    title: "Equipamentos",
-    url: "/dashboard/equipment",
-    icon: Hammer,
-    requiresGlobalAdmin: false,
-  },
-  {
-    title: "Containers",
-    url: "/dashboard/containers",
-    icon: Package,
-    requiresGlobalAdmin: false,
-  },
-  {
-    title: "Veículos",
-    url: "/dashboard/cars",
-    icon: Truck,
-    requiresGlobalAdmin: false,
-  },
- 
+const iconMap: Record<string, Icon> = {
+  SquaresFour,
+  Users,
+  Buildings,
+  Gear,
+  Package,
+  ChartPie,
+  Car,
+  MapPinLine,
+  Wrench,
+  Globe,
+  Lock,
+  Database,
+  Plugs,
+  UsersFour,
+  Truck,
+  TreeStructure,
+  CirclesThreePlus,
+  GridFour,
+  MapTrifold,
+  UserCircleGear,
+  Sliders,
+  PlugsConnected,
+  ShieldCheck,
+  HardDrives,
+};
 
+function mapNavItem(item: NavItemData): BaseNavItem {
+  const { iconKey, items, ...rest } = item;
+  return {
+    ...rest,
+    icon: iconKey ? iconMap[iconKey] : undefined,
+    items: items?.map(mapNavItem),
+  };
+}
 
-];
+export const getAllNavItems = (isGlobalAdmin: boolean): BaseNavItem[] =>
+  getNavData(isGlobalAdmin).map(mapNavItem);
+
+export const allNavItems: BaseNavItem[] = getAllNavItems(false);
+
+export { adminOnlyPaths } from "@/config/nav-data";

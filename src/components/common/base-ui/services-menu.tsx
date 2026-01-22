@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,65 +9,85 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Grip, Shield, AlertTriangle, Package } from "lucide-react";
+import { DotsNine } from "phosphor-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import Image from "next/image";
 
 export function ServicesMenu() {
   const router = useRouter();
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin);
 
-  // Só mostra o menu se NÃO for global admin
   if (isGlobalAdmin) {
     return null;
   }
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
+  const handleNavigation = (id: string) => {
+    router.push(`/dashboard/modulos?view=${id}`);
   };
+
+  const menuItems = [
+    {
+      id: "supervision",
+      imageSrc: "/supervisionado.png",
+      label: "Supervisão",
+      imageClass: "bg-accent/10",
+    },
+    {
+      id: "occurrence",
+      imageSrc: "/incidente.png",
+      label: "Ocorrências",
+      imageClass: "bg-accent/10",
+    },
+    {
+      id: "rsu",
+      imageSrc: "/reciclar.png",
+      label: "RSU",
+      imageClass: "bg-accent/10",
+    },
+     {
+      id: "ronda",
+      imageSrc: "/transparency.png",
+      label: "Ronda",
+      imageClass: "bg-accent/10",
+    },
+  ];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="lg" 
-          className="text-white hover:text-white/80 hover:bg-white/10 transition-colors duration-200 p-2 cursor-pointer"
-        >
-          <Grip className="h-5 w-5 md:h-6 md:w-6" />
-        </Button>
+        <DotsNine className="h-6 w-6 text-gray-700 cursor-pointer hover:text-primary transition-colors" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        className="w-56 md:w-64 bg-card border-border/50 " 
+      <DropdownMenuContent
+        className="w-md bg-card border-border/50 p-2 dark:bg-slate-950"
         align="end"
         sideOffset={8}
       >
-        <DropdownMenuLabel className="text-foreground font-semibold">
+        <DropdownMenuLabel className="text-foreground font-semibold mb-2 text-center">
           Serviços Rápidos
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-border/50 " />
-        <DropdownMenuGroup className="grid grid-cols-2 md gap-2">
-          <DropdownMenuItem 
-            onClick={() => handleNavigation("/dashboard/service/supervision")}
-            className="cursor-pointer hover:bg-muted/50 transition-colors duration-200"
-          >
-            <Shield className="mr-2 h-4 w-4 text-primary" />
-            <span className="text-foreground">Supervisão</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => handleNavigation("/dashboard/service/occurrence")}
-            className="cursor-pointer hover:bg-muted/50 transition-colors duration-200"
-          >
-            <AlertTriangle className="mr-2 h-4 w-4 text-destructive" />
-            <span className="text-foreground">Ocorrências</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => handleNavigation("/dashboard/service/rsu")}
-            className="cursor-pointer hover:bg-muted/50 transition-colors duration-200"
-          >
-            <Package className="mr-2 h-4 w-4 text-accent-foreground" />
-            <span className="text-foreground">RSU</span>
-          </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-border/50 mb-3" />
+        <DropdownMenuGroup className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {menuItems.map((item, index) => (
+            <DropdownMenuItem
+              key={index}
+              onClick={() => handleNavigation(item.id)}
+              className="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded border border-border/20 hover:border-primary/20"
+            >
+              <div className={`rounded-lg p-2 ${item.imageClass}`}>
+                <Image
+                  src={item.imageSrc}
+                  alt={item.label}
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-contain"
+                />
+              </div>
+              <span className="text-foreground text-sm font-medium text-center">
+                {item.label}
+              </span>
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

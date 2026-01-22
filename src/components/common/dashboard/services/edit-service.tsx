@@ -22,30 +22,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  updateServiceSchema,
-  UpdateService,
-  Service,
-} from "@/infrastructure/schema/schema-service";
-import { useUpdateServiceMutation } from "@/infrastructure/hooks/useServices";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
-import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
+import { moduleSchema, type ModuleSchema } from "@/infrastructure/schema/schema-module";
+import { useUpdateModule } from "@/infrastructure/hooks/useModules";
+import { useTranslations } from "next-intl";
 
 interface EditServiceProps {
-  service: Service;
+  service: ModuleSchema;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function EditService({ service, open, onOpenChange }: EditServiceProps) {
-  const updateServiceMutation = useUpdateServiceMutation();
+  const t = useTranslations("ServicesManagement");
+  const updateModuleMutation = useUpdateModule();
 
-  const form = useForm<UpdateService>({
-    resolver: zodResolver(updateServiceSchema),
+  const form = useForm<Partial<ModuleSchema>>({
+    resolver: zodResolver(moduleSchema.partial()),
     defaultValues: {
       name: service.name,
       description: service.description || "",
-      status: service.status,
+      status: (() => {
+        const raw = service.status as unknown;
+        return typeof raw === 'string'
+          ? raw.toLowerCase() === 'true' || raw === '1'
+          : Boolean(service.status);
+      })(),
     },
   });
 
@@ -54,29 +55,31 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
       form.reset({
         name: service.name,
         description: service.description || "",
-        status: service.status,
+        status: (() => {
+          const raw = service.status as unknown;
+          return typeof raw === 'string'
+            ? raw.toLowerCase() === 'true' || raw === '1'
+            : Boolean(service.status);
+        })(),
       });
     }
   }, [service, form]);
 
-  function onSubmit(data: UpdateService) {
-    updateServiceMutation.mutate(
-      { id: service.id!, data },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-        },
-      }
-    );
+  function onSubmit(data: Partial<ModuleSchema>) {
+    updateModuleMutation.mutate({ id: service.id!, ...data }, {
+      onSuccess: () => {
+        onOpenChange(false);
+      },
+    });
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar Serviço</DialogTitle>
+          <DialogTitle>{t("titles.editService")}</DialogTitle>
           <DialogDescription>
-            Atualize as informações do serviço.
+            {t("descriptions.updateServiceInfo")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -86,9 +89,9 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Serviço</FormLabel>
+                  <FormLabel>{t("fields.serviceName")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite o nome do serviço" {...field} />
+                    <Input placeholder={t("placeholders.enterServiceName")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -99,10 +102,11 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>{t("fields.description")}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Digite a descrição do serviço"
+                      className="resize-none"
+                      placeholder={t("placeholders.enterDescription")}
                       {...field}
                     />
                   </FormControl>
@@ -116,14 +120,19 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Serviço Ativo</FormLabel>
+                    <FormLabel>{t("fields.active")}</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      O serviço estará disponível para uso
+                      {t("messages.serviceAvailable")}
                     </div>
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      className="cursor-pointer"
+                      checked={
+                        typeof field.value === 'string'
+                          ? field.value === 'true' || field.value === '1'
+                          : Boolean(field.value)
+                      }
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -135,13 +144,14 @@ export function EditService({ service, open, onOpenChange }: EditServiceProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                className="cursor-pointer"
               >
-                Cancelar
+                {t("buttons.cancel")}
               </Button>
-              <Button type="submit" disabled={updateServiceMutation.isPending}>
-                {updateServiceMutation.isPending
-                  ? "Atualizando..."
-                  : "Atualizar Serviço"}
+              <Button type="submit" disabled={updateModuleMutation.isPending} className="cursor-pointer">
+                {updateModuleMutation.isPending
+                  ? t("buttons.updating")
+                  : t("buttons.updateService")}
               </Button>
             </div>
           </form>

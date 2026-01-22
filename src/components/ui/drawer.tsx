@@ -6,9 +6,16 @@ import { Drawer as DrawerPrimitive } from "vaul"
 import { cn } from "@/lib/utils"
 
 function Drawer({
+  handleOnly = true,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />
+  return (
+    <DrawerPrimitive.Root
+      data-slot="drawer"
+      handleOnly={handleOnly}
+      {...props}
+    />
+  )
 }
 
 function DrawerTrigger({
@@ -26,7 +33,7 @@ function DrawerPortal({
 function DrawerClose({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Close>) {
-  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
+  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} className="cursor-pointer" />
 }
 
 function DrawerOverlay({
@@ -50,21 +57,74 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  const [hasStackedDrawers, setHasStackedDrawers] = React.useState(false)
+  const [isTopMost, setIsTopMost] = React.useState(true)
+
+  React.useEffect(() => {
+    const updateStackState = () => {
+      const openDrawers = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-slot=\"drawer-content\"]")
+      )
+      setHasStackedDrawers(openDrawers.length > 1)
+      if (!openDrawers.length) {
+        setIsTopMost(true)
+        return
+      }
+      const top = openDrawers[openDrawers.length - 1]
+      const isCurrentTop = top === drawerRef.current
+      setIsTopMost(isCurrentTop)
+    }
+
+    updateStackState()
+
+    const observer = new MutationObserver(updateStackState)
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    return () => observer.disconnect()
+  }, [])
+
+  const drawerRef = React.useRef<HTMLDivElement | null>(null)
+
+  const setDrawerRef = (node: HTMLDivElement | null) => {
+    drawerRef.current = node
+  }
+
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
+        ref={setDrawerRef}
         data-slot="drawer-content"
         className={cn(
           "group/drawer-content bg-background fixed z-50 flex h-auto flex-col",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",
           "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg data-[vaul-drawer-direction=bottom]:border-t",
-          "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
-          "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-sm",
+          "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-xl",
+          "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-xl",
+          hasStackedDrawers && isTopMost ? "ring-1 ring-border/60" : "",
           className
         )}
         {...props}
       >
+        {hasStackedDrawers && (
+          <>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-y-6 left-[-28px] right-6 hidden ",
+                "transition-shadow duration-300 ease-out",
+                "group-data-[vaul-drawer-direction=right]/drawer-content:block -z-10"
+              )}
+            />
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-y-3 left-[-14px] right-3 hidden border border-border/60 bg-background",
+                "group-data-[vaul-drawer-direction=right]/drawer-content:block -z-10"
+              )}
+            />
+          </>
+        )}
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
       </DrawerPrimitive.Content>

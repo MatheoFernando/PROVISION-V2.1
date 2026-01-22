@@ -1,0 +1,787 @@
+{
+    "SystemSettings": {
+        "title": "System Settings",
+        "description": "Manage your application settings."
+    },
+    "Appearance": {
+        "title": "Appearance",
+        "description": "Customize the look and feel.",
+        "theme": {
+            "title": "Theme",
+            "description": "Switch between light and dark mode.",
+            "light": "Light",
+            "dark": "Dark"
+        },
+        "primaryColor": {
+            "title": "Primary Colour",
+            "description": "Select the main colour for buttons and links."
+        },
+        "radius": {
+            "title": "Radius",
+            "description": "Adjust the roundness of cards and buttons."
+        }
+    },
+    "Localization": {
+        "title": "Language & Region",
+        "language": {
+            "title": "Language",
+            "description": "Select your preferred language."
+        },
+        "region": {
+            "title": "Region",
+            "description": "Select your timezone.",
+            "placeholder": "Select timezone"
+        },
+        "dateFormat": {
+            "title": "Date Format",
+            "description": "Choose how dates are displayed.",
+            "placeholder": "Select date format"
+        }
+    },
+    "Common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "create": "Create",
+        "actions": "Actions",
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "profile": "Profile",
+        "logout": "Logout",
+        "edit": "Edit",
+        "view": "View",
+        "remove": "Remove",
+        "delete": "Delete",
+        "confirm": "Confirm",
+        "noResults": "No results",
+        "yes": "Yes",
+        "no": "No",
+        "supervisor": "Supervisor",
+        "back": "Back"
+    },
+    "Sidebar": {
+        "dashboard": "Dashboard",
+        "configuration": "Configuration",
+        "usersAndPermissions": "Users & Permissions",
+        "modulesAndServices": "Modules & Services",
+        "systemDefinitions": "System Definitions",
+        "integrations": "Integrations",
+        "securityAndLogs": "Security & Logs",
+        "backupAndRestore": "Backup & Restore",
+        "analytics": "Analytics",
+        "entities": "Entities",
+        "clients": "Clients",
+        "sites": "Sites",
+        "modules": "Modules",
+        "company": "Company",
+        "companys": "Companys",
+        "equipment": "Equipment",
+        "employees": "Employees",
+        "vehicles": "Vehicles",
+        "operationalOrganization": "Operational Org",
+        "areas": "Areas",
+        "zones": "Zones",
+        "coverage": "Coverage",
+        "sectors": "Sectors",
+        "sitesAndPosts": "Sites / Posts",
+        "reports": "Reports",
+        "security": "Security",
+        "system": "System"
+    },
+    "Nav": {
+        "overview": "Overview",
+        "management": "Management",
+        "configuration": "Configuration"
+    },
+    "NavUser": {
+        "settings": "Settings",
+        "logout": "Logout",
+        "logoutDialog": {
+            "title": "Log out",
+            "description": "Are you sure you want to log out?",
+            "confirm": "Log out",
+            "cancel": "Cancel"
+        }
+    },
+    "Customers": {
+        "title": {
+            "create": "New Customer",
+            "edit": "Edit Customer"
+        },
+        "fields": {
+            "name": "Name",
+            "cod": "Code",
+            "taxName": "Tax Name",
+            "nif": "NIF",
+            "contact": "Contact",
+            "address": "Address",
+            "nameFiscal": "Fiscal Name",
+            "email": "Email",
+            "phone": "Phone"
+        },
+        "placeholders": {
+            "name": "Enter name",
+            "cod": "Enter code",
+            "taxName": "Enter tax name",
+            "nif": "Enter NIF",
+            "search": "Search clients..."
+        },
+        "tooltips": {
+            "taxName": "Name used for tax purposes"
+        },
+        "toasts": {
+            "createSuccess": "Customer created successfully!",
+            "updateSuccess": "Customer updated successfully!",
+            "error": "Error saving customer"
+        }
+    },
+    "Employees": {
+        "title": {
+            "create": "New Employee",
+            "edit": "Edit Employee"
+        },
+        "fields": {
+            "fullName": "Full Name",
+            "cod": "Code",
+            "contact": "Contact",
+            "site": "Site",
+            "department": "Department",
+            "address": "Address",
+            "function": "Function"
+        },
+        "placeholders": {
+            "fullName": "Enter full name",
+            "cod": "Enter code",
+            "function": "Enter function",
+            "search": "Search employees..."
+        },
+        "toasts": {
+            "createSuccess": "Employee created successfully!",
+            "updateSuccess": "Employee updated successfully!",
+            "error": "Error saving employee",
+            "limitReached": "Worker limit reached."
+        },
+        "limitReachedWarning": "Warning: The worker limit for this site ({limit}) has been reached. Please increase the allowed number of workers in the site contract."
+    },
+    "Users": {
+        "title": {
+            "create": "New User",
+            "edit": "Edit User"
+        },
+        "fields": {
+            "phone": "Phone",
+            "password": "Password",
+            "company": "Company",
+            "department": "Department",
+            "role": "Role",
+            "status": "User Status",
+            "active": "Active",
+            "inactive": "Inactive",
+            "isGlobalAdmin": "Global Admin",
+            "isGlobalAdminDesc": "Controls global access"
+        },
+        "placeholders": {
+            "passwordCreate": "Minimum 6 characters",
+            "passwordEdit": "Leave empty to keep current"
+        },
+        "validation": {
+            "passwordRequired": "Password is required to create user"
+        },
+        "toasts": {
+            "createSuccess": "User created successfully!",
+            "updateSuccess": "User updated successfully!",
+            "error": "Error saving user"
+        }
+    },
+    "Hooks": {
+        "Users": {
+            "create": {
+                "success": "User created successfully",
+                "error": "Error creating user"
+            },
+            "update": {
+                "success": "User updated successfully",
+                "error": "Error updating user"
+            },
+            "delete": {
+                "success": "User deleted successfully",
+                "error": "Error deleting user"
+            }
+        },
+        "Customers": {
+            "create": {
+                "success": "Customer created successfully!",
+                "error": "Error creating customer"
+            },
+            "import": {
+                "success": "Customer imported successfully!",
+                "error": "Error importing customer"
+            },
+            "update": {
+                "success": "Customer updated successfully!",
+                "error": "Error updating customer"
+            },
+            "delete": {
+                "success": "Customer deleted successfully!",
+                "error": "Error deleting customer"
+            }
+        },
+        "Areas": {
+            "create": {
+                "success": "Area created successfully!",
+                "error": "Error creating area"
+            },
+            "update": {
+                "success": "Area updated successfully!",
+                "error": "Error updating area"
+            },
+            "delete": {
+                "success": "Area deleted successfully!",
+                "error": "Error deleting area"
+            }
+        },
+        "Occurrences": {
+            "create": {
+                "success": "Occurrence created successfully!",
+                "error": "Error creating occurrence. Try again."
+            },
+            "update": {
+                "success": "Occurrence updated successfully!",
+                "error": "Error updating occurrence. Try again."
+            },
+            "delete": {
+                "success": "Occurrence deleted successfully!",
+                "error": "Error deleting occurrence. Try again."
+            }
+        },
+        "TypeOccurrence": {
+            "create": {
+                "success": "Occurrence type created!",
+                "error": "Error creating occurrence type"
+            },
+            "update": {
+                "success": "Occurrence type updated!",
+                "error": "Error updating occurrence type"
+            },
+            "delete": {
+                "success": "Occurrence type deleted!",
+                "error": "Error deleting occurrence type"
+            }
+        },
+        "Sites": {
+            "create": {
+                "success": "Site created successfully!",
+                "error": "Error creating site"
+            },
+            "import": {
+                "success": "Site imported successfully!",
+                "error": "Error importing site"
+            },
+            "update": {
+                "success": "Site updated successfully!",
+                "error": "Error updating site"
+            },
+            "delete": {
+                "success": "Site deleted successfully!",
+                "error": "Error deleting site"
+            }
+        },
+        "Addresses": {
+            "create": {
+                "success": "Address created successfully!",
+                "error": "Error creating address"
+            },
+            "update": {
+                "success": "Address updated successfully!",
+                "error": "Error updating address"
+            },
+            "delete": {
+                "success": "Address deleted successfully!",
+                "error": "Error deleting address"
+            }
+        },
+        "TypeEquipment": {
+            "create": {
+                "success": "Equipment type created successfully!",
+                "error": "Error creating equipment type"
+            },
+            "update": {
+                "success": "Equipment type updated successfully!",
+                "error": "Error updating equipment type"
+            },
+            "delete": {
+                "success": "Equipment type deleted successfully!",
+                "error": "Error deleting equipment type"
+            }
+        },
+        "Rsu": {
+            "create": {
+                "success": "RSU created successfully",
+                "error": "Error creating RSU"
+            },
+            "update": {
+                "success": "RSU updated successfully",
+                "error": "Error updating RSU"
+            },
+            "delete": {
+                "success": "RSU deleted successfully",
+                "error": "Error deleting RSU"
+            }
+        },
+        "Supervisions": {
+            "create": {
+                "success": "Supervision created successfully",
+                "error": "Error creating supervision"
+            },
+            "update": {
+                "success": "Supervision updated successfully",
+                "error": "Error updating supervision"
+            },
+            "delete": {
+                "success": "Supervision deleted successfully",
+                "error": "Error deleting supervision"
+            }
+        },
+        "UserPermissions": {
+            "update": {
+                "success": "Permissions updated successfully",
+                "error": "Failed to update permissions"
+            }
+        },
+        "Employees": {
+            "create": {
+                "success": "Employee created successfully!"
+            },
+            "import": {
+                "success": "Employee imported successfully!",
+                "error": "Error importing employee"
+            },
+            "update": {
+                "success": "Employee updated successfully!"
+            },
+            "delete": {
+                "success": "Employee deleted successfully!"
+            }
+        },
+        "Rounds": {
+            "create": {
+                "success": "Round created successfully!",
+                "error": "Error creating round"
+            },
+            "update": {
+                "success": "Round updated successfully!",
+                "error": "Error updating round"
+            },
+            "delete": {
+                "success": "Round deleted successfully!",
+                "error": "Error deleting round"
+            }
+        },
+        "ItemInspectionRounds": {
+            "create": {
+                "success": "Item created successfully!",
+                "error": "Error creating item"
+            },
+            "update": {
+                "success": "Item updated successfully!",
+                "error": "Error updating item"
+            },
+            "delete": {
+                "success": "Item deleted successfully!",
+                "error": "Error deleting item"
+            }
+        },
+        "CheckListRoundGroups": {
+            "create": {
+                "success": "Assessment saved!",
+                "error": "Error saving assessment"
+            },
+            "update": {
+                "success": "Assessment updated!",
+                "error": "Error updating assessment"
+            },
+            "delete": {
+                "success": "Assessment deleted!",
+                "error": "Error deleting assessment"
+            }
+        }
+    },
+    "SiteDetails": {
+        "tabs": {
+            "overview": "Overview",
+            "clients": "Clients",
+            "tools": "Tools"
+        },
+        "actions": {
+            "associateClient": "Associate Client",
+            "addEquipment": "Add Equipment",
+            "manageTeam": "Manage Team",
+            "siteSettings": "Site Settings",
+            "editSite": "Edit Site",
+            "associateEmployee": "Associate Employee"
+        },
+        "sections": {
+            "locationDetails": "Location Details",
+            "operationalInfo": "Operational Info",
+            "associatedClients": "Associated Clients",
+            "equipmentsAndTools": "Equipments & Tools"
+        },
+        "fields": {
+            "area": "Area",
+            "zone": "Zone",
+            "sector": "Sector",
+            "createdAt": "Created At",
+            "municipality": "Municipality",
+            "province": "Province",
+            "country": "Country",
+            "equipment": {
+                "mark": "Mark",
+                "model": "Model",
+                "serial": "Serial No.",
+                "type": "Type",
+                "status": "Status"
+            }
+        },
+        "stats": {
+            "workers": "Workers",
+            "zones": "Zones",
+            "equipments": "Equipments"
+        },
+        "placeholders": {
+            "searchTools": "Search tools..."
+        },
+        "clientAssociation": {
+            "title": "Associate Client",
+            "description": "Select a client to link to",
+            "searchPlaceholder": "Search clients...",
+            "noResults": "No clients found",
+            "tryDifferent": "Try a different search term",
+            "allAssociated": "All available clients are already associated",
+            "associateSelected": "Associate Selected"
+        },
+        "success": {
+            "employeeAssociated": "Employee associated successfully"
+        }
+    },
+    "CustomerDetails": {
+        "notFound": "Customer not found",
+        "tabs": {
+            "overview": "Overview",
+            "sites": "Sites"
+        },
+        "actions": {
+            "associateClient": "Associate Client",
+            "edit": "Edit"
+        },
+        "sections": {
+            "contactDetails": "Contact Details",
+            "fiscalInfo": "Fiscal & Corporate Info"
+        },
+        "fields": {
+            "updatedAt": "Updated At",
+            "companyName": "Associated Company",
+            "commune": "Commune",
+            "country": "Country"
+        }
+    },
+    "OrganizationalStructure": {
+        "columns": {
+            "areas": "Areas",
+            "zones": "Zones",
+            "sectors": "Sectors",
+            "posts": "Posts"
+        },
+        "messages": {
+            "selectArea": "Select an area",
+            "selectZone": "Select a zone",
+            "selectHierarchy": "Select a hierarchy",
+            "noAreaFound": "No areas found.",
+            "noZoneFound": "No zones found.",
+            "noSectorFound": "No sectors found.",
+            "noPostFound": "No posts found.",
+            "noItemsFound": "No items found.",
+            "noResponsible": "No responsible"
+        },
+        "buttons": {
+            "createNew": "Create New"
+        },
+        "metrics": {
+            "zones": "Zones",
+            "sectors": "Sectors",
+            "posts": "Posts",
+            "workers": "Workers"
+        },
+        "Modal": {
+            "title": {
+                "AREA": "Area",
+                "ZONE": "Zone",
+                "SECTOR": "Sector",
+                "newItem": "New Item"
+            },
+            "labels": {
+                "area": "Area",
+                "zone": "Zone",
+                "sector": "Sector",
+                "responsible": "Responsible",
+                "name": "Name"
+            },
+            "placeholders": {
+                "nameArea": "Enter area name",
+                "nameZone": "Enter zone name",
+                "nameSector": "Enter sector name"
+            },
+            "buttons": {
+                "save": "Save",
+                "cancel": "Cancel",
+                "createNew": "Create New"
+            },
+            "toasts": {
+                "success": "Operation completed successfully!",
+                "error": "Error performing operation"
+            },
+            "validation": {
+                "nameRequired": "Name is required",
+                "selectArea": "Select an area",
+                "selectZone": "Select a zone",
+                "selectSector": "Select a sector"
+            }
+        },
+        "deleteModal": {
+            "titleArea": "Delete Area",
+            "titleZone": "Delete Zone",
+            "titleSector": "Delete Sector",
+            "messageArea": "Are you sure you want to delete the area",
+            "messageZone": "Are you sure you want to delete the zone",
+            "messageSector": "Are you sure you want to delete the sector",
+            "confirmMessage": "This action cannot be undone."
+        }
+    },
+    "Components": {
+        "DeleteModal": {
+            "title": "Are you sure you want to delete?",
+            "message": "This action cannot be undone.",
+            "cancel": "Cancel",
+            "confirm": "Delete",
+            "deleting": "Deleting..."
+        }
+    },
+    "Supervision": {
+        "tabs": {
+            "details": "Details",
+            "resources": "Resources",
+            "equipments": "Equipments",
+            "observations": "Observations"
+        },
+        "sections": {
+            "operationalData": "Operational Data",
+            "responsible": "Responsible",
+            "equipmentDetails": "Equipment Details"
+        },
+        "fields": {
+            "status": "Status",
+            "date": "Date",
+            "time": "Time",
+            "desired": "Desired",
+            "present": "Present",
+            "employee": "Employee",
+            "department": "Department",
+            "code": "Code",
+            "name": "Name",
+            "equipment": "Equipment",
+            "site": "Site",
+            "noStatus": "No status",
+            "responsible": "Responsible"
+        },
+        "table": {
+            "code": "Code",
+            "status": "Status",
+            "name": "Name",
+            "model": "Model"
+        },
+        "messages": {
+            "noObservation": "No observation registered for this supervision.",
+            "noEquipment": "No equipment"
+        }
+    },
+    "Occurrence": {
+        "tabs": {
+            "info": "Details",
+            "context": "Context",
+            "equipments": "Equipments",
+            "actions": "Corrective Action",
+            "description": "Description"
+        },
+        "sections": {
+            "basicData": "Basic Data",
+            "localEquipment": "Location & Equipment",
+            "responsible": "Responsible",
+            "adoptedMeasures": "Adopted Measures",
+            "eventDescription": "Event Description"
+        },
+        "fields": {
+            "type": "Type",
+            "time": "Time",
+            "date": "Date",
+            "site": "Site",
+            "equipment": "Equipment",
+            "employee": "Employee",
+            "company": "Company",
+            "typology": "Typology",
+            "gravity": "Gravity",
+            "status": "Status"
+        },
+        "messages": {
+            "noAction": "No corrective action defined."
+        }
+    },
+    "Rsu": {
+        "tabs": {
+            "details": "Details",
+            "logistics": "Logistics",
+            "observations": "Observations"
+        },
+        "sections": {
+            "loadData": "Load Data",
+            "location": "Location",
+            "transport": "Transport",
+            "responsible": "Responsible",
+            "additionalNotes": "Additional Notes"
+        },
+        "fields": {
+            "container": "Container",
+            "quantity": "Quantity",
+            "vehicle": "Vehicle",
+            "company": "Company",
+            "date": "Date",
+            "site": "Site",
+            "responsible": "Responsible"
+        }
+    },
+    "EquipmentView": {
+        "title": "Equipment Details",
+        "serialString": "Serial Number",
+        "active": "Active",
+        "inactive": "Inactive",
+        "sections": {
+            "generalInfo": "General Information",
+            "siteAndType": "Site Details & Type"
+        },
+        "tabs": {
+            "site": "Site",
+            "type": "Equipment Type"
+        },
+        "fields": {
+            "mark": "Mark",
+            "model": "Model",
+            "code": "Code",
+            "company": "Company",
+            "client": "Client",
+            "contractedEmployees": "Contracted Employees",
+            "sector": "Sector",
+            "zone": "Zone",
+            "status": "Status",
+            "name": "Name",
+            "description": "Description",
+            "createdAt": "Created At"
+        }
+    },
+    "Services": {
+        "supervision": {
+            "name": "Supervision",
+            "description": "Supervision and monitoring service"
+        },
+        "occurrence": {
+            "name": "Occurrence",
+            "description": "Occurrence and incident management"
+        },
+        "rsu": {
+            "name": "RSU",
+            "description": "Selective Waste Collection"
+        },
+        "ronda": {
+            "name": "Patrol",
+            "description": "Collection patrol"
+        }
+    },
+    "Ronda": {
+        "title": "Patrol Management",
+        "subtitle": "Track and manage team patrols in real time.",
+        "create": {
+            "button": "New Patrol",
+            "title": "Start New Patrol",
+            "description": "Fill in the initial data to start a new patrol."
+        }
+    },
+    "ServicesManagement": {
+        "fields": {
+            "company": "Company",
+            "module": "Module / Service",
+            "service": "Service",
+            "description": "Description",
+            "status": "Status",
+            "serviceName": "Service Name",
+            "moduleName": "Module Name",
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "placeholders": {
+            "selectService": "Select a service",
+            "searchService": "Search service...",
+            "searchServices": "Search services...",
+            "searchModule": "Search Module...",
+            "enterModuleName": "Enter module name",
+            "enterServiceName": "Enter service name",
+            "enterDescription": "Enter service description",
+            "status": "Status"
+        },
+        "messages": {
+            "noDataFiltered": "No data filtered.",
+            "noServiceFound": "No service found.",
+            "serviceAvailable": "The service will be available for use"
+        },
+        "buttons": {
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveChanges": "Save changes",
+            "associate": "Associate",
+            "edit": "Edit",
+            "dissociate": "Dissociate",
+            "delete": "Delete",
+            "processing": "Processing...",
+            "createService": "Create Service",
+            "createModule": "Create Module",
+            "updating": "Updating...",
+            "updateService": "Update Service",
+            "associateServices": "Associate Services",
+            "close": "Close",
+            "viewOthers": "View others"
+        },
+        "titles": {
+            "editAssociation": "Edit association",
+            "associateServiceToCompany": "Associate service to company",
+            "createModule": "Create Module",
+            "editService": "Edit Service",
+            "deleteService": "Delete service",
+            "services": "Services"
+        },
+        "descriptions": {
+            "updateServiceInfo": "Update service information.",
+            "selectModuleAccess": "Select the module you want to access"
+        },
+        "tabs": {
+            "module": "Module",
+            "companyModules": "Company Modules"
+        },
+        "filters": {
+            "statusFilter": "Filter by status",
+            "all": "All"
+        },
+        "deleteModal": {
+            "message": "Are you sure you want to delete the service",
+            "permanentAction": "This action cannot be undone."
+        },
+        "dynamic": {
+            "moduleTitle": "Module:",
+            "moduleContent": "The content of this module will be loaded here."
+        }
+    }
+}

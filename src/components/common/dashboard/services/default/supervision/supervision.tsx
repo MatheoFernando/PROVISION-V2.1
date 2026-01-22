@@ -1,39 +1,40 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { SupervisionTable } from "./supervision-table"
-import { CreateSupervisionModal } from "./supervision-modals"
-import { useSupervisionsQuery } from "@/infrastructure/hooks/useSupervisions"
+import * as React from "react";
+import { SupervisionTable } from "./supervision-table";
+import {
+  useSupervisions,
+} from "@/infrastructure/hooks/useSupervisions";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import type { DateRange } from "react-day-picker";
 
 export default function Supervision() {
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
-  const { data: supervisions = [], isLoading, error } = useSupervisionsQuery()
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const [range, setRange] = React.useState<DateRange | undefined>(undefined);
+  const [status, setStatus] = React.useState<string | undefined>(undefined);
+  
+  const companyId = useAuthStore((state) => state.companyId);
+  
+  const singleDay = React.useMemo(() => {
+    if (!range?.from || !range.to) return undefined;
+    const from = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate());
+    const to = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate());
+    return from.getTime() === to.getTime() ? from : undefined;
+  }, [range]);
+
+  const { data: supervisions = [], isLoading } = useSupervisions(companyId ?? undefined, {
+    date: singleDay,
+    status
+  });
 
   return (
-    <div className=" py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Supervisão</h1>
-        <p className="text-muted-foreground">
-          Gerencie supervisões e monitoramento de equipes
-        </p>
-      </div>
-      
-      {error && (
-        <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-md mb-4">
-          <p>Erro ao carregar supervisões: {error.message}</p>
-        </div>
-      )}
-
-      <SupervisionTable 
-        data={supervisions} 
-        isLoading={isLoading}
-        onCreateClick={() => setIsCreateOpen(true)}
-      />
-
-      <CreateSupervisionModal
-        isOpen={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
-      />
-    </div>
-  )
+    <SupervisionTable
+      data={supervisions ?? []}
+      isLoading={isLoading}
+      onCreateClick={() => setIsCreateOpen(true)}
+      onDateRangeChange={setRange}
+      statusFilter={status}
+      onStatusFilterChange={setStatus}
+    />
+  );
 }

@@ -1,21 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
-import { mockTypeOccurrences } from '@/infrastructure/schema/schema-type-occurrence';
-import type { TypeOccurrence, CreateTypeOccurrence, UpdateTypeOccurrence } from '@/infrastructure/schema/schema-type-occurrence';
+import type { TypeOccurrence } from '@/infrastructure/schema/schema-type-occurrence';
 
-export function useTypeOccurrences() {
+export function useTypeOccorrences(companyId?: string) {
   return useQuery({
-    queryKey: ['type-occurrences'],
+    queryKey: ['type-occurrences', companyId],
     queryFn: async (): Promise<TypeOccurrence[]> => {
+      if (!companyId) return [];
       try {
-        const { data } = await api.get('/type-occurrence/GetAll');
-        return data?.data ?? [];
+        const { data } = await api.get(`/typeOccorrence/getAllbyCompany/${companyId}`);
+        return data?.data ?? data ?? [];
       } catch {
-        return mockTypeOccurrences;
+        return [];
       }
     },
-    initialData: mockTypeOccurrences,
+    enabled: !!companyId,
   });
 }
 
@@ -23,7 +24,7 @@ export function useTypeOccurrence(id: string) {
   return useQuery({
     queryKey: ['type-occurrence', id],
     queryFn: async (): Promise<TypeOccurrence | null> => {
-      const { data } = await api.get(`/type-occurrence/GetById/${id}`);
+      const { data } = await api.get(`/typeOccorrence/getById?id=${id}`);
       return data?.data ?? null;
     },
     enabled: !!id,
@@ -32,57 +33,60 @@ export function useTypeOccurrence(id: string) {
 
 export function useCreateTypeOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeOccurrence");
 
   return useMutation({
-    mutationFn: async (data: CreateTypeOccurrence): Promise<TypeOccurrence> => {
-      const { data: response } = await api.post('/type-occurrence/Create', data);
-      return response?.data;
+    mutationFn: async (data: TypeOccurrence): Promise<TypeOccurrence> => {
+      const { data: response } = await api.post('/typeOccorrence/create', data);
+      return response.data; // Retorna o objeto data que contém id, cod, description, etc
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['type-occurrences'] });
-      toast.success('Tipo de ocorrência criado com sucesso!');
+    onSuccess: (createdData, variables) => {
+      // Invalida a query específica da empresa para forçar refetch
+      queryClient.invalidateQueries({ queryKey: ['type-occurrences', variables.companyId] });
+      toast.success(t('create.success'));
     },
     onError: (error) => {
       console.error('Erro ao criar tipo de ocorrência:', error);
-      toast.error('Erro ao criar tipo de ocorrência. Tente novamente.');
+      toast.error(t('create.error'));
     },
   });
 }
 
 export function useUpdateTypeOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeOccurrence");
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateTypeOccurrence }): Promise<TypeOccurrence> => {
-      const { data: response } = await api.put(`/type-occurrence/Update/${id}`, data);
+    mutationFn: async ( data: TypeOccurrence): Promise<TypeOccurrence> => {
+      const { data: response } = await api.put(`/typeOccorrence`, data);
       return response?.data;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['type-occurrences'] });
-      queryClient.invalidateQueries({ queryKey: ['type-occurrence', id] });
-      toast.success('Tipo de ocorrência atualizado com sucesso!');
+      toast.success(t('update.success'));
     },
     onError: (error) => {
       console.error('Erro ao atualizar tipo de ocorrência:', error);
-      toast.error('Erro ao atualizar tipo de ocorrência. Tente novamente.');
+      toast.error(t('update.error'));
     },
   });
 }
 
 export function useDeleteTypeOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.TypeOccurrence");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/type-occurrence/Delete/${id}`);
+      await api.delete(`/typeOccorrence/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['type-occurrences'] });
-      toast.success('Tipo de ocorrência excluído com sucesso!');
+      toast.success(t('delete.success'));
     },
     onError: (error) => {
-      console.error('Erro ao excluir tipo de ocorrência:', error);
-      toast.error('Erro ao excluir tipo de ocorrência. Tente novamente.');
+      console.error('Erro ao eliminar tipo de ocorrência:', error);
+      toast.error(t('delete.error'));
     },
   });
 }

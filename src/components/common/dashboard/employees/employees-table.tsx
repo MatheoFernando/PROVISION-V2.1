@@ -1,146 +1,137 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
-import { useEmployees } from "@/infrastructure/hooks/useEmployees";
-import { Employee } from "@/infrastructure/schema/schema-employees";
+import React from "react";
+import { Eye, PencilSimple, Trash, X } from "phosphor-react";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import {
+  useCreateGrossEmployee,
+  useDeleteEmployee,
+  useEmployees,
+} from "@/infrastructure/hooks/useEmployees";
+import { useAreas } from "@/infrastructure/hooks/useAreas";
+import { useZones } from "@/infrastructure/hooks/useZones";
+import { useSectors } from "@/infrastructure/hooks/useSectors";
+import { Employee } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { EmployeesCreate } from "./employees-create";
-import { EmployeesView } from "./employees-view";
+
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteEmployee } from "@/infrastructure/hooks/useEmployees";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Badge from "@/components/ui/badge";
-
-const columns: ColumnDef<Employee>[] = [
-  {
-    accessorKey: "photo",
-    header: "Foto",
-    cell: ({ row }) => {
-      const photo = row.getValue("photo") as string;
-      return <div><Avatar className="h-8 w-8 rounded-sm">
-        <AvatarImage src={photo} alt="teste" className="rounded-sm" />
-        <AvatarFallback className="bg-primary/10 text-primary font-medium text-base rounded-sm">
-          f
-        </AvatarFallback>
-      </Avatar></div>;
-    },
-  },
-  {
-    accessorKey: "cod",
-    header: "Código",
-    cell: ({ row }) => {
-      const cod = row.getValue("cod") as string;
-      return <div className="text-sm text-muted-foreground">{cod}</div>;
-    },
-  },
-  {
-    accessorKey: "fullName",
-    header: "Nome Completo",
-    cell: ({ row }) => {
-      const fullName = row.getValue("fullName") as string;
-      return <div>{fullName}</div>;
-    },
-  },
-
-  {
-    accessorKey: "contactId",
-    header: "Contato",
-    cell: ({ row }) => {
-      const contactId = row.getValue("contactId") as string;
-      return <div>{contactId}</div>;
-    },
-  },
-  {
-    accessorKey: "siteId",
-    header: "Site",
-    cell: ({ row }) => {
-      const siteId = row.getValue("siteId") as string;
-      return <div>{siteId}</div>;
-    },
-  },
-  {
-    accessorKey: "departmentId",
-    header: "Departamento",
-    cell: ({ row }) => {
-      const departmentId = row.getValue("departmentId") as string;
-      return <div>{departmentId}</div>;
-    },
-  },
-  {
-    accessorKey: "userId",
-    header: "Usuário",
-    cell: ({ row }) => {
-      const userId = row.getValue("userId") as string;
-      return <div>{userId}</div>;
-    },
-  },
-  {
-    accessorKey: "functionEntityId",
-    header: "Função",
-    cell: ({ row }) => {
-      const functionEntityId = row.getValue("functionEntityId") as string;
-      return <div>{functionEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "rolesEntityId",
-    header: "Cargo",
-    cell: ({ row }) => {
-      const rolesEntityId = row.getValue("rolesEntityId") as string;
-      return <div>{rolesEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
-      );
-    },
-  },
-
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
-    },
-  },
-];
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { EmployeeDialog } from "./employee-create";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import { type CreateGrossEmployeePayload } from "@/infrastructure/schema/schema-employees";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 interface EmployeesTableProps {
-  mockData?: Employee[];
+  companyId?: string;
+  siteIds?: string[];
+  data?: Employee[];
+  isLoadingOverride?: boolean;
 }
 
-export function EmployeesTable({ mockData }: EmployeesTableProps) {
-  const { data: employees = [], isLoading } = useEmployees();
-  const deleteEmployee = useDeleteEmployee();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>();
+export function EmployeesTable({ companyId: companyIdProp, data, isLoadingOverride }: EmployeesTableProps = {}) {
+  const fallbackCompanyId = useAuthStore((state) => state.companyId) ?? "";
+  const userId = useAuthStore((state) => state.userId) ?? "";
+  const companyId = companyIdProp ?? fallbackCompanyId;
+  const shouldFetch = !data;
+  const { data: employees = [], isLoading } = useEmployees(companyId, { enabled: shouldFetch });
+  const { mutateAsync: deleteEmployee, isPending: isDeleting } =
+    useDeleteEmployee(companyId);
+  const createGrossEmployee = useCreateGrossEmployee();
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const router = useRouter();
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [selectedEmployee, setSelectedEmployee] = React.useState<
+    Employee | undefined
+  >();
+  const [employeesToDelete, setEmployeesToDelete] =
+    React.useState<Employee[]>([]);
+  const [isBulkOpen, setIsBulkOpen] = React.useState(false);
+  const columns = React.useMemo<ColumnDef<Employee>[]>(
+    () => [
+      {
+        accessorKey: "cod",
+        size: 50,
+        header: "Código",
+        cell: ({ row }) => {
+          const cod = row.getValue("cod") as string;
+          return (
+            <div className="text-sm ">
+              {cod}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "fullName",
+        header: "Nome Completo",
+        cell: ({ row }) => {
+          const fullName = row.getValue("fullName") as string;
+          return <div>{fullName}</div>;
+        },
+      },
 
-  // Use mock data if provided, otherwise use API data
-  const data = mockData || employees;
+      {
+        accessorKey: "department",
+        header: "Departamento",
+        cell: ({ row }) => {
+          return <div>{row.original.department?.name ?? "Não informado"}</div>;
+        },
+      },
+      {
+        accessorKey: "function",
+        header: "Função",
+        cell: ({ row }) => {
+          const functionValue = row.getValue("function") as string;
+          return <div>{functionValue}</div>;
+        },
+      },
+    ],
+    []
+  );
 
-  const filteredData = data.filter((item) =>
-    item.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  const resetDeletionState = React.useCallback(() => {
+    setEmployeesToDelete([]);
+    setIsDeleteOpen(false);
+    setSelectedEmployee(undefined);
+  }, []);
+
+  const executeDeletion = React.useCallback(
+    async (targets: Employee[]) => {
+      let successCount = 0;
+
+      for (const target of targets) {
+        if (!target?.id) continue;
+        try {
+          await deleteEmployee({ id: target.id, companyId });
+          successCount += 1;
+        } catch (error) {
+          toast.error(`Erro ao eliminar ${target.fullName ?? "funcionário"}`);
+        }
+      }
+
+      if (successCount === 0) return;
+
+      toast.success(
+        successCount === 1
+          ? "Funcionário excluído com sucesso!"
+          : `${successCount} funcionários excluídos com sucesso!`
+      );
+    },
+    [deleteEmployee]
   );
 
   const handleView = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setIsViewOpen(true);
+    if (employee.id) {
+      router.push(`/dashboard/funcionarios/${employee.id}`);
+    }
   };
 
   const handleEdit = (employee: Employee) => {
@@ -150,81 +141,206 @@ export function EmployeesTable({ mockData }: EmployeesTableProps) {
 
   const handleDelete = (employee: Employee) => {
     setSelectedEmployee(employee);
+    setEmployeesToDelete([employee]);
     setIsDeleteOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedEmployee) return;
-
-    try {
-      await deleteEmployee.mutateAsync(selectedEmployee.id);
-      toast.success("Funcionário excluído com sucesso!");
-      setIsDeleteOpen(false);
-      setSelectedEmployee(undefined);
-    } catch (error) {
-      toast.error("Erro ao excluir funcionário");
+    if (!employeesToDelete.length) {
+      resetDeletionState();
+      return;
     }
+
+    await executeDeletion(employeesToDelete);
+    resetDeletionState();
   };
 
-  const handleCreate = () => {
-    setSelectedEmployee(undefined);
-    setIsCreateOpen(true);
-  };
+  const deleteTitle =
+    employeesToDelete.length > 1
+      ? "Eliminar Funcionários"
+      : "Eliminar Funcionário";
+  const deleteTargetLabel =
+    employeesToDelete[0]?.fullName ?? "este funcionário";
+  const deleteMessage =
+    employeesToDelete.length > 1
+      ? `Tem certeza que deseja excluir ${employeesToDelete.length} funcionários selecionados? Esta ação não pode ser desfeita.`
+      : `Tem certeza que deseja excluir ${deleteTargetLabel}? Esta ação não pode ser desfeita.`;
+
+
+
+  const sourceEmployees = React.useMemo(
+    () => data ?? employees,
+    [data, employees],
+  );
+
+  const { data: areas = [] } = useAreas({ companyId });
+  const { data: zones = [] } = useZones({ companyId });
+  const { data: sectors = [] } = useSectors({ companyId });
+
+
+  const employeesWithDependencies = React.useMemo(() => {
+    const ids = new Set<string>();
+    areas.forEach((a) => a.employeeId && ids.add(a.employeeId));
+    zones.forEach((z) => z.employeeId && ids.add(z.employeeId));
+    sectors.forEach((s) => s.employeeId && ids.add(s.employeeId));
+    return ids;
+  }, [areas, zones, sectors]);
 
   return (
     <div className="space-y-4">
+
+
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
-        isLoading={isLoading}
+        data={sourceEmployees}
+        isLoading={isLoadingOverride ?? isLoading}
         searchKey="fullName"
         actionButton={{
           label: "Novo Funcionário",
-          onClick: handleCreate,
+          onClick: () => {
+            setSelectedEmployee(undefined);
+            setIsCreateOpen(true);
+          },
+        }
+        }
+        bulkImportButton={{
+          label: "Importar funcionários",
+          onClick: () => setIsBulkOpen(true),
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+        dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
-            icon: <Eye className="h-4 w-4 mr-2" />,
+            icon: <Eye className="mr-2 h-3 w-3 text-gray-600" />,
             onClick: (employee) => handleView(employee),
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="mr-2 h-3 w-3 text-gray-600" />,
             onClick: (employee) => handleEdit(employee),
           },
           {
-            label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2 text-gray-600" />,
             onClick: (employee) => handleDelete(employee),
+            render: (employee, action) => {
+              const hasDependencies = employeesWithDependencies.has(employee.id as string) || !!employee.siteId;
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="w-full outline-none">
+                        <DropdownMenuItem
+                          className={`w-full cursor-pointer ${hasDependencies ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          onClick={(e) => {
+                            if (hasDependencies) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              action.onClick(employee);
+                            }
+                          }}
+                        >
+                          {action.icon && <span className="mr-2">{action.icon}</span>}
+                          {action.label}
+                        </DropdownMenuItem>
+                      </span>
+                    </TooltipTrigger>
+                    {hasDependencies && (
+                      <TooltipContent>
+                        <p>Não pode excluir funcionário associado a Site/Área/Zona/Setor</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            },
           },
         ]}
       />
 
-      <EmployeesCreate
-        employee={selectedEmployee}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
 
-      <EmployeesView
-        employee={selectedEmployee}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
+
+      <EmployeeDialog
+        open={isCreateOpen}
+        onOpenChange={(open) => {
+          setIsCreateOpen(open);
+          if (!open) setSelectedEmployee(undefined);
+        }}
+        employeeToEdit={selectedEmployee}
       />
 
       <DeleteModal
         isOpen={isDeleteOpen}
-        onClose={() => {
-          setIsDeleteOpen(false);
-          setSelectedEmployee(undefined);
-        }}
+        onClose={resetDeletionState}
         onConfirm={handleConfirmDelete}
-        title="Excluir Funcionário"
-        message="Tem certeza que deseja excluir este funcionário? Esta ação não pode ser desfeita."
-        isLoading={deleteEmployee.isPending}
+        title={deleteTitle}
+        isLoading={isDeleting}
+        message={deleteMessage}
+      />
+
+      <BulkImportDialog<CreateGrossEmployeePayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de funcionários"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "fullName", label: "Nome completo", required: true },
+          { key: "function", label: "Função", required: true },
+          { key: "nameSite", label: "Nome do site registrado", required: false },
+          { key: "nameDepartment", label: "Nome do departamento registrado", required: true },
+          { key: "addressHouseHold", label: "Morada", required: true },
+          { key: "addressCommune", label: "Comuna", required: true },
+          { key: "addressMunicipality", label: "Município", required: true },
+          { key: "addressProvince", label: "Província", required: true },
+          { key: "addressCountry", label: "País", required: true },
+          { key: "contactEmail", label: "Email", required: false },
+          { key: "contactPhones", label: "Telefones ", required: false },
+        ]}
+        shouldValidate={false}
+        mapRawToInput={(raw) => {
+          const phoneNumbers = (raw.contactPhones ?? "")
+            .split(/[;,]/)
+            .map((phone) => phone.trim())
+            .filter(Boolean)
+            .map((phone) => ({ phone }));
+
+          const payload: any = {
+            cod: raw.cod ?? "",
+            companyId,
+            fullName: raw.fullName ?? "",
+            function: raw.function ?? "",
+            nameSite: raw.nameSite ?? "",
+            userId,
+            nameDepartment: raw.nameDepartment ?? "",
+          };
+
+          const hasContact = (raw.contactEmail && raw.contactEmail.trim()) || phoneNumbers.length > 0;
+          if (hasContact) {
+            payload.contact = {
+              companyId,
+              email: raw.contactEmail || undefined,
+              phoneNumbers: phoneNumbers.length ? phoneNumbers : undefined,
+            };
+          }
+
+          const hasAddress = raw.addressHouseHold && raw.addressHouseHold.trim();
+          if (hasAddress) {
+            payload.address = {
+              houseHold: raw.addressHouseHold ?? "",
+              commune: raw.addressCommune ?? "",
+              municipality: raw.addressMunicipality ?? "",
+              province: raw.addressProvince ?? "",
+              country: raw.addressCountry ?? "",
+            };
+          }
+
+          return payload;
+        }}
+        onCreate={async (payload) => {
+          await createGrossEmployee.mutateAsync(payload);
+        }}
       />
     </div>
   );

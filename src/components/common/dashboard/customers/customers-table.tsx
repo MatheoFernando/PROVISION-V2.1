@@ -1,38 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
-import { useCustomers } from "@/infrastructure/hooks/useCustomers";
-import { Customer } from "@/infrastructure/schema/schema-customers";
+import { Eye, PencilSimple, Trash, X } from "phosphor-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { CustomersCreate } from "./customers-create";
-import { CustomersView } from "./customers-view";
-import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteCustomer } from "@/infrastructure/hooks/useCustomers";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import {
+  useCreateGrossCustomer,
+  useDeleteCustomer,
+  useCustomersByCompanyId,
+} from "@/infrastructure/hooks/useCustomers";
+import { useSites } from "@/infrastructure/hooks/useSites";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { Customer, Company, Contact } from "@/infrastructure/types/domain";
+import { type CreateGrossCustomerPayload } from "@/infrastructure/schema/schema-customers";
+import { DeleteModal } from "@/components/ui/delete-modal";
+import { CustomerDialog } from "./customer-create";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-const columns: ColumnDef<Customer>[] = [
-  {
-    accessorKey: "photo",
-    header: "Foto",
-    cell: ({ row }) => {
-      const photo = row.getValue("photo") as string;
-      const name = row.original.name;
-      return (
-        <Avatar className="h-8 w-8 rounded-sm">
-          <AvatarImage src={photo} alt={name} className="rounded-sm" />
-          <AvatarFallback className="bg-blue-100 text-blue-600 font-medium text-base rounded-sm">
-            {name.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-      );
-    },
-  },
+const customerColumns: ColumnDef<Customer>[] = [
   {
     accessorKey: "cod",
     header: "Código",
@@ -47,18 +41,6 @@ const columns: ColumnDef<Customer>[] = [
     cell: ({ row }) => {
       const name = row.getValue("name") as string;
       return <div>{name}</div>;
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
-      );
     },
   },
   {
@@ -78,43 +60,103 @@ const columns: ColumnDef<Customer>[] = [
     },
   },
   {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
+    accessorKey: "contact",
+    header: "Contacto",
     cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+      const contact = row.getValue("contact") as Contact;
+      const phone = contact?.phoneNumbers?.[0]?.phone || "";
+
+      if (!phone) return <div className="text-muted-foreground">-</div>;
+
+      return (
+        <div className="flex flex-col">
+          {phone && <span >{phone}</span>}
+        </div>
+      );
     },
-  },
+  }
 ];
 
-export function CustomersTable() {
-  const { data: customers = [], isLoading } = useCustomers();
+interface CustomersTableProps {
+  openCreateOnLoad?: boolean;
+  shouldNavigateBack?: boolean;
+}
+
+type TableData = Customer;
+
+export function CustomersTable({
+  openCreateOnLoad = false,
+  shouldNavigateBack = false,
+}: CustomersTableProps = {}) {
+  const router = useRouter();
+  const companyId = useAuthStore((state) => state.companyId) || "";
+
+  const {
+    data: customersByCompany = [],
+    isLoading: isLoadingByCompany,
+  } = useCustomersByCompanyId(companyId, {
+    enabled: !!companyId,
+  });
+
+
+  const customers = customersByCompany 
+  const isLoadingCustomers = isLoadingByCompany;
+
   const deleteCustomer = useDeleteCustomer();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
+  const createGrossCustomer = useCreateGrossCustomer();
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    Customer | Company | undefined
+  >();
 
-  const filteredData = customers.filter((item) =>
-    item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.taxName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.nif.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
-  const handleView = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsViewOpen(true);
+ 
+  const data = customers;
+  const isLoading = isLoadingCustomers;
+  const tableColumns = customerColumns;
+  const searchKey = "businessName";
+
+  const resetCreateState = () => {
+    setIsCreateOpen(false);
+    setSelectedCustomer(undefined);
   };
 
-  const handleEdit = (customer: Customer) => {
+  const handleReturn = () => {
+    if (shouldNavigateBack) router.back();
+  };
+
+  const handleCreateCancel = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+
+
+  const handleCreateDialogChange = (open: boolean) => {
+    if (open) {
+      setIsCreateOpen(true);
+      return;
+    }
+    handleCreateCancel();
+  };
+
+  const handleView = (customer: Customer | Company) => {
+    if (!customer?.id) return;
+    router.push(`/dashboard/clientes/${customer.id}`);
+  };
+
+
+  const handleEdit = (customer: Customer | Company) => {
     setSelectedCustomer(customer);
+    setIsDeleteOpen(false);
     setIsCreateOpen(true);
   };
 
-  const handleDelete = (customer: Customer) => {
+  const handleDelete = (customer: Customer | Company) => {
     setSelectedCustomer(customer);
+    setIsCreateOpen(false);
     setIsDeleteOpen(true);
   };
 
@@ -122,33 +164,44 @@ export function CustomersTable() {
     if (!selectedCustomer) return;
 
     try {
-      await deleteCustomer.mutateAsync(selectedCustomer.id);
+      await deleteCustomer.mutateAsync(selectedCustomer.id as string);
       toast.success("Cliente excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedCustomer(undefined);
     } catch (error) {
-      toast.error("Erro ao excluir cliente");
+      toast.error("Erro ao eliminar cliente");
     }
   };
 
-  const handleCreate = () => {
-    setSelectedCustomer(undefined);
-    setIsCreateOpen(true);
-  };
+  const { data: allSites = [] } = useSites(undefined, {
+    enabled: true,
+  });
+
+  const customersWithSites = new Set(
+    allSites.map((site) => site.customerId).filter(Boolean)
+  );
 
   return (
     <div className="space-y-4">
-      <DataTableGeneric
-        columns={columns}
-        data={filteredData}
+      <DataTableGeneric<TableData, any>
+        columns={tableColumns as ColumnDef<TableData>[]}
+        data={data as TableData[]}
         isLoading={isLoading}
-        searchKey="name"
         actionButton={{
           label: "Novo Cliente",
-          onClick: handleCreate,
+          onClick: () => {
+            setSelectedCustomer(undefined);
+            setIsCreateOpen(true);
+          }
+
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+        bulkImportButton={{
+          label: "Importar clientes",
+          onClick: () => setIsBulkOpen(true),
+        }}
+        searchKey={searchKey as any}
+        placeholder="Pesquisar..."
+        dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
@@ -157,28 +210,58 @@ export function CustomersTable() {
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (customer) => handleEdit(customer),
           },
           {
-            label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (customer) => handleDelete(customer),
+            render: (customer, action) => {
+              const hasSites = customersWithSites.has(customer.id as string);
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="w-full outline-none">
+                        <DropdownMenuItem
+                          className={`w-full cursor-pointer ${hasSites ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          onClick={(e) => {
+                            if (hasSites) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              action.onClick(customer);
+                            }
+                          }}
+                        >
+                          {action.icon && <span className="mr-2">{action.icon}</span>}
+                          {action.label}
+                        </DropdownMenuItem>
+                      </span>
+                    </TooltipTrigger>
+                    {hasSites && (
+                      <TooltipContent>
+                        <p>Não pode excluir cliente com sites associados</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            },
           },
+
         ]}
       />
 
-      <CustomersCreate
-        customer={selectedCustomer}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+      <CustomerDialog
+        open={isCreateOpen}
+        onOpenChange={handleCreateDialogChange}
+        customerToEdit={selectedCustomer as Customer | undefined}
       />
 
-      <CustomersView
-        customer={selectedCustomer}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-      />
+
 
       <DeleteModal
         isOpen={isDeleteOpen}
@@ -187,9 +270,78 @@ export function CustomersTable() {
           setSelectedCustomer(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Cliente"
+        title="Eliminar Empresa"
         message="Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita."
         isLoading={deleteCustomer.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossCustomerPayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de clientes"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "name", label: "Nome", required: true },
+          { key: "taxName", label: "Nome Fiscal", required: true },
+          { key: "nif", label: "NIF", required: true },
+          { key: "contactEmail", label: "Email", required: false },
+          { key: "contactPhones", label: "Telefone", required: false },
+          { key: "addressHouseHold", label: "Morada", required: true },
+          { key: "addressCommune", label: "Comuna", required: true },
+          { key: "addressMunicipality", label: "Município", required: true },
+          { key: "addressProvince", label: "Província", required: true },
+          { key: "addressCountry", label: "País", required: true },
+        ]}
+        templateFilename="modelo-clientes.csv"
+        mapRawToInput={(raw) => {
+          const phoneNumbers = (raw.contactPhones ?? "")
+            .split(/[;,]/)
+            .map((phone) => phone.trim())
+            .filter((phone) => phone.length > 0)
+            .map((phone) => ({ phone }));
+
+          const baseCustomerData = {
+            cod: raw.cod ?? "",
+            name: raw.name ?? "",
+            taxName: raw.taxName ?? "",
+            nif: raw.nif ?? "",
+            companyId,
+          };
+
+          const payload: any = {
+            ...baseCustomerData,
+            customer: {
+              ...baseCustomerData,
+              photo: "",
+            },
+          };
+
+          const hasContact = (raw.contactEmail && raw.contactEmail.trim()) || phoneNumbers.length > 0;
+          if (hasContact) {
+            payload.contact = {
+              email: raw.contactEmail || undefined,
+              phoneNumbers: phoneNumbers.length > 0 ? phoneNumbers : undefined,
+              companyId,
+            };
+          }
+
+          const hasAddress = raw.addressHouseHold && raw.addressHouseHold.trim();
+          if (hasAddress) {
+            payload.address = {
+              houseHold: raw.addressHouseHold ?? "",
+              commune: raw.addressCommune ?? "",
+              municipality: raw.addressMunicipality ?? "",
+              province: raw.addressProvince ?? "",
+              country: raw.addressCountry ?? "",
+              companyId,
+            };
+          }
+
+          return payload;
+        }}
+        onCreate={async (payload) => {
+          await createGrossCustomer.mutateAsync(payload);
+        }}
       />
     </div>
   );

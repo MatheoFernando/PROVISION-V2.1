@@ -1,65 +1,44 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { toast } from "sonner"
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  MoreHorizontal
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import { Eye, Edit, MoreHorizontal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
-import { OccurrenceDialog } from "./occurrence-dialog"
-import { EditOccurrenceModal } from "./occurrence-modals"
-import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences"
-import { useTypeOccurrences } from "@/infrastructure/hooks/useTypeOccurrences"
-import type { Occurrence } from "@/infrastructure/schema/schema-occurrence"
-import type { TypeOccurrence } from "@/infrastructure/schema/schema-type-occurrence"
+} from "@/components/ui/dropdown-menu";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { OccurrenceViewDrawer } from "./occurrence-view";
+import { OccurrenceDialog } from "./occurrence-create";
+import { TypeOccurrenceCreateDialog } from "./type-occurrence-create-dialog";
+import { useDeleteOccurrenceMutation } from "@/infrastructure/hooks/useOccurrences";
+import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
+import { DeleteModal } from "@/components/ui/delete-modal";
+import { Trash } from "phosphor-react";
+import type { DateRange } from "react-day-picker";
 
-const mockCompanies = [
-  { id: '1', name: 'TechCorp Solutions' },
-  { id: '2', name: 'InnovaTech' },
-  { id: '3', name: 'DataFlow Systems' },
-]
+interface ActionsButtonsProps {
+  occurrence: Occurrence;
+}
 
-const mockEmployees = [
-  { id: '1', name: 'João Silva' },
-  { id: '2', name: 'Maria Santos' },
-  { id: '3', name: 'Pedro Costa' },
-]
+function ActionsButtons({ occurrence }: ActionsButtonsProps) {
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const deleteMutation = useDeleteOccurrenceMutation();
 
-const mockEquipments = [
-  { id: '1', name: 'Equipamento A' },
-  { id: '2', name: 'Equipamento B' },
-  { id: '3', name: 'Equipamento C' },
-]
-
-const mockSites = [
-  { id: '1', name: 'Site Central' },
-  { id: '2', name: 'Site Norte' },
-  { id: '3', name: 'Site Sul' },
-]
-
-function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [isEditOpen, setIsEditOpen] = React.useState(false)
-  const deleteMutation = useDeleteOccurrenceMutation()
-
-  const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir esta ocorrência?')) {
-      deleteMutation.mutate(occurrence.id!)
+  const handleConfirmDelete = () => {
+    if (occurrence.id) {
+      deleteMutation.mutate(occurrence.id, {
+        onSuccess: () => setIsDeleteOpen(false),
+      });
     }
-  }
+  };
 
   return (
     <>
@@ -74,102 +53,116 @@ function ActionsButtons({ occurrence }: { occurrence: Occurrence }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={() => setIsDialogOpen(true)} className="cursor-pointer">
+          <DropdownMenuItem
+            onClick={() => setIsDialogOpen(true)}
+            className="cursor-pointer"
+          >
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="cursor-pointer">
-            <Edit className="size-4 mr-2" />
+          <DropdownMenuItem
+            onClick={() => setIsEditOpen(true)}
+            className="cursor-pointer"
+          >
+            <Edit className="size-4 mr-2 " />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
-            variant="destructive" 
-            onClick={handleDelete}
+            variant="destructive"
+            onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
-            <Trash2 className="size-4 mr-2" />
-            Excluir
+            <Trash className="size-4 mr-2" />
+            Eliminar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <OccurrenceDialog
+      <OccurrenceViewDrawer
         occurrence={occurrence}
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        onEdit={() => {
+          setIsDialogOpen(false);
+          setIsEditOpen(true);
+        }}
       />
 
-      <EditOccurrenceModal
-        occurrence={occurrence}
-        isOpen={isEditOpen}
+      <OccurrenceDialog
+        open={isEditOpen}
         onOpenChange={setIsEditOpen}
+        occurrenceToEdit={occurrence}
+      />
+
+      <DeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+        title="Eliminar Ocorrência"
+        message={`Tem certeza que deseja excluir a ocorrência ${occurrence.cod}?`}
       />
     </>
-  )
+  );
 }
 
-const createOccurrenceColumns = (typeOccurrences: TypeOccurrence[]): ColumnDef<Occurrence>[] => [
+const formatHour = (value?: string): string => {
+  if (!value) return "--";
+  if (value.includes("T") && Number.isNaN(Date.parse(value))) {
+    const fallback = value.includes(":") ? value : `${value}:00`;
+    return fallback.slice(0, 5);
+  }
+  const date = value.includes("T")
+    ? new Date(value)
+    : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`);
+  if (Number.isNaN(date.getTime())) {
+    const fallback = value.includes(":") ? value : `${value}:00`;
+    return fallback.slice(0, 5);
+  }
+  return date
+    .toLocaleTimeString("pt-AO", { hour: "2-digit", minute: "2-digit", hour12: false })
+    .replace(".", ":");
+};
+
+/** Extended occurrence type with flattened display names for table columns */
+interface OccurrenceWithNames extends Occurrence {
+  employeeName?: string;
+  equipmentName?: string;
+  siteName?: string;
+}
+
+const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
   {
     accessorKey: "cod",
     header: "Código",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.cod}</div>
-    ),
-  },
-
-  {
-    accessorKey: "description",
-    header: "Descrição",
-    cell: ({ row }) => {
-      return <div>{row.original.description || 'N/A'}</div>
-    },
+    size: 40,
+    cell: ({ row }) => <div>{row.original.cod}</div>,
   },
   {
-    accessorKey: "typeOccurrenceId",
-    header: "Tipo",
-    cell: ({ row }) => {
-      const type = typeOccurrences?.find(t => t.id === row.original.typeOccurrenceId)
-      return <div>{type?.description || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "equipmentId",
+    accessorKey: "equipmentName",
     header: "Equipamento",
-    cell: ({ row }) => {
-      const equipment = mockEquipments.find(e => e.id === row.original.equipmentId)
-      return <div>{equipment?.name || 'N/A'}</div>
-    },
+    cell: ({ row }) => <div>{row.original.equipmentName || "—"}</div>,
   },
   {
-    accessorKey: "employeeId",
+    accessorKey: "employeeName",
     header: "Funcionário",
-    cell: ({ row }) => {
-      const employee = mockEmployees.find(e => e.id === row.original.employeeId)
-      return <div>{employee?.name || 'N/A'}</div>
-    },
+    cell: ({ row }) => <div>{row.original.employeeName || "—"}</div>,
   },
   {
-    accessorKey: "siteId",
+    accessorKey: "siteName",
     header: "Site",
-    cell: ({ row }) => {
-      const site = mockSites.find(s => s.id === row.original.siteId)
-      return <div>{site?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "time",
-    header: "Horário",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.time}</div>
-    ),
+    cell: ({ row }) => <div>{row.original.siteName || "—"}</div>,
   },
   {
     accessorKey: "correctiveAction",
     header: "Ação Corretiva",
     cell: ({ row }) => (
-      <div className="max-w-[200px] truncate" title={row.original.correctiveAction}>
+      <div
+        className="max-w-[200px] truncate"
+        title={row.original.correctiveAction}
+      >
         {row.original.correctiveAction}
       </div>
     ),
@@ -178,70 +171,132 @@ const createOccurrenceColumns = (typeOccurrences: TypeOccurrence[]): ColumnDef<O
     accessorKey: "gravity",
     header: "Gravidade",
     cell: ({ row }) => {
-      const gravity = row.original.gravity
-      const variant = gravity === 'Alta' ? 'destructive' : gravity === 'Média' ? 'default' : 'secondary'
+      const gravity = row.original.gravity;
+      const variant =
+        gravity === "Alta"
+          ? "destructive"
+          : gravity === "Média"
+            ? "default"
+            : "secondary";
       return (
-        <Badge variant={variant} className={variant === 'destructive' ? 'bg-red-500 text-white' : variant === 'default' ? 'bg-green-500 text-white' : 'bg-orange-200 text-red-500'}>
+        <Badge
+          variant={variant}
+          className={
+            variant === "destructive"
+              ? "bg-red-500 text-white"
+              : variant === "default"
+                ? "bg-orange-200 text-red-500"
+                : variant === "secondary"
+                  ? " bg-green-500 text-white"
+                  : "bg-gray-200 text-gray-500"
+          }
+        >
           {gravity}
         </Badge>
-      )
+      );
     },
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Estado",
     cell: ({ row }) => {
-      const isOpen = row.original.status === 'Aberto'
+      const isOpen = row.original.status === "Ativo";
       return (
-        <Badge variant={isOpen ? 'default' : 'secondary'} className={isOpen ? 'bg-green-500 text-white' : 'bg-orange-200 text-red-500'}>
+        <Badge
+          variant={isOpen ? "default" : "secondary"}
+          className={
+            isOpen ? "bg-green-500 text-white" : "bg-orange-200 text-red-500"
+          }
+        >
           {row.original.status}
         </Badge>
-      )
+      );
     },
   },
   {
-    accessorKey: "createdAt",
-    header: "Criado em",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {new Date(row.original.createdAt || '').toLocaleDateString('pt-BR')}
-      </div>
-    ),
+    accessorFn: (row) => formatHour(row.time),
+    header: "Horário",
+    size: 40,
+    cell: ({ row }) => {
+      const hhmm = formatHour(row.original.time);
+      return <div className="text-center">{hhmm}</div>;
+    },
   },
-
   {
     id: "actions",
     header: "Ações",
-    cell: ({ row }) => (
-      <ActionsButtons occurrence={row.original} />
-    ),
+    cell: ({ row }) => <ActionsButtons occurrence={row.original} />,
   },
-]
+];
 
 interface OccurrenceTableProps {
-  data: Occurrence[]
-  isLoading?: boolean
-  onCreateClick?: () => void
+  data: Occurrence[];
+  isLoading?: boolean;
+  onCreateClick?: () => void;
+  onDateRangeChange?: (range?: DateRange) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (status?: string) => void;
 }
 
-export function OccurrenceTable({ data, isLoading, onCreateClick }: OccurrenceTableProps) {
-  const { data: typeOccurrences } = useTypeOccurrences()
-  
+export function OccurrenceTable({
+  data,
+  isLoading,
+  onDateRangeChange,
+  statusFilter,
+  onStatusFilterChange,
+}: OccurrenceTableProps) {
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const [isTypeOccurrenceDialogOpen, setIsTypeOccurrenceDialogOpen] = React.useState(false);
+
+  const transformedData: OccurrenceWithNames[] = React.useMemo(() => {
+    return data.map((occurrence) => ({
+      ...occurrence,
+      employeeName: occurrence.employees?.fullName,
+      equipmentName: occurrence.equipments?.cod,
+      siteName: occurrence.sites?.name,
+    }));
+  }, [data]);
+
+  const handleCreateClick = () => {
+    setIsCreateOpen(true);
+  };
+
   return (
     <div className="w-full">
       <DataTableGeneric
-        data={data}
-        columns={createOccurrenceColumns(typeOccurrences ?? [])}
+        data={transformedData}
+        columns={createOccurrenceColumns()}
         searchKey="cod"
-        placeholder="Pesquisar ocorrências..."
-        enableRowSelection={true}
-        includeSelection={true}
+        placeholder="Pesquisar..."
+        dateKey="createdAt"
         isLoading={isLoading}
         actionButton={{
           label: "Nova Ocorrência",
-          onClick: onCreateClick || (() => toast.success("Funcionalidade em desenvolvimento")),
+          onClick: handleCreateClick
         }}
+        secondaryActionButton={{
+          label: "Tipo de Ocorrência",
+          onClick: () => setIsTypeOccurrenceDialogOpen(true)
+        }}
+        statusOptions={[
+          { label: "Ativo", value: "Ativo" },
+          { label: "Inativo", value: "Inativo" },
+        ]}
+        onDateRangeChange={onDateRangeChange}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
+      />
+
+      <OccurrenceDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        occurrenceToEdit={undefined}
+      />
+
+      <TypeOccurrenceCreateDialog
+        open={isTypeOccurrenceDialogOpen}
+        onOpenChange={setIsTypeOccurrenceDialogOpen}
       />
     </div>
-  )
+  );
 }

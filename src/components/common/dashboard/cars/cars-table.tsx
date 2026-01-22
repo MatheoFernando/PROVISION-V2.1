@@ -1,23 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
-import { useCars } from "@/infrastructure/hooks/useCars";
-import { Car } from "@/infrastructure/schema/schema-cars";
+import { useMemo, useState } from "react";
+import { PencilSimple, Trash, X } from "phosphor-react";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { useCars, useCreateGrossCar, useDeleteCar } from "@/infrastructure/hooks/useCars";
+import { Car } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { CarsCreate } from "./cars-create";
-import { CarsView } from "./cars-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteCar } from "@/infrastructure/hooks/useCars";
 import { toast } from "sonner";
+import { CarDialog } from "./cars-create";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import { createGrossCarSchema } from "@/infrastructure/schema/schema-cars";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { z } from "zod";
+
+type CreateGrossCarPayload = z.infer<typeof createGrossCarSchema>;
 
 const columns: ColumnDef<Car>[] = [
   {
     accessorKey: "cod",
     header: "Código",
+    size: 50,
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
@@ -39,57 +42,37 @@ const columns: ColumnDef<Car>[] = [
       return `${capacity}L`;
     },
   },
-  {
-    accessorKey: "containerId",
-    header: "Container",
-    cell: ({ row }) => {
-      const containerId = row.getValue("containerId") as string;
-      return <div>{containerId}</div>;
-    },
-  },
-  {
-    accessorKey: "geoLocationEntityId",
-    header: "Localização",
-    cell: ({ row }) => {
-      const geoLocationEntityId = row.getValue("geoLocationEntityId") as string;
-      return <div>{geoLocationEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
-    },
-  },
+
 ];
 
-interface CarsTableProps {
-  mockData?: Car[];
+function parseCapacity(value: string | number | undefined) {
+  if (typeof value === "number") return value;
+  if (!value) return 0;
+  const normalized = value.replace(/[^\d.,-]/g, "").replace(",", ".");
+  const parsed = Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-export function CarsTable({ mockData }: CarsTableProps) {
-  const { data: cars = [], isLoading } = useCars();
+interface CarsTableProps {
+  companyId?: string;
+  data?: Car[];
+  isLoadingOverride?: boolean;
+}
+
+export function CarsTable({ companyId: companyIdProp, data, isLoadingOverride }: CarsTableProps = {}) {
+  const shouldFetch = !data;
   const deleteCar = useDeleteCar();
-  const [searchTerm, setSearchTerm] = useState("");
+  const createGrossCar = useCreateGrossCar();
+  const fallbackCompanyId = useAuthStore((s) => s.companyId) ?? "";
+  const companyId = companyIdProp ?? fallbackCompanyId;
+  const { data: cars = [], isLoading } = useCars({
+    enabled: shouldFetch,
+    companyId: companyId || undefined,
+  });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Car | undefined>();
-
-  // Use mock data if provided, otherwise use API data
-  const data = mockData || cars;
-
-  const filteredData = data.filter((item) =>
-    item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.mark.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleView = (car: Car) => {
-    setSelectedCar(car);
-    setIsViewOpen(true);
-  };
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
   const handleEdit = (car: Car) => {
     setSelectedCar(car);
@@ -102,65 +85,66 @@ export function CarsTable({ mockData }: CarsTableProps) {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedCar) return;
+    if (!selectedCar || !selectedCar.id) return;
 
     try {
-      await deleteCar.mutateAsync(selectedCar.id);
+      await deleteCar.mutateAsync(selectedCar.id as string);
       toast.success("Veículo excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedCar(undefined);
     } catch (error) {
-      toast.error("Erro ao excluir veículo");
+      toast.error("Erro ao eliminar veículo");
     }
-  };
-
-  const handleCreate = () => {
-    setSelectedCar(undefined);
-    setIsCreateOpen(true);
   };
 
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
-        isLoading={isLoading}
+        data={cars}
+        isLoading={isLoadingOverride ?? isLoading}
+        dateKey="createdAt"
         searchKey="cod"
         actionButton={{
           label: "Novo Veículo",
-          onClick: handleCreate,
-        }}
-        enableRowSelection={true}
-        includeSelection={true}
-        rowActions={[
-          {
-            label: "Visualizar",
-            icon: <Eye className="h-4 w-4 mr-2" />,
-            onClick: (car) => handleView(car),
+          onClick: () => {
+            setSelectedCar(undefined);
+            setIsCreateOpen(true);
           },
+        }}
+        bulkImportButton={{
+          label: "Importar viaturas",
+          onClick: () => setIsBulkOpen(true),
+        }}
+
+        rowActions={[
+
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (car) => handleEdit(car),
           },
           {
-            label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (car) => handleDelete(car),
           },
         ]}
       />
 
-      <CarsCreate
-        car={selectedCar}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
 
-      <CarsView
-        car={selectedCar}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
+
+      <CarDialog
+        open={isCreateOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateOpen(false);
+            setSelectedCar(undefined);
+          } else {
+            setIsCreateOpen(true);
+          }
+        }}
+        carToEdit={selectedCar ?? undefined}
       />
 
       <DeleteModal
@@ -170,9 +154,41 @@ export function CarsTable({ mockData }: CarsTableProps) {
           setSelectedCar(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Veículo"
+        title="Eliminar Veículo"
         message="Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita."
         isLoading={deleteCar.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossCarPayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de viaturas"
+        description="Importe um arquivo CSV conforme o modelo disponível. Todos os campos obrigatórios precisam estar preenchidos."
+        templateFilename="modelo-viaturas.csv"
+        schema={createGrossCarSchema}
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "mark", label: "Marca", required: true },
+          { key: "model", label: "Modelo", required: true },
+          { key: "capacity", label: "Capacidade", required: true },
+          { key: "codContainer", label: "Código do container", required: true },
+          { key: "geoLocationId", label: "Localização", required: true },
+        ]}
+        mapRawToInput={(raw) => {
+          const capacity = parseCapacity(raw.capacity);
+          return {
+            cod: raw.cod ?? "",
+            mark: raw.mark ?? "",
+            model: raw.model ?? "",
+            capacity,
+            geoLocationId: raw.geoLocationId ?? "",
+            codContainer: raw.codContainer ?? "",
+            companyId: raw.companyId || companyId,
+          };
+        }}
+        onCreate={async (payload) => {
+          await createGrossCar.mutateAsync(payload);
+        }}
       />
     </div>
   );

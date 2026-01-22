@@ -1,24 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
-import { useSites } from "@/infrastructure/hooks/useSites";
-import { Site } from "@/infrastructure/schema/schema-sites";
+import * as React from "react";
+import { Eye, PencilSimple, Trash } from "phosphor-react";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { useDeleteSite, useCreateGrossSite, useSites } from "@/infrastructure/hooks/useSites";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEmployees } from "@/infrastructure/hooks/useEmployees";
+import { useEquipment } from "@/infrastructure/hooks/useEquipment";
+import type { Site, Customer, Area, Zone, Sector, Contact } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { SitesCreate } from "./sites-create";
-import { SitesView } from "./sites-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteSite } from "@/infrastructure/hooks/useSites";
 import { toast } from "sonner";
+import { SiteDialog } from "./site-create";
+import { useRouter } from "next/navigation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  createGrossSiteSchema,
+  type CreateGrossSitePayload,
+} from "@/infrastructure/schema/schema-sites";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
+function getNestedEntity<T>(arrayOrObject: T | T[] | null | undefined): T | undefined {
+  if (!arrayOrObject) return undefined;
+  if (Array.isArray(arrayOrObject)) {
+    const withName = arrayOrObject.find((item) => (item as any)?.name);
+    return (withName ?? arrayOrObject[0]) as T | undefined;
+  }
+  return arrayOrObject;
+}
 
 const columns: ColumnDef<Site>[] = [
   {
     accessorKey: "cod",
     header: "Código",
+    size: 50,
     cell: ({ row }) => {
       const cod = row.getValue("cod") as string;
       return <div>{cod}</div>;
@@ -32,17 +55,76 @@ const columns: ColumnDef<Site>[] = [
       return <div>{name}</div>;
     },
   },
-
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "customerId",
+    header: "Cliente",
     cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
+      const original = row.original;
+      const customer = getNestedEntity<Customer>(
+        original.customers as Customer | Customer[] | null | undefined
+      ) ?? original.customer;
+      return <div>{customer?.name ?? "-"}</div>;
+    },
+  },
+  {
+    accessorKey: "areaId",
+    header: "Área",
+    cell: ({ row }) => {
+      const original = row.original;
+      const area = getNestedEntity<Area>(
+        original.areas as Area | Area[] | null | undefined
+      ) ?? original.area;
+      return <div>{area?.name ?? "-"}</div>;
+    },
+  },
+  {
+    accessorKey: "zoneId",
+    header: "Zona",
+    cell: ({ row }) => {
+      const original = row.original;
+      const zone = getNestedEntity<Zone>(
+        original.zones as Zone | Zone[] | null | undefined
+      ) ?? original.zone;
+      return <div>{zone?.name ?? "-"}</div>;
+    },
+  },
+  {
+    accessorKey: "sectorId",
+    header: "Setor",
+    cell: ({ row }) => {
+      const original = row.original;
+      const sector = getNestedEntity<Sector>(
+        original.sectors as Sector | Sector[] | null | undefined
+      ) ?? original.sector;
+      return <div>{sector?.name ?? "-"}</div>;
+    },
+  },
+  {
+    accessorKey: "contactId",
+    header: "Contato",
+    cell: ({ row }) => {
+      const original = row.original;
+      const contact = getNestedEntity<Contact>(
+        original.contacts as Contact | Contact[] | null | undefined
+      ) ?? original.contact;
+
+      const phone = contact?.phoneNumbers?.[0]?.phone || "";
+
+      if (!phone) return <div className="text-muted-foreground">-</div>;
+
+      return (
+        <div>
+          {phone && <span className="">{phone}</span>}
+        </div>
       );
+    },
+  },
+  {
+    accessorKey: "employee",
+    header: "Responsável",
+    cell: ({ row }) => {
+      const responsible = (row.original as any)?.employee;
+      return <div>{responsible?.fullName ?? "-"}</div>;
     },
   },
   {
@@ -53,108 +135,53 @@ const columns: ColumnDef<Site>[] = [
       return <div>{numberWorkersContract}</div>;
     },
   },
-  {
-    accessorKey: "customerId",
-    header: "Cliente",
-    cell: ({ row }) => {
-      const customerId = row.getValue("customerId") as string;
-      return <div>{customerId}</div>;
-    },
-  },
-  {
-    accessorKey: "zoneId",
-    header: "Zona",
-    cell: ({ row }) => {
-      const zoneId = row.getValue("zoneId") as string;
-      return <div>{zoneId}</div>;
-    },
-  },
-  {
-    accessorKey: "areaId",
-    header: "Área",
-    cell: ({ row }) => {
-      const areaId = row.getValue("areaId") as string;
-      return <div>{areaId}</div>;
-    },
-  },
-  {
-    accessorKey: "sectorId",
-    header: "Setor",
-    cell: ({ row }) => {
-      const sectorId = row.getValue("sectorId") as string;
-      return <div>{sectorId}</div>;
-    },
-  },
-  {
-    accessorKey: "contactId",
-    header: "Contato",
-    cell: ({ row }) => {
-      const contactId = row.getValue("contactId") as string;
-      return <div>{contactId}</div>;
-    },
-  },
-  {
-    accessorKey: "addressId",
-    header: "Endereço",
-    cell: ({ row }) => {
-      const addressId = row.getValue("addressId") as string;
-      return <div>{addressId}</div>;
-    },
-  },
-  {
-    accessorKey: "siteEntityId",
-    header: "Site",
-    cell: ({ row }) => {
-      const siteEntityId = row.getValue("siteEntityId") as string;
-      return <div>{siteEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "geoLocationEntityId",
-    header: "Localização",
-    cell: ({ row }) => {
-      const geoLocationEntityId = row.getValue("geoLocationEntityId") as string;
-      return <div>{geoLocationEntityId}</div>;
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const createdAt = row.getValue("createdAt");
-      
-      if (!createdAt) {
-        return <div>-</div>;
-      }
-      
-      const date = createdAt instanceof Date ? createdAt : new Date(createdAt as string);
-      
-      if (isNaN(date.getTime())) {
-        return <div>-</div>;
-      }
-      
-      return <div>{format(date, "dd/MM/yyyy", { locale: ptBR })}</div>;
-    },
-  },
 ];
 
-export function SitesTable() {
-  const { data: sites = [], isLoading } = useSites();
+interface SitesTableProps {
+  openCreateOnLoad?: boolean;
+  shouldNavigateBack?: boolean;
+  customerId?: string;
+  companyId?: string;
+  data?: Site[];
+  isLoadingOverride?: boolean;
+}
+
+function parseWorkersCount(rawValue: string | undefined): number {
+  if (!rawValue) return 0;
+  const normalized = rawValue.replace(/[^\d]/g, "");
+  if (!normalized) return 0;
+  return Number.parseInt(normalized, 10);
+}
+
+export function SitesTable({
+  openCreateOnLoad = false,
+  customerId,
+  companyId: companyIdProp,
+  data,
+  isLoadingOverride,
+}: SitesTableProps = {}) {
+  const router = useRouter();
+  const shouldFetch = !data;
+  const authCompanyId = useAuthStore((state) => state.companyId);
+  const companyId = companyIdProp || authCompanyId || "";
   const deleteSite = useDeleteSite();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
+  const createGrossSite = useCreateGrossSite();
+  const queryClient = useQueryClient();
+  
+  const { data: sites = [], isLoading: isLoadingSites } = useSites(undefined, {
+    enabled: shouldFetch && !!companyId,
+    companyId,
+  });
+  
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | undefined>();
-
-  const filteredData = sites.filter((item) =>
-    item.cod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
   const handleView = (site: Site) => {
-    setSelectedSite(site);
-    setIsViewOpen(true);
+    if (site.id) {
+      router.push(`/dashboard/sites/${site.id}`);
+    }
   };
 
   const handleEdit = (site: Site) => {
@@ -168,36 +195,59 @@ export function SitesTable() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedSite) return;
+    if (!selectedSite?.id) return;
 
     try {
       await deleteSite.mutateAsync(selectedSite.id);
       toast.success("Site excluído com sucesso!");
       setIsDeleteOpen(false);
       setSelectedSite(undefined);
-    } catch (error) {
-      toast.error("Erro ao excluir site");
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      if (customerId) {
+        await queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+      }
+    } catch {
+      toast.error("Erro ao eliminar site");
     }
   };
 
-  const handleCreate = () => {
-    setSelectedSite(undefined);
-    setIsCreateOpen(true);
-  };
+  const resolvedData = data ?? sites;
+  const resolvedIsLoading = isLoadingOverride ?? isLoadingSites;
+
+  const { data: allEmployees = [] } = useEmployees(companyId, {
+    enabled: !!companyId,
+  });
+  const { data: allEquipment = [] } = useEquipment(undefined, {
+    enabled: true,
+    companyId,
+  });
+
+  const sitesWithEmployees = new Set(
+    (Array.isArray(allEmployees) ? allEmployees : []).map((emp) => emp.siteId).filter(Boolean)
+  );
+  const sitesWithEquipment = new Set(
+    (Array.isArray(allEquipment) ? allEquipment : []).map((eq) => eq.siteId).filter(Boolean)
+  );
 
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
-        isLoading={isLoading}
-        searchKey="name"
+        data={resolvedData}
+        isLoading={resolvedIsLoading}
+        searchKey="cod"
         actionButton={{
           label: "Novo Site",
-          onClick: handleCreate,
+          onClick: () => {
+            setSelectedSite(undefined);
+            setIsCreateOpen(true);
+          },
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+        bulkImportButton={{
+          label: "Importar sites",
+          onClick: () => setIsBulkOpen(true),
+        }}
+        dateKey={"createdAt" as keyof Site}
         rowActions={[
           {
             label: "Visualizar",
@@ -206,27 +256,78 @@ export function SitesTable() {
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (site) => handleEdit(site),
           },
           {
-            label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (site) => handleDelete(site),
+            render: (site, action) => {
+              const hasEmployees = sitesWithEmployees.has(site.id as string);
+              const hasEquipment = sitesWithEquipment.has(site.id as string);
+              const isDisabled = hasEmployees || hasEquipment;
+
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="w-full outline-none">
+                        <DropdownMenuItem
+                          className={`w-full cursor-pointer ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                          onClick={(e) => {
+                            if (isDisabled) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              action.onClick(site);
+                            }
+                          }}
+                        >
+                          {action.icon && <span className="mr-2">{action.icon}</span>}
+                          {action.label}
+                        </DropdownMenuItem>
+                      </span>
+                    </TooltipTrigger>
+                    {isDisabled && (
+                      <TooltipContent>
+                        <p>
+                          {hasEmployees && hasEquipment
+                            ? "Não pode excluir site com funcionários e equipamentos associados"
+                            : hasEmployees
+                              ? "Não pode excluir site com funcionários associados"
+                              : "Não pode excluir site com equipamentos associados"}
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            },
           },
         ]}
       />
 
-      <SitesCreate
-        site={selectedSite}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
-
-      <SitesView
-        site={selectedSite}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
+      <SiteDialog
+        open={isCreateOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateOpen(false);
+            setSelectedSite(undefined);
+          } else {
+            setIsCreateOpen(true);
+          }
+        }}
+        siteToEdit={selectedSite ?? undefined}
+        customerId={customerId}
+        companyId={companyId}
+        onSuccess={async () => {
+          setSelectedSite(undefined);
+          await queryClient.invalidateQueries({ queryKey: ["sites"] });
+          if (customerId) {
+            await queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+          }
+        }}
       />
 
       <DeleteModal
@@ -236,9 +337,83 @@ export function SitesTable() {
           setSelectedSite(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Site"
+        title="Eliminar Site"
         message="Tem certeza que deseja excluir este site? Esta ação não pode ser desfeita."
         isLoading={deleteSite.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossSitePayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de sites"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "name", label: "Nome do Site", required: true },
+          { key: "numberWorkersContract", label: "Trabalhadores", required: true },
+          { key: "codCustomer", label: "Código do Cliente registrado", required: true },
+          { key: "nameArea", label: "Área registrada", required: true },
+          { key: "nameZone", label: "Zona registrada", required: true },
+          { key: "nameSector", label: "Setor registrado", required: true },
+          { key: "contactEmail", label: "Email", required: false },
+          { key: "contactPhones", label: "Telefone", required: false },
+          { key: "addressHouseHold", label: "Morada", required: true },
+          { key: "addressCommune", label: "Comuna", required: true },
+          { key: "addressMunicipality", label: "Município", required: true },
+          { key: "addressProvince", label: "Província", required: true },
+          { key: "addressCountry", label: "País", required: true },
+        ]}
+        templateFilename="modelo-sites.csv"
+        schema={createGrossSiteSchema}
+        shouldValidate={false}
+        mapRawToInput={(raw) => {
+          const phoneNumbers = (raw.contactPhones ?? "")
+            .split(/[;,]/)
+            .map((phone) => phone.trim())
+            .filter(Boolean)
+            .map((phone) => ({ phone }));
+          const numberWorkersContract = parseWorkersCount(raw.numberWorkersContract);
+
+          const payload: any = {
+            cod: raw.cod ?? "",
+            name: raw.name ?? "",
+            numberWorkersContract,
+            nameArea: raw.nameArea ?? "",
+            codCustomer: raw.codCustomer ?? "",
+            nameZone: raw.nameZone ?? "",
+            nameSector: raw.nameSector ?? "",
+            companyId,
+          };
+
+          const hasContact = (raw.contactEmail && raw.contactEmail.trim()) || phoneNumbers.length > 0;
+          if (hasContact) {
+            payload.contact = {
+              phoneNumbers: phoneNumbers.length ? phoneNumbers : undefined,
+              email: raw.contactEmail || undefined,
+              companyId,
+            };
+          }
+
+          const hasAddress = raw.addressHouseHold && raw.addressHouseHold.trim();
+          if (hasAddress) {
+            payload.address = {
+              houseHold: raw.addressHouseHold ?? "",
+              commune: raw.addressCommune ?? "",
+              municipality: raw.addressMunicipality ?? "",
+              province: raw.addressProvince ?? "",
+              country: raw.addressCountry ?? "",
+              companyId,
+            };
+          }
+
+          return payload;
+        }}
+        onCreate={async (payload) => {
+          await createGrossSite.mutateAsync(payload);
+          await queryClient.invalidateQueries({ queryKey: ["sites"] });
+          if (customerId) {
+            await queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+          }
+        }}
       />
     </div>
   );

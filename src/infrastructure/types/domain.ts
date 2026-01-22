@@ -1,0 +1,489 @@
+export interface Address {
+    id?: string;
+    houseHold: string;
+    commune?: string;
+    municipality?: string;
+    province?: string;
+    country?: string;
+    companyId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Area {
+    id?: string;
+    name: string;
+    employeeId?: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface AuthCredentials {
+    phone: string;
+    password: string;
+}
+
+export interface AuthResponse {
+    id: string;
+    phone: string;
+    status: boolean;
+    role: string;
+    permissions: string[];
+    companyId: string;
+    isGlobalAdmin: boolean;
+}
+
+export interface ChangePasswordRequest {
+    oldPassword: string;
+    newPassword: string;
+}
+
+export interface Car {
+    id?: string;
+    cod: string;
+    mark: string;
+    model: string;
+    capacity: number;
+    containerId: string;
+    geoLocationId: string | null;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface PhoneNumber {
+    phone: string;
+}
+
+export interface Contact {
+    id?: string;
+    phoneNumbers: PhoneNumber[];
+    email: string;
+    companyId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Company {
+    id?: string;
+    cod: string;
+    taxName: string;
+    businessName: string;
+    nif: string;
+    photo: string;
+    status: boolean;
+    hasExistedSince: string;
+    contactId?: string;
+    addressId?: string;
+    address?: Address;
+    addresses?: Address[];
+    contact?: Contact;
+    contacts?: Contact[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CreateCompanyPayload {
+    cod: string;
+    taxName: string;
+    businessName: string;
+    nif: string;
+    photo?: string;
+    status: boolean;
+    hasExistedSince: string;
+    address: Address;
+    contact: Contact;
+}
+
+export interface UpdateCompanyPayload {
+    id: string;
+    taxName: string;
+    businessName: string;
+    photo?: string;
+    contactId?: string;
+    addressId?: string;
+    status: boolean;
+    hasExistedSince?: string;
+    contact?: Contact;
+    address?: Address;
+}
+
+export interface User {
+    id?: string;
+    phone: string;
+    status: boolean;
+    companyId?: string;
+    isGlobalAdmin: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    roleId?: string;
+    password?: string;
+    permissions?: string[];
+    employee?: Employee | null;
+    departmentId?: string;
+    department?: Department;
+}
+
+export interface CreateUserPayload {
+    phone: string;
+    password: string;
+    email?: string;
+    isGlobalAdmin?: boolean;
+    status: boolean;
+    companyId?: string;
+    departmentId?: string;
+    roleId?: string;
+}
+
+export interface UpdateUserPayload {
+    id: string;
+    phone: string;
+    password?: string;
+    isGlobalAdmin: boolean;
+    status: boolean;
+    companyId?: string;
+    departmentId?: string;
+    roleId?: string;
+}
+
+export interface Container {
+    id?: string;
+    cod: string;
+    mark: string;
+    model: string;
+    capacity: number;
+    containerId?: string;
+    status: boolean;
+    name: string;
+    companyId: string;
+    geoLocationEntityId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Customer {
+    id?: string;
+    cod: string;
+    name: string;
+    taxName: string;
+    photo: string;
+    nif: string;
+    contactId?: string;
+    addressId?: string;
+    address?: Address;
+    contact?: Contact;
+    companyId: string;
+    company?: Company;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Department {
+    id?: string;
+    name: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Employee {
+    id?: string;
+    cod: string;
+    companyId: string;
+    fullName: string;
+    photo: string;
+    function: string;
+    contactId?: string;
+    addressId?: string;
+    contact?: Contact;
+    address?: Address;
+    siteId: string;
+    userId: string;
+    departmentId: string;
+    createdAt?: string;
+    updatedAt?: string;
+    department?: Department | null;
+}
+
+export interface Equipment {
+    id?: string;
+    cod: string;
+    serialNumber: string;
+    status: boolean | string;
+    mark: string;
+    model: string;
+    siteId: string;
+    typeEquipmentId: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+    site?: Site | null;
+    typeEquipment?: TypeEquipment | null;
+}
+
+export interface Module {
+    id?: string;
+    name: string;
+    description: string;
+    status: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Site {
+    id?: string;
+    cod: string;
+    name: string;
+    numberWorkersContract: number;
+    customerId: string;
+    areaId: string;
+    contactId: string;
+    addressId: string;
+    sectorId: string;
+    zoneId: string;
+    companyId: string;
+    geoLocationId: string | null | undefined;
+    status: string;
+    nameArea?: string;
+    nameZone?: string;
+    nameSector?: string;
+    customer?: Customer;
+    customers?: Customer | (Customer | null)[];
+    address?: Address;
+    addresses?: Address | (Address | null)[];
+    zone?: Zone;
+    zones?: Zone | (Zone | null)[];
+    area?: Area;
+    areas?: Area | (Area | null)[];
+    sector?: Sector;
+    sectors?: Sector | (Sector | null)[];
+    contact?: Contact;
+    contacts?: Contact | (Contact | null)[];
+    equipments?: Equipment[] | null;
+    employees?: Employee[] | null;
+    cars?: Car[] | null;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Occorrence {
+    id?: string;
+    cod: string;
+    description: string;
+    companyId: string;
+    typeOccorrenceId: string;
+    equipmentId?: string;
+    employeeId: string;
+    siteId: string;
+    time: string;
+    correctiveAction: string;
+    gravity: string;
+    status: string;
+    createdAt?: string;
+    updatedAt?: string;
+    equipments?: Equipment;
+    employees?: Employee;
+    sites?: Site;
+    companies?: Company;
+    typeOccorence?: TypeOccorrence;
+}
+
+export interface Permission {
+    id?: string;
+    name: string;
+    description: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface RolePermission {
+    id?: string;
+    rolesId: string;
+    permissionsId: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Role {
+    id?: string;
+    name: string;
+    description: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Sector {
+    id?: string;
+    name: string;
+    employeeId?: string;
+    zoneId: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Supervision {
+    id?: string;
+    cod: string;
+    observation?: string;
+    companyId: string;
+    desiredNumberWorkers?: string;
+    equipmentId?: string;
+    employeeId?: string;
+    siteId: string;
+    time: string;
+    numberWorkerPresent?: string;
+    departmentId?: string;
+    status?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    department?: Department;
+    company?: Company;
+    employees?: Employee;
+    sites?: Site;
+    equipments?: Equipment;
+    departments?: Department[];
+}
+
+export interface Rsu {
+    id?: string;
+    cod: string;
+    containerId: string;
+    companyId: string;
+    quantity: number;
+    comment?: string;
+    dataStart?: string;
+    clientTime?: string;
+    employeeId: string;
+    siteId: string;
+    status: string;
+    carId: string;
+    customerSignature: string;
+    createdAt?: string;
+    updatedAt?: string;
+    container?: Container | null;
+    employee?: Employee | null;
+    site?: Site | null;
+    car?: Car | null;
+}
+
+export interface TypeEquipment {
+    id?: string;
+    name: string;
+    description?: string;
+    status?: string | boolean;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Zone {
+    id?: string;
+    name: string;
+    employeeId: string | undefined;
+    companyId: string;
+    areaId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CreateZonePayload {
+    name: string;
+    companyId: string;
+    employeeId?: string;
+    areaId: string;
+}
+
+export interface TypeOccorrence {
+    id?: string;
+    cod: string;
+    description: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface AngolaCommune {
+    name: string;
+    slug: string;
+}
+
+export interface AngolaDistrict {
+    name: string;
+    slug: string;
+}
+
+export interface AngolaMunicipality {
+    name: string;
+    slug: string;
+    districts: AngolaDistrict[];
+    communes: AngolaCommune[];
+}
+
+export interface AngolaProvince {
+    name: string;
+    slug: string;
+    area: string;
+    foundationDate: string;
+    capital: {
+        name: string;
+        slug: string;
+    };
+    municipalities: AngolaMunicipality[];
+}
+
+export interface AngolaCountry {
+    name: string;
+    slug: string;
+}
+
+export interface Round {
+    id?: string;
+    position: string;
+    numberOfRounds: number;
+    kmStart: string;
+    kmEnd?: string;
+    timeStart: string;
+    timeEnd?: string;
+    carId: string;
+    companyId: string;
+    areaId: string;
+    sectorId: string;
+    checkListRoundGroupId?: string;
+    numberOfCartFrota: number;
+    status?: string;
+    itemInspectionRounds?: ItemInspectionRound[];
+    checkListRoundGroups?: CheckListRoundGroup[];
+    createdAt?: string;
+    updatedAt?: string;
+    car?: Car;
+    area?: Area;
+    sector?: Sector;
+}
+
+export interface ItemInspectionRound {
+    id?: string;
+    category: string;
+    description: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CheckListRoundGroup {
+    id?: string;
+    assessment: number;
+    applicable: boolean;
+    itemInspectionRoundId: string;
+    roundId: string;
+    quantity?: number;
+    observation?: string;
+    companyId: string;
+    createdAt?: string;
+    updatedAt?: string;
+    itemInspectionRound?: ItemInspectionRound;
+}

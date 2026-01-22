@@ -1,14 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { toast } from "sonner"
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  MoreHorizontal
-} from "lucide-react"
+import { ColumnDef} from "@tanstack/react-table"
+import { Eye, PencilSimple, Trash, DotsThree} from "phosphor-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,53 +12,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
-import { SupervisionDialog } from "./supervision-dialog"
-import { EditSupervisionModal } from "./supervision-modals"
+import { DataTableGeneric } from "@/components/common/base-ui/data-table"
+import type { DateRange } from "react-day-picker"
+import { SupervisionDialog } from "./supervision-create"
 import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervisions"
-import type { Supervision } from "@/infrastructure/schema/schema-supervision"
+import { Supervision } from "@/infrastructure/types/domain"
+import { DeleteModal } from "@/components/ui/delete-modal"
+import { SupervisionDrawer } from "./supervision-view"
 
+interface ActionsButtonsProps {
+  supervision: Supervision
+  equipmentCode?: string
+  onEdit?: (supervision: Supervision) => void
+}
 
-const mockCompanies = [
-  { id: '1', name: 'TechCorp Solutions' },
-  { id: '2', name: 'InnovaTech' },
-  { id: '3', name: 'DataFlow Systems' },
-]
-
-const mockEmployees = [
-  { id: '1', name: 'João Silva' },
-  { id: '2', name: 'Maria Santos' },
-  { id: '3', name: 'Pedro Costa' },
-]
-
-const mockEquipments = [
-  { id: '1', name: 'Equipamento A' },
-  { id: '2', name: 'Equipamento B' },
-  { id: '3', name: 'Equipamento C' },
-]
-
-const mockSites = [
-  { id: '1', name: 'Site Central' },
-  { id: '2', name: 'Site Norte' },
-  { id: '3', name: 'Site Sul' },
-]
-
-const mockDepartments = [
-  { id: '1', name: 'Produção' },
-  { id: '2', name: 'Qualidade' },
-  { id: '3', name: 'Manutenção' },
-]
-
-
-function ActionsButtons({ supervision }: { supervision: Supervision }) {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [isEditOpen, setIsEditOpen] = React.useState(false)
+function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
+  const [isViewOpen, setIsViewOpen] = React.useState(false)
   const deleteMutation = useDeleteSupervisionMutation()
 
-  const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir esta supervisão?')) {
-      deleteMutation.mutate(supervision.id!)
-    }
+  const handleConfirmDelete = () => {
+    deleteMutation.mutate(supervision.id!, {
+      onSuccess: () => setIsDeleteOpen(false),
+    })
   }
 
   return (
@@ -76,166 +46,248 @@ function ActionsButtons({ supervision }: { supervision: Supervision }) {
             className="data-[state=open]:bg-muted text-muted-foreground flex size-8 cursor-pointer"
             size="icon"
           >
-            <MoreHorizontal className="size-4" />
+            <DotsThree className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsDialogOpen(true)}>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => setIsViewOpen(true)}
+          >
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="cursor-pointer">
-            <Edit className="size-4 mr-2" />
+          <DropdownMenuItem
+            onClick={() => onEdit?.(supervision)}
+            className="cursor-pointer"
+          >
+            <PencilSimple className="size-4 mr-2" />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
-            variant="destructive" 
-            onClick={handleDelete}
+            variant="destructive"
+            onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
-            <Trash2 className="size-4 mr-2" />
-            Excluir
+            <Trash className="size-4 mr-2" />
+            Eliminar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SupervisionDialog
+      <SupervisionDrawer
         supervision={supervision}
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        onEdit={(sup) => {
+          setIsViewOpen(false);
+          onEdit?.(sup);
+        }}
       />
 
-      <EditSupervisionModal
-        supervision={supervision}
-        isOpen={isEditOpen}
-        onOpenChange={setIsEditOpen}
+      <DeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+        title="Eliminar Supervisão"
+        message={`Tem certeza que deseja excluir a supervisão do equipamento ?`}
       />
     </>
   )
 }
 
 
-const createSupervisionColumns = (): ColumnDef<Supervision>[] => [
-  {
-    accessorKey: "cod",
-    header: "Código",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.cod}</div>
-    ),
-  },
-  {
-    accessorKey: "observation",
-    header: "Observação",
-    cell: ({ row }) => {
-      return <div>{row.original.observation || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "desiredNumberWorkers",
-    header: "Desejado",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.desiredNumberWorkers}</div>
-    ),
-  },
-  {
-    accessorKey: "numberWorkerPresent",
-    header: "Presente",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.numberWorkerPresent}</div>
-    ),
-  },
-  {
-    accessorKey: "equipmentId",
-    header: "Equipamento",
-    cell: ({ row }) => {
-      const equipment = mockEquipments.find(e => e.id === row.original.equipmentId)
-      return <div>{equipment?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "employeeId",
-    header: "Funcionário",
-    cell: ({ row }) => {
-      const employee = mockEmployees.find(e => e.id === row.original.employeeId)
-      return <div>{employee?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "siteId",
-    header: "Site",
-    cell: ({ row }) => {
-      const site = mockSites.find(s => s.id === row.original.siteId)
-      return <div>{site?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "time",
-    header: "Horário",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.time}</div>
-    ),
-  },
-  {
-    accessorKey: "departmentId",
-    header: "Departamento",
-    cell: ({ row }) => {
-      const department = mockDepartments.find(d => d.id === row.original.departmentId)
-      return <div>{department?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const isActive = row.original.status === 'Ativo'
-      return (
-        <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
-          {row.original.status}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Criado em",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {new Date(row.original.createdAt || '').toLocaleDateString('pt-BR')}
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    header: "Ações",
-    cell: ({ row }) => (
-      <ActionsButtons supervision={row.original} />
-    ),
-  },
-]
+const formatHour = (value?: string) => {
+  if (!value) return "--"
+  if (value.includes("T") && Number.isNaN(Date.parse(value))) {
+    const fallback = value.includes(":") ? value : `${value}:00`
+    return fallback.slice(0, 5)
+  }
+  const date = value.includes("T")
+    ? new Date(value)
+    : new Date(`${new Date().toISOString().slice(0, 10)}T${value}`)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = value.includes(":") ? value : `${value}:00`
+    return fallback.slice(0, 5)
+  }
+  return date
+    .toLocaleTimeString("pt-AO", { hour: "2-digit", minute: "2-digit", hour12: false })
+    .replace(".", ":")
+}
+
+
 
 interface SupervisionTableProps {
   data: Supervision[]
   isLoading?: boolean
   onCreateClick?: () => void
+  onDateRangeChange?: (range?: DateRange) => void
+  onBulkDelete?: (selected: Supervision[]) => void
+  statusFilter?: string
+  onStatusFilterChange?: (status?: string) => void
 }
 
-export function SupervisionTable({ data, isLoading, onCreateClick }: SupervisionTableProps) {
+export function SupervisionTable({
+  data,
+  isLoading,
+  onDateRangeChange,
+  statusFilter,
+  onStatusFilterChange,
+}: SupervisionTableProps) {
+
+  const [isFormOpen, setIsFormOpen] = React.useState(false)
+  const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
+
+  const columns: ColumnDef<Supervision>[] = React.useMemo(() => [
+    {
+      accessorKey: "cod",
+      header: "Código",
+      size: 50,
+      cell: ({ row }) => (
+        <div>{row.original.cod}</div>
+      ),
+    },
+    {
+      accessorKey: "desiredNumberWorkers",
+      header: "Desejado",
+      size: 20,
+      cell: ({ row }) => (
+        <div>{row.original.desiredNumberWorkers}</div>
+      ),
+    },
+    {
+      accessorKey: "numberWorkerPresent",
+      header: "Presente",
+      size: 20,
+      cell: ({ row }) => {
+        const present = Number(row.original.numberWorkerPresent) || 0
+        const desired = Number(row.original.desiredNumberWorkers) || 0
+        const isEqual = present === desired
+        const isLess = present < desired
+        const difference = present - desired
+
+        return (
+          <div className={isEqual ? 'text-green-600 font-medium' : isLess ? 'text-red-600 font-medium' : ''}>
+            {isLess ? `${difference}` : present}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "equipment",
+      header: `Equipamentos`,
+      cell: ({ row }) => {
+          const eq = row.original.equipments;
+          const name = eq ? `${eq.cod || ''}`.trim() : 'N/A';
+          return <div>{name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "employee",
+      header: "Funcionário",
+      cell: ({ row }) => {
+        return <div>{row.original.employees?.fullName || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "site",
+      header: "Site",
+      cell: ({ row }) => {
+        return <div>{row.original.sites?.name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "time",
+      header: "Horário",
+      size: 20,
+      cell: ({ row }) => {
+        const hhmm = formatHour(row.original.time)
+        return <div>{hhmm}</div>
+      },
+    },
+    {
+      accessorKey: "department",
+      header: "Departamento",
+      cell: ({ row }) => {
+        return <div>{row.original.departments?.name || 'N/A'}</div>
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Estado",
+      cell: ({ row }) => {
+        const isActive = row.original.status === 'Finalizado'
+        return (
+          <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-500' : 'bg-orange-200 text-red-600'}>
+            {row.original.status}
+          </Badge>
+        )
+      },
+    },
+    {
+      id: "actions",
+      header: "Ações",
+      size: 50,
+      cell: ({ row }) => {
+        return (
+          <ActionsButtons
+            supervision={row.original}
+            equipmentCode={row.original.equipments?.cod}
+            onEdit={(supervision) => {
+              setSelectedSupervision(supervision)
+              setIsFormOpen(true)
+            }}
+          />
+        )
+      },
+    },
+  ], []);
+
+  const handleCreate = () => {
+    setSelectedSupervision(null)
+    setIsFormOpen(true)
+  }
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false)
+    setSelectedSupervision(null)
+  }
+
   return (
     <div className="w-full">
       <DataTableGeneric
         data={data}
-        columns={createSupervisionColumns()}
+        columns={columns}
         searchKey="cod"
-        placeholder="Pesquisar supervisões..."
-        enableRowSelection={true}
-        includeSelection={true}
+        placeholder="Pesquisar..."
         isLoading={isLoading}
+        dateKey="time"
+        onDateRangeChange={onDateRangeChange}
         actionButton={{
           label: "Nova Supervisão",
-          onClick: onCreateClick || (() => toast.success("Funcionalidade em desenvolvimento")),
+          onClick: handleCreate,
         }}
+        statusOptions={[
+          { label: "Em andamento", value: "Em andamento" },
+          { label: "Finalizado", value: "Finalizado" },
+        ]}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
+      />
+
+      <SupervisionDialog
+        open={isFormOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseForm()
+          } else {
+            setIsFormOpen(true)
+          }
+        }}
+        supervisionToEdit={selectedSupervision ?? undefined}
       />
     </div>
   )

@@ -1,5 +1,5 @@
-"use client"
-import { usePathname } from "next/navigation"
+"use client";
+import { usePathname } from "next/navigation";
 
 import {
   SidebarGroup,
@@ -7,78 +7,236 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+} from "@/components/ui/sidebar";
+import { useTranslations } from "next-intl";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal } from "lucide-react"
-import { useIsMobile } from "@/hooks/use-mobile"
-import type { NavItem } from "./nav-items"
-import { allNavItems } from "./nav-items"
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { CaretRight } from "phosphor-react";
+import { allNavItems } from "./nav-items";
+import Link from "next/link";
+
+type NavItem = {
+  title: string;
+  url?: string;
+  icon?: any;
+  items?: NavItem[];
+  children?: NavItem[];
+};
+
+function hasActiveChild(item: NavItem, pathname: string): boolean {
+  if (item.url) {
+    if (item.url === "/dashboard") {
+      if (pathname === "/dashboard") return true;
+    } else if (pathname.startsWith(item.url)) {
+      return true;
+    }
+  }
+  if (item.items?.length) {
+    return item.items.some((subItem) => hasActiveChild(subItem, pathname));
+  }
+  return false;
+}
+
+function NavMenuItem({ item, pathname, level = 0 }: { item: NavItem; pathname: string; level?: number }) {
+  const t = useTranslations();
+
+  const title = item.title.includes('.') ? t(item.title) : item.title;
+
+  const isActiveUrl = (url?: string) => {
+    if (!url) return false;
+    if (url === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname.startsWith(url);
+  };
+
+  const hasSubItems = item.items && item.items.length > 0;
+  const isActive = hasActiveChild(item, pathname);
+
+  if (hasSubItems) {
+    return (
+      <SidebarMenuSubItem>
+        <Collapsible
+          defaultOpen={isActive}
+          className="group/collapsible"
+        >
+          <CollapsibleTrigger asChild>
+            <SidebarMenuSubButton>
+              {item.icon && <item.icon className="size-4" />}
+              <span>{title}</span>
+              <CaretRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            </SidebarMenuSubButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {item.items!.map((subItem) => (
+                <NavMenuItem
+                  key={subItem.title}
+                  item={subItem}
+                  pathname={pathname}
+                  level={level + 1}
+                />
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarMenuSubItem>
+    );
+  }
+
+  return (
+    <SidebarMenuSubItem>
+      <SidebarMenuSubButton
+        asChild
+        isActive={isActiveUrl(item.url)}
+      >
+        <Link href={item.url ?? "#"} prefetch>
+          {item.icon && <item.icon className="size-4" />}
+          <span>{title}</span>
+        </Link>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  );
+}
 
 export function NavMain({
   items = allNavItems,
-}: { items?: (NavItem & { isActive?: boolean; items?: NavItem[]; children?: NavItem[] })[] }) {
-  const pathname = usePathname()
-  const isMobile = useIsMobile()
+}: {
+  items?: (NavItem & {
+    isActive?: boolean;
+    items?: NavItem[];
+    children?: NavItem[];
+  })[];
+}) {
+  const pathname = usePathname();
+  const t = useTranslations();
+
   const isActiveUrl = (url?: string) => {
-    if (!url) return false
+    if (!url) return false;
     if (url === "/dashboard") {
-      return pathname === "/dashboard"
+      return pathname === "/dashboard";
     }
-    return pathname.startsWith(url)
-  }
+    return pathname.startsWith(url);
+  };
+
   return (
     <SidebarGroup>
+      <SidebarGroupLabel className="mb-2 text-xs font-medium text-gray-500 tracking-wider">
+        Menu
+      </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
+          const title = item.title.includes(".") ? t(item.title) : item.title;
+
           if (item.items?.length) {
+            const isActive = hasActiveChild(item, pathname);
             return (
-              <DropdownMenu key={item.title}>
-                <SidebarMenuItem>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent/50 transition-colors duration-200">
+              <SidebarMenuItem key={item.title}>
+                <Collapsible
+                  defaultOpen={item.isActive || isActive}
+                  className="group/collapsible"
+                >
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip={title}>
                       {item.icon && <item.icon className="size-4" />}
-                      <span>{item.title}</span>
-                      <MoreHorizontal className="ml-auto" />
+                      <span>{title}</span>
+                      <CaretRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    side={isMobile ? "bottom" : "right"}
-                    align={isMobile ? "end" : "start"}
-                    className="min-w-56 rounded-lg"
-                  >
-                    <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-                    {item.items.map((subItem) => (
-                      <DropdownMenuItem asChild key={subItem.title}>
-                        <a href={subItem.url}>
-                          {subItem.icon && <subItem.icon className="size-4" />}
-                          <span>{subItem.title}</span>
-                        </a>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </SidebarMenuItem>
-              </DropdownMenu>
-            )
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => (
+                        <NavMenuItem
+                          key={subItem.title}
+                          item={subItem}
+                          pathname={pathname}
+                          level={1}
+                        />
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
+            );
           }
 
-          // Se não tem subitens, renderiza como botão simples
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title} isActive={isActiveUrl(item.url)}>
-                <a href={item.url ?? "#"}>
+              <SidebarMenuButton
+                asChild
+                tooltip={title}
+                isActive={isActiveUrl(item.url)}
+              >
+                <Link href={item.url ?? "#"} prefetch>
                   {item.icon && <item.icon className="size-4" />}
-                  <span>{item.title}</span>
-                </a>
+                  <span>{title}</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          )
+          );
         })}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }
+
+export function NavConfig({ item, footer }: { item: NavItem; footer?: React.ReactNode }) {
+  const pathname = usePathname();
+  const t = useTranslations();
+
+  const title = item.title.includes(".") ? t(item.title) : item.title;
+  const hasSubItems = item.items && item.items.length > 0;
+  const isActive = hasActiveChild(item, pathname);
+
+  if (!hasSubItems) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="mb-2 text-xs font-medium text-gray-500 tracking-wider">
+        {title}
+      </SidebarGroupLabel>
+      <SidebarMenu>
+        <SidebarMenuItem key={item.title}>
+          <Collapsible
+            defaultOpen={isActive}
+            className="group/collapsible"
+          >
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton tooltip={title}>
+                {item.icon && <item.icon className="size-4" />}
+                <span>{title}</span>
+                <CaretRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {(item.items ?? []).map((subItem) => (
+                  <NavMenuItem
+                    key={subItem.title}
+                    item={subItem}
+                    pathname={pathname}
+                    level={1}
+                  />
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      {footer && (
+        <div className="mt-3">
+          {footer}
+        </div>
+      )}
+    </SidebarGroup>
+  );
+}
+

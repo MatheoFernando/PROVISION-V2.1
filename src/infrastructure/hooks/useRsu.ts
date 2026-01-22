@@ -1,102 +1,171 @@
-"use client"
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/infrastructure/utils/api'
-import type { 
-  Rsu, 
-  CreateRsu, 
-  UpdateRsu 
-} from '@/infrastructure/schema/schema-rsu'
-import { rsuSchema, mockRsu } from '@/infrastructure/schema/schema-rsu'
-import { toast } from 'sonner'
+import * as React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/infrastructure/utils/api";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import type { Rsu } from "@/infrastructure/types/domain";
 
-export function useRsuQuery() {
+const LIST_KEY = ["rsu"] as const;
+const BY_DATE_KEY = ["rsu", "byDate"] as const;
+const BY_SITE_KEY = ["rsu", "bySite"] as const;
+const BY_STATUS_KEY = ["rsu", "byStatus"] as const;
+const DETAIL_KEY = (id: string) => ["rsu", id] as const;
+type QueryClientInstance = ReturnType<typeof useQueryClient>;
+
+const syncRsuLists = (queryClient: QueryClientInstance) => {
+  queryClient.invalidateQueries({ queryKey: LIST_KEY });
+  queryClient.invalidateQueries({ queryKey: BY_DATE_KEY, exact: false });
+  queryClient.invalidateQueries({ queryKey: BY_SITE_KEY, exact: false });
+  queryClient.invalidateQueries({ queryKey: BY_STATUS_KEY, exact: false });
+};
+
+const setDetailCache = (queryClient: QueryClientInstance, entity: Rsu) => {
+  if (!entity.id) return;
+  queryClient.setQueryData(DETAIL_KEY(entity.id), entity);
+};
+
+const normalizeResponse = <T,>(payload: any): T => {
+  if (!payload) return [] as T;
+  return ((payload?.data ?? payload?.items ?? payload) as T) ?? ([] as T);
+};
+
+export function useRsus(companyId?: string) {
   return useQuery({
-    queryKey: ['rsu'],
+    queryKey: [...LIST_KEY, companyId],
     queryFn: async (): Promise<Rsu[]> => {
-      try {
-        const response = await api.get('/rsu')
-        return response.data as Rsu[]
-      } catch {
-        // Sempre retorna mock quando não há dados da API
-        return rsuSchema.array().parse(mockRsu)
-      }
+      if (!companyId) return [];
+      const { data } = await api.get(`/rsu/getAll/${companyId}`);
+      return normalizeResponse<Rsu[]>(data);
     },
-    staleTime: 5 * 60 * 1000,
-    // Sempre mostra dados mockados imediatamente
-    initialData: rsuSchema.array().parse(mockRsu),
-  })
+    enabled: !!companyId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 }
 
-export function useRsuByIdQuery(id: string) {
+export function useRsuByDateQuery(companyId?: string, date?: Date) {
+  const dateParam = React.useMemo(() => {
+    if (!date) return undefined;
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return day.toISOString();
+  }, [date]);
+
   return useQuery({
-    queryKey: ['rsu', id],
-    queryFn: async (): Promise<Rsu> => {
-      try {
-        const response = await api.get(`/rsu/${id}`)
-        return response.data as Rsu
-      } catch {
-        // Mock para testes
-        const rsu = mockRsu.find(r => r.id === id)
-        if (!rsu) throw new Error('RSU não encontrado')
-        return rsu
-      }
+    queryKey: ["rsu", "byDate", companyId, dateParam],
+    enabled: Boolean(companyId) && Boolean(dateParam),
+    queryFn: async (): Promise<Rsu[]> => {
+      const { data } = await api.get(
+        `/rsu/getByDate/${companyId}/${dateParam}`
+      );
+      return normalizeResponse<Rsu[]>(data);
     },
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-  })
+  });
+}
+
+export function useRsuBySiteQuery(companyId?: string, siteId?: string) {
+  return useQuery({
+    queryKey: ["rsu", "bySite", companyId, siteId ?? "all"],
+    enabled: Boolean(companyId) && Boolean(siteId),
+    queryFn: async (): Promise<Rsu[]> => {
+      const { data } = await api.get(
+        `/rsu/getBySiteId/${companyId}/${siteId}`
+      );
+      return normalizeResponse<Rsu[]>(data);
+    },
+  });
+}
+
+export function useRsuByStatusQuery(companyId?: string, status?: string) {
+  return useQuery({
+    queryKey: ["rsu", "byStatus", companyId, status ?? "all"],
+    enabled: Boolean(companyId) && Boolean(status),
+    queryFn: async (): Promise<Rsu[]> => {
+      const { data } = await api.get(
+        `/rsu/getByStatus/${companyId}/${status}`
+      );
+      return normalizeResponse<Rsu[]>(data);
+    },
+  });
+}
+
+export function useRsuDetailQuery(id?: string) {
+  return useQuery({
+    queryKey: id ? DETAIL_KEY(id) : ["rsu", "detail", "unknown"],
+    enabled: Boolean(id),
+    queryFn: async (): Promise<Rsu> => {
+      const { data } = await api.get(`/rsu/${id}`);
+      return (data?.data ?? data) as Rsu;
+    },
+
+  });
 }
 
 export function useCreateRsuMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Rsu");
 
   return useMutation({
-    mutationFn: async (data: CreateRsu): Promise<Rsu> => {
-      const response = await api.post('/rsu', data)
-      return response.data
+    mutationFn: async (
+      payload: Omit<Rsu, "id" | "createdAt" | "updatedAt">
+    ): Promise<Rsu> => {
+      const { data } = await api.post("/rsu/create", payload);
+      return (data?.data ?? data) as Rsu;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rsu'] })
-      toast.success('RSU criado com sucesso')
+    onSuccess: (created) => {
+      syncRsuLists(queryClient);
+      setDetailCache(queryClient, created);
+      toast.success(t("create.success"));
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao criar RSU')
+    onError: (error) => {
+      const message =
+        (error as any)?.response?.data?.message || "Erro ao criar RSU";
+      toast.error(message);
     },
-  })
+  });
 }
 
 export function useUpdateRsuMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Rsu");
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateRsu }): Promise<Rsu> => {
-      const response = await api.put(`/rsu/${id}`, data)
-      return response.data
+    mutationFn: async (payload: Rsu): Promise<Rsu> => {
+      const { data } = await api.put("/rsu", payload);
+      return (data?.data ?? data) as Rsu;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rsu'] })
-      toast.success('RSU atualizado com sucesso')
+    onSuccess: (updated) => {
+      syncRsuLists(queryClient);
+      setDetailCache(queryClient, updated);
+      toast.success(t("update.success"));
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao atualizar RSU')
+    onError: (error) => {
+      const message =
+        (error as any)?.response?.data?.message || "Erro ao atualizar RSU";
+      toast.error(message);
     },
-  })
+  });
 }
 
 export function useDeleteRsuMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Rsu");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/rsu/${id}`)
+      await api.delete(`/rsu/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rsu'] })
-      toast.success('RSU excluído com sucesso')
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({ queryKey: DETAIL_KEY(id) });
+      syncRsuLists(queryClient);
+      toast.success(t("delete.success"));
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao excluir RSU')
+    onError: (error) => {
+      const message =
+        (error as any)?.response?.data?.message || "Erro ao eliminar RSU";
+      toast.error(message);
     },
-  })
+  });
 }
-

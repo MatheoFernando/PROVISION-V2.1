@@ -1,8 +1,10 @@
 import api, { setAccessToken } from '@/infrastructure/utils/api';
+import Cookies from 'js-cookie';
 import { useAuthStore } from '@/infrastructure/hooks/useAuthStore';
 
 export type LoginRequest = {
-  phone: string;
+  phone?: string;
+  email?: string;
   password: string;
 };
 
@@ -19,30 +21,33 @@ export type LoginData = {
   };
 };
 
+
 export type LoginEnvelope = {
+  message: string;
   data: LoginData;
   success: boolean;
+  statusCode?: number;
 };
 
 export async function login(request: LoginRequest): Promise<LoginEnvelope> {
   const { data } = await api.post<LoginEnvelope>('/authentication/login', request);
   if (data?.data?.accessToken) {
     setAccessToken(data.data.accessToken);
-    
-      try {
-        const user = data?.data?.user;
-        const payload = {
-          isGlobalAdmin: Boolean(user?.isGlobalAdmin),
-        };
-        window.localStorage.setItem('user', JSON.stringify(payload));
-        
-        // Atualizar o store
-        useAuthStore.getState().setIsGlobalAdmin(Boolean(user?.isGlobalAdmin));
-      } catch {
-        // ignore storage errors
-      }
-    }
- 
+  }
+  if (data?.data?.refreshToken) {
+    Cookies.set('refreshToken', data.data.refreshToken);
+  }
+
+  if (data?.data?.user) {
+    const { id, companyId, isGlobalAdmin } = data.data.user;
+
+    useAuthStore.getState().setSession({
+      token: data.data.accessToken,
+      userId: id,
+      companyId,
+      isGlobalAdmin,
+    });
+  }
   return data;
 }
 

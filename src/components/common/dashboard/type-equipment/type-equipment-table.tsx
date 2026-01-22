@@ -1,16 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
+import { PencilSimple, Trash } from "phosphor-react";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
 import { useTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
-import { TypeEquipment } from "@/infrastructure/schema/schema-type-equipment";
+import { TypeEquipment } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TypeEquipmentCreate } from "./type-equipment-create";
-import { TypeEquipmentView } from "./type-equipment-view";
-import { TypeEquipmentModals } from "./type-equipment-modals";
+import { TypeEquipmentDialog } from "./type-equipment-create";
+import { useDeleteTypeEquipment } from "@/infrastructure/hooks/useTypeEquipment";
+import { DeleteModal } from "@/components/ui/delete-modal";
+
+interface SelectedTypeEquipment {
+  id: string;
+  name: string;
+  companyId: string;
+  description?: string;
+}
 
 const columns: ColumnDef<TypeEquipment>[] = [
   {
@@ -33,45 +40,67 @@ const columns: ColumnDef<TypeEquipment>[] = [
     accessorKey: "createdAt",
     header: "Data de Criação",
     cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
+      const date = row.getValue("createdAt") as string | undefined;
+      if (!date) return "-";
       return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
     },
   },
 ];
 
-interface TypeEquipmentTableProps {
-  mockData?: TypeEquipment[];
-}
 
-export function TypeEquipmentTable({ mockData }: TypeEquipmentTableProps) {
-  const { data: typeEquipment = [], isLoading } = useTypeEquipment();
+
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
+export function TypeEquipmentTable() {
+  const companyId = useAuthStore((state) => state.companyId);
+  const { data: typeEquipment = [], isLoading } = useTypeEquipment(companyId ?? undefined);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedTypeEquipment, setSelectedTypeEquipment] = useState<TypeEquipment | undefined>();
+  const [selectedTypeEquipment, setSelectedTypeEquipment] = useState<SelectedTypeEquipment | undefined>();
+  const deleteTypeEquipment = useDeleteTypeEquipment();
 
-  // Use mock data if provided, otherwise use API data
-  const data = mockData || typeEquipment;
+  const data = typeEquipment;
 
-  const filteredData = data.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const handleView = (typeEquipment: TypeEquipment) => {
-    setSelectedTypeEquipment(typeEquipment);
-    setIsViewOpen(true);
-  };
+  const normalizedTerm = (searchTerm ?? "").trim().toLowerCase();
+  const filteredData = data.filter((item) => {
+    const name = (item?.name ?? "").toLowerCase();
+    const description = (item?.description ?? "").toLowerCase();
+    if (!normalizedTerm) return true;
+    return name.includes(normalizedTerm) || description.includes(normalizedTerm);
+  });
 
   const handleEdit = (typeEquipment: TypeEquipment) => {
-    setSelectedTypeEquipment(typeEquipment);
+    if (!typeEquipment.id) return;
+    setSelectedTypeEquipment({
+      id: typeEquipment.id,
+      name: typeEquipment.name,
+      companyId: typeEquipment.companyId,
+      description: typeEquipment.description,
+    });
     setIsCreateOpen(true);
   };
 
   const handleDelete = (typeEquipment: TypeEquipment) => {
-    setSelectedTypeEquipment(typeEquipment);
+    if (!typeEquipment.id) return;
+    setSelectedTypeEquipment({
+      id: typeEquipment.id,
+      name: typeEquipment.name,
+      companyId: typeEquipment.companyId,
+      description: typeEquipment.description,
+    });
     setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedTypeEquipment?.id) return;
+    try {
+      await deleteTypeEquipment.mutateAsync(selectedTypeEquipment.id);
+    } catch {
+    } finally {
+      setIsDeleteOpen(false);
+      setSelectedTypeEquipment(undefined);
+    }
   };
 
   const handleCreate = () => {
@@ -90,46 +119,34 @@ export function TypeEquipmentTable({ mockData }: TypeEquipmentTableProps) {
           label: "Novo Tipo de Equipamento",
           onClick: handleCreate,
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+        dateKey="createdAt"
         rowActions={[
-          {
-            label: "Visualizar",
-            icon: <Eye className="h-4 w-4 mr-2" />,
-            onClick: (typeEquipment) => handleView(typeEquipment),
-          },
+
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (typeEquipment) => handleEdit(typeEquipment),
           },
           {
-            label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (typeEquipment) => handleDelete(typeEquipment),
           },
         ]}
       />
 
-      <TypeEquipmentCreate
-        typeEquipment={selectedTypeEquipment}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+      <TypeEquipmentDialog
+        typeEquipmentToEdit={selectedTypeEquipment}
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
       />
-
-      <TypeEquipmentView
-        typeEquipment={selectedTypeEquipment}
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-      />
-
-      <TypeEquipmentModals
-        typeEquipmentToDelete={selectedTypeEquipment}
+      <DeleteModal
         isOpen={isDeleteOpen}
-        onCloseDelete={() => {
-          setIsDeleteOpen(false);
-          setSelectedTypeEquipment(undefined);
-        }}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="Remover tipo de equipamento"
+        message={`Tem certeza que deseja remover "${selectedTypeEquipment?.name ?? ""}"?`}
+        isLoading={(deleteTypeEquipment as any).isPending}
       />
     </div>
   );

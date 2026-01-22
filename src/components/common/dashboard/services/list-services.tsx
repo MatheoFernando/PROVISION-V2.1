@@ -1,152 +1,195 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Edit, Trash2, Eye, Building2 } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
-import { EditService } from "./edit-service";
-import { AssociateServiceCompany } from "./associate-service-company";
-import { Service } from "@/infrastructure/schema/schema-service";
-import { useUpdateServiceMutation, useDeleteServiceMutation } from "@/infrastructure/hooks/useServices";
-import { useCompaniesQuery } from "@/infrastructure/hooks/useCompanies";
-import { useUsersQuery } from "@/infrastructure/hooks/useUsers";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { DeleteModal } from "@/components/ui/delete-modal";
+import { Edit, Trash2 } from "lucide-react";
+import {
+  useDeleteCompanyModuleMutation,
+} from "@/infrastructure/hooks/useCompanies";
+import type { CompanyModuleWithDetails } from "@/infrastructure/schema/schema-company-module";
+import {
+  CompanyModuleDialog,
+  type CompanyModuleDialogState,
+} from "./company-module-create";
+import { useTranslations } from "next-intl";
 
 interface ListServicesProps {
-  services: Service[];
-  isGlobalAdmin: boolean;
+  services: CompanyModuleWithDetails[];
+  isLoading?: boolean;
+  readOnly?: boolean;
+  showCompanyColumn?: boolean;
 }
 
-export function ListServices({ services, isGlobalAdmin }: ListServicesProps) {
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [associateService, setAssociateService] = useState<Service | null>(
-    null
+interface CompanyModuleRow extends CompanyModuleWithDetails {
+  status?: string | boolean;
+}
+
+export function ListServices({ services, isLoading, readOnly = false, showCompanyColumn = false }: ListServicesProps) {
+  const t = useTranslations("ServicesManagement");
+  const [deleteTarget, setDeleteTarget] =
+    useState<CompanyModuleWithDetails | null>(null);
+  const deleteCompanyModuleMutation = useDeleteCompanyModuleMutation();
+  const [dialogState, setDialogState] = useState<CompanyModuleDialogState | null>(
+    null,
   );
-  const updateServiceMutation = useUpdateServiceMutation();
-  const deleteServiceMutation = useDeleteServiceMutation();
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  function handleToggleActive(service: Service) {
-    updateServiceMutation.mutate({
-      id: service.id!,
-      data: { status: !service.status },
-    });
-  }
 
-  function handleDelete(service: Service) {
-    if (confirm("Tem certeza que deseja excluir este serviço?")) {
-      deleteServiceMutation.mutate(service.id!);
-    }
-  }
-
-  const columns = useMemo<ColumnDef<Service>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Nome",
-        cell: ({ row }) => (
-          <div className="font-medium">{row.getValue("name")}</div>
-        ),
-      },
-      {
-        accessorKey: "description",
-        header: "Descrição",
-        cell: ({ row }) => (
-          <div className="max-w-[200px] truncate">
-            {row.getValue("description") || "-"}
-          </div>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as boolean;
-          return (
-            <Badge
-              variant={status ? "default" : "destructive"}
-            >
-              {status ? "Ativo" : "Inativo"}
-            </Badge>
-          );
-        },
-      },
-     
-    ],
+  const handleDeleteClick = useCallback(
+    (service: CompanyModuleWithDetails) => {
+      setDeleteTarget(service);
+    },
     []
   );
 
-  const rowActions = useMemo(() => {
-    if (!isGlobalAdmin) return [];
+  function confirmDelete() {
+    if (!deleteTarget?.id) return;
+    setIsDeleting(true);
+    deleteCompanyModuleMutation.mutate(deleteTarget.id, {
+      onSettled: () => {
+        setIsDeleting(false);
+        setDeleteTarget(null);
+      },
+    });
+  }
 
+  const getAssociationStatus = useCallback((service: CompanyModuleRow) => {
+    const rawStatus =
+      (service.status as unknown) ?? (service.isActive as unknown);
+    if (typeof rawStatus === "string") {
+      const normalized = rawStatus.toLowerCase();
+      return normalized === "true" || normalized === "1";
+    }
+    return Boolean(rawStatus);
+  }, []);
+
+  const columns = useMemo<ColumnDef<CompanyModuleRow>[]>(
+    () => {
+      const cols: ColumnDef<CompanyModuleRow>[] = [];
+
+      cols.push(
+        {
+          accessorKey: "module.name",
+          header: t("fields.service"),
+          cell: ({ row }) => (
+            <div className="font-medium">{row.original.module?.name ?? "N/D"}</div>
+          ),
+        },
+        {
+          accessorKey: "module.description",
+          header: t("fields.description"),
+          cell: ({ row }) => (
+            <div className="truncate">
+              {row.original.module?.description || "-"}
+            </div>
+          ),
+        },
+        {
+          accessorKey: "status",
+          header: t("fields.status"),
+          cell: ({ row }) => {
+            const isActive = getAssociationStatus(row.original);
+            return (
+              <Badge
+                className={`${isActive
+                  ? "bg-transparent text-green-600"
+                  : "bg-orange-200 text-red-600"
+                  } `}
+                variant={isActive ? "default" : "destructive"}
+              >
+                {isActive ? t("fields.active") : t("fields.inactive")}
+              </Badge>
+            );
+          },
+        }
+      );
+
+      return cols;
+    },
+    [getAssociationStatus, showCompanyColumn]
+  );
+
+  const filteredServices = useMemo(() => services, [services]);
+
+  const openAssociationDialog = useCallback(
+    (service: CompanyModuleWithDetails) => {
+      if (!service.id && !service.companyId && !service.moduleId) return;
+      setDialogState({
+        associationId: service.id ?? null,
+        defaultCompanyId: service.companyId ?? service.company?.id ?? undefined,
+        defaultModuleId: service.moduleId ?? service.module?.id ?? undefined,
+        defaultStatus: getAssociationStatus(service),
+      });
+    },
+    [getAssociationStatus]
+  );
+
+  const rowActions = useMemo(() => {
+    if (readOnly) return [];
     return [
       {
-        label: "Atribuir a empresa",
-        icon: <Building2 className="h-3 w-3" />,
-        onClick: (service: Service) => setAssociateService(service),
-        variant: "ghost" as const,
+        label: t("buttons.edit"),
+        icon: <Edit className="size-4" />,
+        onClick: openAssociationDialog,
       },
       {
-        label: "Editar",
-        icon: <Edit className="h-3 w-3" />,
-        onClick: (service: Service) => setEditingService(service),
-        variant: "ghost" as const,
-      },
-      {
-        label: "Excluir",
-        icon: <Trash2 className="h-3 w-3" />,
-        onClick: handleDelete,
+        label: t("buttons.dissociate"),
+        icon: <Trash2 className="size-4" />,
+        onClick: handleDeleteClick,
         variant: "ghost" as const,
       },
     ];
-  }, [isGlobalAdmin]);
-
-  if (services.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Serviços</CardTitle>
-          <CardDescription>
-            {isGlobalAdmin
-              ? "Nenhum serviço foi criado ainda."
-              : "Nenhum serviço personalizado foi criado para sua empresa."}
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  }, [handleDeleteClick, openAssociationDialog, readOnly]);
 
   return (
     <div>
       <div>
         <DataTableGeneric
-          data={services}
+          data={filteredServices}
           columns={columns}
-          searchKey="name"
-          placeholder="Pesquisar serviços..."
-          rowActions={rowActions}
+          dateKey="createdAt"
+          isLoading={isLoading}
+          placeholder={t("placeholders.searchServices")}
+          rowActions={rowActions }
+          actionButton={
+            !readOnly
+              ? {
+                label: t("buttons.associateServices"),
+                onClick: () =>
+                  setDialogState({
+                    associationId: null,
+                    defaultStatus: true,
+                  }),
+              }
+              : undefined
+          }
         />
       </div>
-      {editingService && (
-        <EditService
-          service={editingService}
-          open={!!editingService}
-          onOpenChange={(open) => !open && setEditingService(null)}
-        />
-      )}
-      {associateService && (
-        <AssociateServiceCompany
-          open={!!associateService}
-          onOpenChange={(open) => !open && setAssociateService(null)}
-          moduleId={associateService.id!}
-          moduleName={associateService.name}
-        />
-      )}
+
+      <DeleteModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        title={t("titles.deleteService")}
+        message={`${t("deleteModal.message")} ${deleteTarget?.module?.name}? ${t("deleteModal.permanentAction")}`}
+      />
+
+
+      <CompanyModuleDialog
+        open={Boolean(dialogState)}
+        onOpenChange={(open) => {
+          if (!open) setDialogState(null);
+        }}
+        associationId={dialogState?.associationId}
+        defaultCompanyId={dialogState?.defaultCompanyId}
+        defaultModuleId={dialogState?.defaultModuleId}
+        defaultStatus={dialogState?.defaultStatus}
+      />
+
     </div>
   );
 }

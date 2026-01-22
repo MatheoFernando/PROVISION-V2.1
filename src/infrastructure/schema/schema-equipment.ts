@@ -1,56 +1,28 @@
 import { z } from "zod";
 
-export const equipmentSchema = z.object({
-  id: z.string(),
+export const createEquipmentSchema = z.object({
+  cod: z.string().min(1, "Código é obrigatório"),
   serialNumber: z.string().min(1, "Número de série é obrigatório"),
-  status: z.boolean(),
   mark: z.string().min(1, "Marca é obrigatória"),
   model: z.string().min(1, "Modelo é obrigatório"),
+  status: z.boolean(),
   siteId: z.string(),
   typeEquipmentId: z.string(),
   companyId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  sitesId: z.string(),
+  employeeId: z.string().optional(),
 });
 
-export const createEquipmentSchema = equipmentSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+const statusLiterals = z.union([z.literal("ACTIVE"), z.literal("INACTIVE")]);
+
+export const createGrossEquipmentSchema = z.object({
+  cod: z.string().min(1, "Código é obrigatório"),
+  serialNumber: z.string().min(1, "Número de série é obrigatório"),
+  status: statusLiterals.default("ACTIVE"),
+  mark: z.string().min(1, "Marca é obrigatória"),
+  model: z.string().min(1, "Modelo é obrigatório"),
+  nameSite: z.string().min(1, "Site é obrigatório"),
+  nameTypeEquipment: z.string().min(1, "Tipo de equipamento é obrigatório"),
+
 });
 
-export const updateEquipmentSchema = createEquipmentSchema.partial();
-
-export type Equipment = z.infer<typeof equipmentSchema>;
-export type CreateEquipment = z.infer<typeof createEquipmentSchema>;
-export type UpdateEquipment = z.infer<typeof updateEquipmentSchema>;
-
-export const mockEquipments: Equipment[] = [
-  {
-    id: "1",
-    serialNumber: "1234567890",
-    status: true,
-    mark: "Apple",
-    model: "MacBook Pro 2025",
-    siteId: "1",
-    typeEquipmentId: "1",
-    companyId: "1",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    sitesId: "1",
-  },
-  {
-    id: "2",
-    serialNumber: "0987654321",
-    status: false,
-    mark: "Dell",
-    model: "XPS 15",
-    siteId: "1",
-    typeEquipmentId: "1",
-    companyId: "1",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    sitesId: "1",
-  }
- ]
+export type CreateGrossEquipmentPayload = z.infer<typeof createGrossEquipmentSchema>;

@@ -1,13 +1,12 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
-
-interface Contact {
-  id?: string;
-  phoneNumbers?: { phone?: string }[];
-  email?: string;
-  companyId?: string;
-}
+import { Contact } from "../types/domain";
 
 export function useContacts(): UseQueryResult<Contact[]>;
 export function useContacts(companyId?: string): UseQueryResult<Contact[]>;
@@ -25,23 +24,47 @@ export function useContactsByEmail(email: string) {
   return useQuery({
     queryKey: ["contacts", "email", email],
     queryFn: async (): Promise<Contact[]> => {
-      const { data } = await api.get(`/contact/email?email=${email}`);
+      const { data } = await api.get(`/contact/email`, { params: { email } });
       return (data?.data ?? []) as Contact[];
     },
     enabled: !!email,
   });
 }
 
+export function useContactById(id?: string, companyId?: string) {
+  return useQuery({
+    queryKey: ["contact", id, companyId],
+    queryFn: async (): Promise<Contact | null> => {
+      if (!id) return null;
+      try {
+        const { data } = await api.get(`/contact/getById`, { params: { id } });
+        return data?.data || data || null;
+      } catch (error) {
+        if (!companyId) return null;
+        const { data } = await api.get("/contact/getAllByCompany", { params: { companyId } });
+        const contacts = (data?.data ?? data ?? []) as Contact[];
+        return contacts.find((c) => c.id === id) || null;
+      }
+    },
+    enabled: !!id,
+    retry: 1,
+  });
+}
+
 export function useCreateContact() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (payload: Partial<Contact>): Promise<Contact> => {
+    mutationFn: async (
+      payload: Omit<Contact, "id" | "createdAt" | "updatedAt">
+    ): Promise<Contact> => {
       const response = await api.post("/contact/create", payload);
-      return response.data;
+      return response.data?.data ?? response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    onSuccess: (_created, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["contacts", (variables as Contact).companyId],
+      });
       toast.success("Contato criado com sucesso!");
     },
     onError: (error: any) => {
@@ -52,11 +75,15 @@ export function useCreateContact() {
 
 export function useUpdateContact() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (data: Partial<Contact> & { id: string }): Promise<Contact> => {
+    mutationFn: async (
+      data: Partial<Omit<Contact, "id" | "createdAt" | "updatedAt">> & {
+        id: string;
+      }
+    ): Promise<Contact> => {
       const response = await api.put("/contact", data);
-      return response.data;
+      return response.data?.data ?? response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
@@ -70,7 +97,7 @@ export function useUpdateContact() {
 
 export function useDeleteContact() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/contact/${id}`);
@@ -80,7 +107,7 @@ export function useDeleteContact() {
       toast.success("Contato excluído com sucesso!");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao excluir contato");
+      toast.error(error.response?.data?.message || "Erro ao eliminar contato");
     },
   });
 }

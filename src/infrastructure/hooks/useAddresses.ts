@@ -1,90 +1,151 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { Address } from "../types/domain";
 
-interface Address {
-  id?: string;
-  houseHold?: string;
-  commune?: string;
-  municipality?: string;
-  province?: string;
-  country?: string;
-  companyId?: string;
+interface ApiListResponse<T> {
+  data?: T;
+  success?: boolean;
 }
 
-export function useAddresses(companyId?: string) {
-  return useQuery({
-    queryKey: ["addresses", companyId],
-    queryFn: async (): Promise<Address[]> => {
-      const response= await api.get("/address/getAll");
-      return response.data?.data ;
-    },
-  });
+interface ApiItemResponse<T> {
+  data?: T;
+  success?: boolean;
 }
+
+
 
 export function useAddressesByHouseHold(houseHold: string) {
   return useQuery({
     queryKey: ["addresses", "houseHold", houseHold],
     queryFn: async (): Promise<Address[]> => {
-      const { data } = await api.get(`/address/getByHouseHold?houseHold=${houseHold}`);
+      const { data } = await api.get<ApiListResponse<Address[]>>(
+        `/address/getByHouseHold`,
+        { params: { houseHold } }
+      );
+
+      if (Array.isArray(data)) return data as Address[];
       return (data?.data ?? []) as Address[];
     },
     enabled: !!houseHold,
   });
 }
 
+export function useAddressById(id?: string, companyId?: string) {
+  return useQuery({
+    queryKey: ["address", id, companyId],
+    queryFn: async (): Promise<Address | null> => {
+      if (!id) return null;
+
+      try {
+        const { data } = await api.get<ApiItemResponse<Address> | Address>(
+          `/address/getById`,
+          { params: { id } }
+        );
+
+        if (data && (data as ApiItemResponse<Address>).data) {
+          return (data as ApiItemResponse<Address>).data ?? null;
+        }
+
+        return (data as Address) ?? null;
+      } catch (error) {
+        if(!companyId) return null;
+        const { data } = await api.get<ApiListResponse<Address[]> | Address[]>(
+            `/address/getAllbyCompany/${companyId}`
+        );
+        
+        let addresses: Address[] = [];
+        if(Array.isArray(data)){
+             addresses = data;
+        } else {
+             addresses = (data as ApiListResponse<Address[]>).data || [];
+        }
+
+        return addresses.find((a) => a.id === id) || null;
+      }
+    },
+    enabled: !!id,
+    
+  });
+}
+
 export function useCreateAddress() {
   const queryClient = useQueryClient();
-  
+  const t = useTranslations("Hooks.Addresses");
+
   return useMutation({
-    mutationFn: async (payload: Partial<Address>): Promise<Address> => {
-      const response = await api.post("/address/create", payload);
-      return response.data;
+    mutationFn: async (
+      payload: Omit<Address, "id" | "createdAt" | "updatedAt">
+    ): Promise<Address> => {
+      const response = await api.post<ApiItemResponse<Address> | Address>(
+        "/address/create",
+        payload
+      );
+
+      const data = response.data;
+      if (data && (data as ApiItemResponse<Address>).data) {
+        return (data as ApiItemResponse<Address>).data as Address;
+      }
+
+      return data as Address;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Endereço criado com sucesso!");
+      toast.success(t("create.success"));
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao criar endereço");
+      toast.error(error.response?.data?.message || t("create.error"));
     },
   });
 }
 
 export function useUpdateAddress() {
   const queryClient = useQueryClient();
-  
+  const t = useTranslations("Hooks.Addresses");
+
   return useMutation({
-    mutationFn: async (data: Partial<Address> & { id: string }): Promise<Address> => {
-      const response = await api.put("/address", data);
-      return response.data;
+    mutationFn: async (
+      data: Partial<Omit<Address, "id" | "createdAt" | "updatedAt">> & {
+        id: string;
+      }
+    ): Promise<Address> => {
+      const response = await api.put<ApiItemResponse<Address> | Address>(
+        "/address",
+        data
+      );
+
+      const payload = response.data;
+      if (payload && (payload as ApiItemResponse<Address>).data) {
+        return (payload as ApiItemResponse<Address>).data as Address;
+      }
+
+      return payload as Address;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Endereço atualizado com sucesso!");
+      toast.success(t("update.success"));
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao atualizar endereço");
+      toast.error(error.response?.data?.message || t("update.error"));
     },
   });
 }
 
 export function useDeleteAddress() {
   const queryClient = useQueryClient();
-  
+  const t = useTranslations("Hooks.Addresses");
+
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await api.delete(`/address/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Endereço excluído com sucesso!");
+      toast.success(t("delete.success"));
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Erro ao excluir endereço");
+      toast.error(error.response?.data?.message || t("delete.error"));
     },
   });
 }
-
-
-

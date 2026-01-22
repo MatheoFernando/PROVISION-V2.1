@@ -1,0 +1,813 @@
+{
+    "SystemSettings": {
+        "title": "Definições do Sistema",
+        "description": "Gerencie as configurações da sua aplicação."
+    },
+    "Appearance": {
+        "title": "Aparência",
+        "description": "Personalize a aparência da aplicação.",
+        "theme": {
+            "title": "Tema",
+            "description": "Alterne entre modo claro e escuro.",
+            "light": "Claro",
+            "dark": "Escuro"
+        },
+        "primaryColor": {
+            "title": "Cor Primária",
+            "description": "Selecione a cor principal usada em botões e links."
+        },
+        "radius": {
+            "title": "Arredondamento",
+            "description": "Ajuste o arredondamento dos cantos de botões e cards."
+        }
+    },
+    "Localization": {
+        "title": "Idioma e Região",
+        "language": {
+            "title": "Idioma",
+            "description": "Defina o idioma padrão do sistema."
+        },
+        "region": {
+            "title": "Fuso Horário",
+            "description": "Defina o fuso horário regional.",
+            "placeholder": "Selecione o fuso horário"
+        },
+        "dateFormat": {
+            "title": "Formatos de Data",
+            "description": "Escolha como as datas devem ser exibidas.",
+            "placeholder": "Selecione o formato"
+        }
+    },
+    "Common": {
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "create": "Adicionar Funcionário",
+        "actions": "Ações",
+        "dashboard": "Dashboard",
+        "settings": "Configurações",
+        "profile": "Perfil",
+        "edit": "Editar",
+        "view": "Ver",
+        "remove": "Remover",
+        "delete": "Eliminar",
+        "confirm": "Confirmar",
+        "noResults": "Sem resultados",
+        "yes": "Sim",
+        "no": "Não",
+        "supervisor": "Supervisor",
+        "back": "Voltar"
+    },
+    "Sidebar": {
+        "dashboard": "Painel Principal",
+        "configuration": "Configurações",
+        "usersAndPermissions": "Utilizadores e Permissões",
+        "modulesAndServices": "Módulos e Serviços",
+        "systemDefinitions": "Definições do Sistema",
+        "integrations": "Integrações",
+        "securityAndLogs": "Segurança e Logs",
+        "backupAndRestore": "Backup e Restauro",
+        "analytics": "Analytics",
+        "entities": "Entidades",
+        "clients": "Clientes",
+        "sites": "Sites",
+        "modules": "Módulos",
+        "company": "Empresa",
+        "equipment": "Equipamentos",
+        "companys" : "Empresas",
+        "employees": "Funcionários",
+        "vehicles": "Veículos",
+        "operationalOrganization": "Organização Operacional",
+        "areas": "Áreas",
+        "zones": "Zonas",
+        "coverage": "Cobertura",
+        "sectors": "Sectores",
+        "sitesAndPosts": "Sites / Postos",
+        "reports": "Relatórios",
+        "security": "Segurança",
+        "system": "Sistema"
+    },
+    "Nav": {
+        "overview": "Visão Geral",
+        "management": "Gestão",
+        "configuration": "Configuração"
+    },
+    "NavUser": {
+        "settings": "Configurações",
+        "logout": "Sair",
+        "logoutDialog": {
+            "title": "Sair da conta",
+            "description": "Tem certeza que deseja sair da sua conta?",
+            "confirm": "Sair",
+            "cancel": "Cancelar"
+        }
+    },
+    "Customers": {
+        "title": {
+            "create": "Novo Cliente",
+            "edit": "Editar Cliente"
+        },
+        "fields": {
+            "name": "Nome",
+            "cod": "Código",
+            "taxName": "Nome Fiscal",
+            "nameFiscal": "Nome Fiscal",
+            "email": "Email",
+            "phone": "Telefone",
+            "nif": "NIF",
+            "contact": "Contacto",
+            "address": "Morada"
+        },
+        "placeholders": {
+            "name": "Digite o nome",
+            "cod": "Digite o código",
+            "taxName": "Digite o nome fiscal",
+            "nif": "Digite o NIF",
+            "search": "Pesquisar clientes..."
+        },
+        "tooltips": {
+            "taxName": "Nome utilizado para fins fiscais"
+        },
+        "toasts": {
+            "createSuccess": "Cliente criado com sucesso!",
+            "updateSuccess": "Cliente atualizado com sucesso!",
+            "error": "Erro ao guardar cliente"
+        }
+    },
+    "Employees": {
+        "title": {
+            "create": "Criar Funcionário",
+            "edit": "Editar Funcionário"
+        },
+        "fields": {
+            "fullName": "Nome Completo",
+            "cod": "Código",
+            "contact": "Contacto",
+            "site": "Site",
+            "department": "Departamento",
+            "address": "Morada",
+            "function": "Função"
+        },
+        "placeholders": {
+            "fullName": "Digite o nome completo",
+            "cod": "Digite o código",
+            "function": "Digite a função",
+            "search": "Pesquisar funcionários..."
+        },
+        "toasts": {
+            "createSuccess": "Funcionário criado com sucesso!",
+            "updateSuccess": "Funcionário atualizado com sucesso!",
+            "error": "Erro ao guardar funcionário",
+            "limitReached": "Limite de trabalhadores atingido."
+        },
+        "limitReachedWarning": "Atenção: O limite de trabalhadores para este site ({limit}) foi atingido. Por favor, aumente o número de trabalhadores permitidos do site."
+    },
+    "Users": {
+        "title": {
+            "create": "Novo Utilizador",
+            "edit": "Editar Utilizador"
+        },
+        "fields": {
+            "phone": "Telefone",
+            "password": "Senha",
+            "company": "Empresa",
+            "department": "Departamento",
+            "role": "Função",
+            "status": "Estado do Utilizador",
+            "active": "Ativo",
+            "inactive": "Inativo",
+            "isGlobalAdmin": "Super Administrador",
+            "isGlobalAdminDesc": "Controla acesso global"
+        },
+        "placeholders": {
+            "passwordCreate": "Mínimo 6 caracteres",
+            "passwordEdit": "Deixe vazio para manter"
+        },
+        "validation": {
+            "passwordRequired": "Senha é obrigatória para criar utilizador"
+        },
+        "toasts": {
+            "createSuccess": "Utilizador criado com sucesso!",
+            "updateSuccess": "Utilizador atualizado com sucesso!",
+            "error": "Erro ao guardar utilizador"
+        }
+    },
+    "Hooks": {
+        "Users": {
+            "create": {
+                "success": "Utilizador criado com sucesso",
+                "error": "Erro ao criar utilizador"
+            },
+            "update": {
+                "success": "Utilizador atualizado com sucesso",
+                "error": "Erro ao atualizar utilizador"
+            },
+            "delete": {
+                "success": "Utilizador eliminado com sucesso",
+                "error": "Erro ao eliminar utilizador"
+            }
+        },
+        "Customers": {
+            "create": {
+                "success": "Cliente criado com sucesso!",
+                "error": "Erro ao criar cliente"
+            },
+            "import": {
+                "success": "Cliente importado com sucesso!",
+                "error": "Erro ao importar cliente"
+            },
+            "update": {
+                "success": "Cliente atualizado com sucesso!",
+                "error": "Erro ao atualizar cliente"
+            },
+            "delete": {
+                "success": "Cliente eliminado com sucesso!",
+                "error": "Erro ao eliminar cliente"
+            }
+        },
+        "Areas": {
+            "create": {
+                "success": "Área criada com sucesso!",
+                "error": "Erro ao criar área"
+            },
+            "update": {
+                "success": "Área atualizada com sucesso!",
+                "error": "Erro ao atualizar área"
+            },
+            "delete": {
+                "success": "Área eliminada com sucesso!",
+                "error": "Erro ao eliminar área"
+            }
+        },
+        "Occurrences": {
+            "create": {
+                "success": "Ocorrência criada com sucesso!",
+                "error": "Erro ao criar ocorrência. Tente novamente."
+            },
+            "update": {
+                "success": "Ocorrência atualizada com sucesso!",
+                "error": "Erro ao atualizar ocorrência. Tente novamente."
+            },
+            "delete": {
+                "success": "Ocorrência eliminada com sucesso!",
+                "error": "Erro ao eliminar ocorrência. Tente novamente."
+            }
+        },
+        "TypeOccurrence": {
+            "create": {
+                "success": "Tipo de ocorrência criado!",
+                "error": "Erro ao criar tipo de ocorrência"
+            },
+            "update": {
+                "success": "Tipo de ocorrência atualizado!",
+                "error": "Erro ao atualizar tipo de ocorrência"
+            },
+            "delete": {
+                "success": "Tipo de ocorrência eliminado!",
+                "error": "Erro ao eliminar tipo de ocorrência"
+            }
+        },
+        "Sites": {
+            "create": {
+                "success": "Site criado com sucesso!",
+                "error": "Erro ao criar site"
+            },
+            "import": {
+                "success": "Site importado com sucesso!",
+                "error": "Erro ao importar site"
+            },
+            "update": {
+                "success": "Site atualizado com sucesso!",
+                "error": "Erro ao atualizar site"
+            },
+            "delete": {
+                "success": "Site eliminado com sucesso!",
+                "error": "Erro ao eliminar site"
+            }
+        },
+        "Addresses": {
+            "create": {
+                "success": "Morada criada com sucesso!",
+                "error": "Erro ao criar morada"
+            },
+            "update": {
+                "success": "Morada atualizada com sucesso!",
+                "error": "Erro ao atualizar morada"
+            },
+            "delete": {
+                "success": "Morada eliminada com sucesso!",
+                "error": "Erro ao eliminar morada"
+            }
+        },
+        "TypeEquipment": {
+            "create": {
+                "success": "Tipo de equipamento criado com sucesso!",
+                "error": "Erro ao criar tipo de equipamento"
+            },
+            "update": {
+                "success": "Tipo de equipamento atualizado com sucesso!",
+                "error": "Erro ao atualizar tipo de equipamento"
+            },
+            "delete": {
+                "success": "Tipo de equipamento eliminado com sucesso",
+                "error": "Erro ao eliminar tipo de equipamento"
+            }
+        },
+        "Rsu": {
+            "create": {
+                "success": "RSU criado com sucesso",
+                "error": "Erro ao criar RSU"
+            },
+            "update": {
+                "success": "RSU atualizado com sucesso",
+                "error": "Erro ao atualizar RSU"
+            },
+            "delete": {
+                "success": "RSU eliminado com sucesso",
+                "error": "Erro ao eliminar RSU"
+            }
+        },
+        "Supervisions": {
+            "create": {
+                "success": "Supervisão criada com sucesso",
+                "error": "Erro ao criar supervisão"
+            },
+            "update": {
+                "success": "Supervisão atualizada com sucesso",
+                "error": "Erro ao atualizar supervisão"
+            },
+            "delete": {
+                "success": "Supervisão eliminada com sucesso",
+                "error": "Erro ao eliminar supervisão"
+            }
+        },
+        "UserPermissions": {
+            "update": {
+                "success": "Permissões atualizadas com sucesso",
+                "error": "Não foi possível atualizar as permissões"
+            }
+        },
+        "Employees": {
+            "create": {
+                "success": "Funcionário criado com sucesso!"
+            },
+            "import": {
+                "success": "Funcionário importado com sucesso!",
+                "error": "Erro ao importar funcionário"
+            },
+            "update": {
+                "success": "Funcionário atualizado com sucesso!"
+            },
+            "delete": {
+                "success": "Funcionário eliminado com sucesso!"
+            }
+        },
+        "Rounds": {
+            "create": {
+                "success": "Ronda criada com sucesso!",
+                "error": "Erro ao criar ronda"
+            },
+            "update": {
+                "success": "Ronda atualizada com sucesso!",
+                "error": "Erro ao atualizar ronda"
+            },
+            "delete": {
+                "success": "Ronda eliminada com sucesso!",
+                "error": "Erro ao eliminar ronda"
+            }
+        },
+        "ItemInspectionRounds": {
+            "create": {
+                "success": "Item criado com sucesso!",
+                "error": "Erro ao criar item"
+            },
+            "update": {
+                "success": "Item atualizado com sucesso!",
+                "error": "Erro ao atualizar item"
+            },
+            "delete": {
+                "success": "Item eliminado com sucesso!",
+                "error": "Erro ao eliminar item"
+            }
+        },
+        "CheckListRoundGroups": {
+            "create": {
+                "success": "Avaliação guardada!",
+                "error": "Erro ao guardar avaliação"
+            },
+            "update": {
+                "success": "Avaliação atualizada!",
+                "error": "Erro ao atualizar avaliação"
+            },
+            "delete": {
+                "success": "Avaliação eliminada!",
+                "error": "Erro ao eliminar avaliação"
+            }
+        }
+    },
+    "SiteDetails": {
+        "tabs": {
+            "overview": "Visão Geral",
+            "clients": "Clientes",
+            "tools": "Equipamentos"
+        },
+        "actions": {
+            "associateClient": "Associar Cliente",
+            "addEquipment": "Adicionar Equipamento",
+            "manageTeam": "Gerir Equipa",
+            "siteSettings": "Definições do Site",
+            "editSite": "Editar Site",
+            "associateEmployee": "Associar Funcionário"
+        },
+        "sections": {
+            "locationDetails": "Detalhes de Localização",
+            "operationalInfo": "Informações Operacionais",
+            "associatedClients": "Clientes Associados",
+            "equipmentsAndTools": "Equipamentos"
+        },
+        "fields": {
+            "area": "Área",
+            "zone": "Zona",
+            "sector": "Sector",
+            "createdAt": "Criado em",
+            "municipality": "Município",
+            "province": "Província",
+            "country": "País",
+            "equipment": {
+                "mark": "Marca",
+                "model": "Modelo",
+                "serial": "Nº Série",
+                "type": "Tipo",
+                "status": "Estado"
+            }
+        },
+        "stats": {
+            "workers": "Trabalhadores",
+            "zones": "Zonas",
+            "equipments": "Equipamentos"
+        },
+        "placeholders": {
+            "searchTools": "Pesquisar ferramentas..."
+        },
+        "clientAssociation": {
+            "title": "Associar Cliente",
+            "description": "Selecione um cliente para vincular a",
+            "searchPlaceholder": "Pesquisar clientes...",
+            "noResults": "Nenhum cliente encontrado",
+            "tryDifferent": "Tente um termo diferente",
+            "allAssociated": "Todos os clientes disponíveis já estão associados",
+            "associateSelected": "Associar Selecionado"
+        },
+        "success": {
+            "employeeAssociated": "Funcionário associado com sucesso"
+        }
+    },
+    "CustomerDetails": {
+        "notFound": "Cliente não encontrado",
+        "tabs": {
+            "overview": "Visão Geral",
+            "sites": "Sites"
+        },
+        "actions": {
+            "associateClient": "Associar Cliente",
+            "edit": "Editar"
+        },
+        "sections": {
+            "contactDetails": "Detalhes de Contato",
+            "fiscalInfo": "Informações Fiscais"
+        },
+        "fields": {
+            "companyName": "Empresa",
+            "commune": "Comuna",
+            "country": "País"
+        }
+    },
+    "OrganizationalStructure": {
+        "columns": {
+            "areas": "Áreas",
+            "zones": "Zonas",
+            "sectors": "Sectores",
+            "posts": "Postos"
+        },
+        "messages": {
+            "selectArea": "Selecione uma área",
+            "selectZone": "Selecione uma zona",
+            "selectHierarchy": "Selecione uma hierarquia",
+            "noAreaFound": "Nenhuma área encontrada.",
+            "noZoneFound": "Nenhuma zona encontrada.",
+            "noSectorFound": "Nenhum sector encontrado.",
+            "noPostFound": "Nenhum posto encontrado.",
+            "noItemsFound": "Nenhum item encontrado.",
+            "noResponsible": "Sem responsável"
+        },
+        "buttons": {
+            "createNew": "Criar Novo"
+        },
+        "metrics": {
+            "zones": "Zonas",
+            "sectors": "Sectores",
+            "posts": "Postos",
+            "workers": "Trabalhadores"
+        },
+        "Modal": {
+            "title": {
+                "AREA": "Área",
+                "ZONE": "Zona",
+                "SECTOR": "Sector",
+                "newItem": "Novo Item"
+            },
+            "labels": {
+                "area": "Área",
+                "zone": "Zona",
+                "sector": "Sector",
+                "responsible": "Responsável",
+                "name": "Nome"
+            },
+            "placeholders": {
+                "nameArea": "Digite o nome da área",
+                "nameZone": "Digite o nome da zona",
+                "nameSector": "Digite o nome do sector"
+            },
+            "buttons": {
+                "save": "Guardar",
+                "cancel": "Cancelar",
+                "createNew": "Criar Novo"
+            },
+            "toasts": {
+                "success": "Operação realizada com sucesso!",
+                "error": "Erro ao realizar operação"
+            },
+            "validation": {
+                "nameRequired": "O nome é obrigatório",
+                "selectArea": "Selecione uma área",
+                "selectZone": "Selecione uma zona",
+                "selectSector": "Selecione um sector"
+            }
+        },
+        "deleteModal": {
+            "titleArea": "Eliminar Área",
+            "titleZone": "Eliminar Zona",
+            "titleSector": "Eliminar Sector",
+            "confirmMessage": "Esta ação não pode ser desfeita."
+        }
+    },
+    "Components": {
+        "DeleteModal": {
+            "title": "Tem a certeza que deseja eliminar?",
+            "message": "Esta ação não pode ser desfeita.",
+            "cancel": "Cancelar",
+            "confirm": "Eliminar",
+            "deleting": "Eliminando..."
+        }
+    },
+    "Supervision": {
+        "tabs": {
+            "details": "Detalhes",
+            "resources": "Recursos",
+            "equipments": "Equipamentos",
+            "observations": "Observações"
+        },
+        "sections": {
+            "operationalData": "Dados Operativos",
+            "responsible": "Responsável",
+            "equipmentDetails": "Detalhes do Equipamento"
+        },
+        "fields": {
+            "status": "Estado",
+            "date": "Data",
+            "time": "Hora",
+            "desired": "Desejado",
+            "present": "Presente",
+            "employee": "Funcionário",
+            "department": "Departamento",
+            "code": "Código",
+            "name": "Nome",
+            "equipment": "Equipamento",
+            "site": "Site",
+            "noStatus": "Sem estado",
+            "responsible": "Responsável"
+        },
+        "table": {
+            "code": "Código",
+            "status": "Estado",
+            "name": "Nome",
+            "model": "Modelo"
+        },
+        "messages": {
+            "noObservation": "Nenhuma observação registrada para esta supervisão.",
+            "noEquipment": "Sem equipamento"
+        }
+    },
+    "Occurrence": {
+        "tabs": {
+            "info": "Detalhes",
+            "context": "Recursos",
+            "equipments": "Equipamentos",
+            "actions": "Ação Corretiva",
+            "description": "Descrição"
+        },
+        "sections": {
+            "basicData": "Dados Básicos",
+            "localEquipment": "Local e Equipamento",
+            "responsible": "Responsável",
+            "adoptedMeasures": "Medidas Adotadas",
+            "eventDescription": "Descrição do Evento"
+        },
+        "fields": {
+            "type": "Tipo",
+            "time": "Horário",
+            "date": "Data",
+            "site": "Site",
+            "equipment": "Equipamento",
+            "employee": "Funcionário",
+            "company": "Empresa",
+            "typology": "Tipologia",
+            "gravity": "Gravidade",
+            "status": "Estado"
+        },
+        "messages": {
+            "noAction": "Nenhuma ação corretiva definida."
+        }
+    },
+    "Rsu": {
+        "tabs": {
+            "details": "Detalhes",
+            "logistics": "Logística",
+            "observations": "Observações"
+        },
+        "sections": {
+            "loadData": "Dados da Carga",
+            "location": "Localização",
+            "transport": "Transporte",
+            "responsible": "Responsável",
+            "additionalNotes": "Notas Adicionais"
+        },
+        "fields": {
+            "container": "Contentor",
+            "quantity": "Quantidade",
+            "vehicle": "Viatura",
+            "company": "Empresa",
+            "date": "Data",
+            "site": "Site",
+            "responsible": "Responsável"
+        }
+    },
+    "EquipmentView": {
+        "title": "Detalhes do Equipamento",
+        "serialString": "Número de Série",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "sections": {
+            "generalInfo": "Informações Gerais",
+            "siteAndType": "Detalhes do Site e Tipo"
+        },
+        "tabs": {
+            "site": "Site",
+            "type": "Tipo de Equipamento"
+        },
+        "fields": {
+            "mark": "Marca",
+            "model": "Modelo",
+            "code": "Código",
+            "company": "Empresa",
+            "client": "Cliente",
+            "contractedEmployees": "Funcionários Contratados",
+            "sector": "Sector",
+            "zone": "Zona",
+            "status": "Estado",
+            "name": "Nome",
+            "description": "Descrição",
+            "createdAt": "Criado em"
+        }
+    },
+    "Services": {
+        "supervision": {
+            "name": "Supervisão",
+            "description": "Serviço de supervisão e monitorização"
+        },
+        "occurrence": {
+            "name": "Ocorrência",
+            "description": "Gestão de ocorrências e incidentes"
+        },
+        "rsu": {
+            "name": "RSU",
+            "description": "Resíduos Sólidos Urbanos"
+        },
+        "ronda": {
+            "name": "Ronda",
+            "description": "Ronda de recolha"
+        }
+    },
+    "Ronda": {
+        "title": "Gestão de Rondas",
+        "subtitle": "Acompanhe e administre as rondas da equipa em tempo real.",
+        "create": {
+            "button": "Nova Ronda",
+            "title": "Iniciar Nova Ronda",
+            "description": "Preencha os dados iniciais para começar uma nova ronda."
+        }
+    },
+    "ServicesManagement": {
+        "fields": {
+            "company": "Empresa",
+            "module": "Módulo ",
+            "service": "Serviço",
+            "description": "Descrição",
+            "status": "Estado",
+            "serviceName": "Nome do módulo",
+            "moduleName": "Nome do model",
+            "active": "Ativo",
+            "inactive": "Inativo"
+        },
+        "placeholders": {
+            "selectService": "Selecione um módulo",
+            "searchService": "Pesquisar módulo...",
+            "searchServices": "Pesquisar módulo...",
+            "searchModule": "Pesquisar módulo...",
+            "enterModuleName": "Digite o nome do módulo",
+            "enterServiceName": "Digite o nome do serviço",
+            "enterDescription": "Digite a descrição do serviço",
+            "status": "Status"
+        },
+        "messages": {
+            "noDataFiltered": "Nenhum dado filtrado.",
+            "noServiceFound": "Nenhum serviço encontrado.",
+            "serviceAvailable": "O serviço estará disponível para uso"
+        },
+        "buttons": {
+            "cancel": "Cancelar",
+            "saving": "A guardar...",
+            "saveChanges": "Guardar mudanças",
+            "associate": "Associar",
+            "edit": "Editar",
+            "dissociate": "Desassociar",
+            "delete": "Eliminar",
+            "processing": "Processando...",
+            "createService": "Criar Serviço",
+            "createModule": "Criar Módulo",
+            "updating": "Atualizando...",
+            "updateService": "Atualizar Serviço",
+            "associateServices": "Associação de serviços",
+            "close": "Fechar",
+            "viewOthers": "Ver outros"
+        },
+        "titles": {
+            "editAssociation": "Editar associação",
+            "associateServiceToCompany": "Associar serviço à empresa",
+            "createModule": "Criar Módulo",
+            "editService": "Editar Serviço",
+            "deleteService": "Eliminar serviço",
+            "services": "Serviços"
+        },
+        "descriptions": {
+            "updateServiceInfo": "Atualize as informações do serviço.",
+            "selectModuleAccess": "Selecione o módulo que deseja acessar"
+        },
+        "tabs": {
+            "module": "Módulo",
+            "companyModules": "Módulo por empresa"
+        },
+        "filters": {
+            "statusFilter": "Filtro por status",
+            "all": "Todos"
+        },
+        "deleteModal": {
+            "message": "Tem certeza que deseja eliminar o serviço",
+            "permanentAction": "Esta ação não pode ser desfeita."
+        },
+        "dynamic": {
+            "moduleTitle": "Módulo:",
+            "moduleContent": "O conteúdo deste módulo será carregado aqui."
+        }
+    },
+    "CompanyView": {
+        "title": "Detalhes da Empresa",
+        "description": "Visualize as informações detalhadas desta empresa",
+        "tabs": {
+            "details": "Detalhes",
+            "contacts": "Contatos",
+            "address": "Morada"
+        },
+        "sections": {
+            "generalInfo": "Informações Gerais",
+            "contact": "Contato",
+            "address": "Morada"
+        },
+        "fields": {
+            "code": "Código",
+            "nif": "NIF",
+            "foundationDate": "Data de Fundação",
+            "municipality": "Município",
+            "commune": "Comuna",
+            "province": "Província",
+            "country": "País"
+        },
+        "status": {
+            "active": "Ativa",
+            "inactive": "Inativa"
+        },
+        "messages": {
+            "noAddress": "Nenhuma morada registada.",
+            "noContact": "Nenhum contacto registado."
+        }
+    }
+}

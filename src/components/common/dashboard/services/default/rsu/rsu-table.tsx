@@ -1,39 +1,50 @@
-"use client"
+"use client";
+// Refactored RsuTable
 
-import * as React from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { toast } from "sonner"
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  MoreHorizontal
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Trash2,
+
+} from "lucide-react";
+import type { DateRange } from "react-day-picker";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic"
-import { RsuDialog } from "./rsu-dialog"
-import { EditRsuModal } from "./rsu-modals"
-import { useDeleteRsuMutation } from "@/infrastructure/hooks/useRsu"
-import type { Rsu } from "@/infrastructure/schema/schema-rsu"
-import { mockContainers, mockSites, mockEmployees, mockCompanies } from "@/infrastructure/schema/schema-rsu"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import { DeleteModal } from "@/components/ui/delete-modal";
+import type { Rsu } from "@/infrastructure/types/domain";
+import { RsuDialog } from "./rsu-create";
+import { RsuDrawer } from "./rsu-view";
+import { ContainerCreateDialog } from "./container-create-dialog";
+import { useDeleteRsuMutation } from "@/infrastructure/hooks/useRsu";
 
-function ActionsButtons({ rsu }: { rsu: Rsu }) {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [isEditOpen, setIsEditOpen] = React.useState(false)
-  const deleteMutation = useDeleteRsuMutation()
+
+
+interface ActionsButtonsProps {
+  rsu: Rsu;
+  onEdit?: (rsu: Rsu) => void;
+}
+
+function ActionsButtons({ rsu, onEdit }: ActionsButtonsProps) {
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const deleteMutation = useDeleteRsuMutation();
 
   const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir este RSU?')) {
-      deleteMutation.mutate(rsu.id!)
-    }
-  }
+    deleteMutation.mutate(rsu.id!, {
+      onSuccess: () => setIsDeleteOpen(false),
+    });
+  };
 
   return (
     <>
@@ -41,167 +52,205 @@ function ActionsButtons({ rsu }: { rsu: Rsu }) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
             size="icon"
+            className="size-8 cursor-pointer text-muted-foreground hover:text-foreground"
           >
             <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={() => setIsDialogOpen(true)} className="cursor-pointer">
-            <Eye className="size-4 mr-2" />
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => setIsDrawerOpen(true)}
+          >
+            <Eye className="mr-2 size-4" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsEditOpen(true)}>
-            <Edit className="size-4 mr-2" />
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => onEdit?.(rsu)}
+          >
+            <Edit className="mr-2 size-4" />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="cursor-pointer"
-            variant="destructive" 
-            onClick={handleDelete}
+          <DropdownMenuItem
+            className="cursor-pointer text-red-600 focus:text-red-600"
+            onClick={() => setIsDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
-            <Trash2 className="size-4 mr-2" />
-            Excluir
+            <Trash2 className="mr-2 size-4" />
+            Eliminar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <RsuDialog
+      <RsuDrawer
         rsu={rsu}
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-      />
-
-      <EditRsuModal
-        rsu={rsu}
-        isOpen={isEditOpen}
-        onOpenChange={setIsEditOpen}
-      />
-    </>
-  )
-}
-
-const createRsuColumns = (): ColumnDef<Rsu>[] => [
-  {
-    accessorKey: "cod",
-    header: "Código",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.cod}</div>
-    ),
-  },
-  {
-    accessorKey: "containerId",
-    header: "Container",
-    cell: ({ row }) => {
-      const container = mockContainers.find(c => c.id === row.original.containerId)
-      return <div>{container?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "quantity",
-    header: "Quantidade",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.quantity}</div>
-    ),
-  },
-  {
-    accessorKey: "comment",
-    header: "Comentário",
-    cell: ({ row }) => (
-      <div className="max-w-[200px] truncate" title={row.original.comment || ''}>
-        {row.original.comment || 'N/A'}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "employeeId",
-    header: "Funcionário",
-    cell: ({ row }) => {
-      const employee = mockEmployees.find(e => e.id === row.original.employeeId)
-      return <div>{employee?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "clientTime",
-    header: "Tempo Cliente",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.clientTime}</div>
-    ),
-  },
-  {
-    accessorKey: "totalTime",
-    header: "Tempo Total",
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.totalTime}</div>
-    ),
-  },
-  {
-    accessorKey: "siteId",
-    header: "Local",
-    cell: ({ row }) => {
-      const site = mockSites.find(s => s.id === row.original.siteId)
-      return <div>{site?.name || 'N/A'}</div>
-    },
-  },
-  {
-    accessorKey: "cardId",
-    header: "Cartão",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.cardId}</div>
-    ),
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Criado em",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {new Date(row.original.createdAt || '').toLocaleDateString('pt-BR')}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "updatedAt",
-    header: "Atualizado em",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {new Date(row.original.updatedAt || '').toLocaleDateString('pt-BR')}
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    header: "Ações",
-    cell: ({ row }) => (
-      <ActionsButtons rsu={row.original} />
-    ),
-  },
-]
-
-interface RsuTableProps {
-  data: Rsu[]
-  isLoading?: boolean
-  onCreateClick?: () => void
-}
-
-export function RsuTable({ data, isLoading, onCreateClick }: RsuTableProps) {
-  return (
-    <div >
-      <DataTableGeneric
-        data={data}
-        columns={createRsuColumns()}
-        searchKey="cod"
-        placeholder="Pesquisar RSU..."
-        enableRowSelection={true}
-        includeSelection={true}
-        isLoading={isLoading}
-        actionButton={{
-          label: "Novo RSU",
-          onClick: onCreateClick || (() => toast.success("Funcionalidade em desenvolvimento")),
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        onEdit={(rsu) => {
+          setIsDrawerOpen(false);
+          onEdit?.(rsu);
         }}
       />
-    </div>
-  )
+
+      <DeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="Eliminar RSU"
+        message={`Tem certeza que deseja excluir o RSU ${rsu.cod}?`}
+        isLoading={deleteMutation.isPending}
+      />
+    </>
+  );
 }
+
+interface RsuTableProps {
+  data: Rsu[];
+  isLoading?: boolean;
+  onDateRangeChange?: (range?: DateRange) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (status?: string) => void;
+}
+
+export function RsuTable({
+  data,
+  isLoading,
+  onDateRangeChange,
+  statusFilter,
+  onStatusFilterChange,
+}: RsuTableProps) {
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [selectedRsu, setSelectedRsu] = React.useState<Rsu | null>(null);
+  const [isContainerDialogOpen, setIsContainerDialogOpen] = React.useState(false);
+
+  const columns: ColumnDef<Rsu>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "cod",
+        header: "Código",
+        cell: ({ row }) => <span>{row.original.cod}</span>,
+      },
+      {
+        accessorKey: "quantity",
+        header: "Quantidade",
+        size: 60,
+        cell: ({ row }) => <span>{row.original.quantity}</span>,
+      },
+      {
+        id: "container",
+        header: "Contentor",
+        cell: ({ row }) => {
+          const container = row.original.container;
+          return <span>{container ? `${container.cod ?? ""} ${container.name ?? ""}`.trim() : "—"}</span>;
+        },
+      },
+      {
+        id: "car",
+        header: "Viatura",
+        cell: ({ row }) => {
+          const car = row.original.car;
+          return <span>{car ? `${car.cod ?? ""} ${car.mark ?? ""}`.trim() : "—"}</span>;
+        },
+      },
+      {
+        id: "employee",
+        header: "Funcionário",
+        cell: ({ row }) => <span>{row.original.employee?.fullName ?? "—"}</span>,
+      },
+      {
+        id: "site",
+        header: "Site",
+        cell: ({ row }) => <span>{row.original.site?.name ?? "—"}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: "Estado",
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const isDone = status === "Finalizado";
+          return (
+            <Badge
+              variant={isDone ? "default" : "secondary"}
+              className={isDone ? "bg-emerald-500" : "bg-amber-100 text-amber-800"}
+            >
+              {status}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Ações",
+        size: 48,
+        cell: ({ row }) => (
+          <ActionsButtons
+            rsu={row.original}
+            onEdit={(rsu) => {
+              setSelectedRsu(rsu);
+              setIsFormOpen(true);
+            }}
+          />
+        ),
+      },
+    ],
+    []
+  );
+
+  const handleCreate = () => {
+    setSelectedRsu(null);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedRsu(null);
+  };
+
+
+  return (
+    <div className="space-y-4">
+
+      <DataTableGeneric
+        data={data}
+        columns={columns}
+        searchKey="cod"
+        placeholder="Pesquisar por código ou descrição..."
+        isLoading={isLoading}
+        dateKey="createdAt"
+        onDateRangeChange={onDateRangeChange}
+        actionButton={{
+          label: "Novo RSU",
+          onClick: handleCreate,
+        }}
+        secondaryActionButton={{
+          label: "Contentor",
+          onClick: () => setIsContainerDialogOpen(true)
+        }}
+        statusOptions={[
+          { label: "Pendente", value: "Pendente" },
+          { label: "Em andamento", value: "Em andamento" },
+          { label: "Finalizado", value: "Finalizado" },
+        ]}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
+      />
+
+      <RsuDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        rsuToEdit={selectedRsu ?? undefined}
+        onSuccess={handleCloseForm}
+      />
+
+      <ContainerCreateDialog
+        open={isContainerDialogOpen}
+        onOpenChange={setIsContainerDialogOpen}
+      />
+    </div>
+  );
+}
+
+

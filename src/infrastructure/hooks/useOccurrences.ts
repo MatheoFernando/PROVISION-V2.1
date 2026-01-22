@@ -1,91 +1,119 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { api } from '@/infrastructure/utils/api';
-import { mockOccurrences } from '@/infrastructure/schema/schema-occurrence';
-import type { Occurrence, CreateOccurrence, UpdateOccurrence } from '@/infrastructure/schema/schema-occurrence';
+import type { Occorrence } from '@/infrastructure/types/domain';
 
-export function useOccurrences() {
+export function useOccurrences(companyId: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['occurrences'],
-    queryFn: async (): Promise<Occurrence[]> => {
-      try {
-        const { data } = await api.get('/occurrence/GetAll');
-        return data?.data ?? [];
-      } catch {
-        // Sempre retorna mock quando não há dados da API
-        return mockOccurrences;
-      }
+    queryKey: ['occurrences', companyId],
+    queryFn: async (): Promise<Occorrence[]> => {
+      if (!companyId) return [];
+      const { data } = await api.get(`/occorrence/getAllByCompany/${companyId}`);
+      return data?.data ?? data ?? [];
     },
-    // Sempre mostra dados mockados imediatamente
-    initialData: mockOccurrences,
+    enabled: !!companyId && (options?.enabled ?? true),
   });
 }
 
-export function useOccurrence(id: string) {
-  return useQuery({
-    queryKey: ['occurrence', id],
-    queryFn: async (): Promise<Occurrence | null> => {
-      const { data } = await api.get(`/occurrence/GetById/${id}`);
-      return data?.data ?? null;
-    },
-    enabled: !!id,
-  });
-}
+
 
 export function useCreateOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Occurrences");
 
   return useMutation({
-    mutationFn: async (data: CreateOccurrence): Promise<Occurrence> => {
-      const { data: response } = await api.post('/occurrence/Create', data);
-      return response?.data;
+    mutationFn: async (data: Omit<Occorrence, 'id' | 'createdAt' | 'updatedAt'>): Promise<Occorrence> => {
+      const { data: response } = await api.post('/occorrence/create', data);
+      return response?.data ?? response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
-      toast.success('Ocorrência criada com sucesso!');
+      toast.success(t('create.success'));
     },
     onError: (error) => {
       console.error('Erro ao criar ocorrência:', error);
-      toast.error('Erro ao criar ocorrência. Tente novamente.');
+      toast.error(t('create.error'));
     },
   });
 }
 
 export function useUpdateOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Occurrences");
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateOccurrence }): Promise<Occurrence> => {
-      const { data: response } = await api.put(`/occurrence/Update/${id}`, data);
-      return response?.data;
+    mutationFn: async (data: Occorrence): Promise<Occorrence> => {
+      const { data: response } = await api.put('/occorrence', data);
+      return response?.data ?? response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
-      queryClient.invalidateQueries({ queryKey: ['occurrence', id] });
-      toast.success('Ocorrência atualizada com sucesso!');
+      if (updated.id) {
+        queryClient.invalidateQueries({ queryKey: ['occurrence', updated.id] });
+      }
+      toast.success(t('update.success'));
     },
     onError: (error) => {
       console.error('Erro ao atualizar ocorrência:', error);
-      toast.error('Erro ao atualizar ocorrência. Tente novamente.');
+      toast.error(t('update.error'));
     },
   });
 }
 
 export function useDeleteOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Hooks.Occurrences");
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/occurrence/Delete/${id}`);
+      await api.delete(`/occorrence/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['occurrences'] });
-      toast.success('Ocorrência excluída com sucesso!');
+      toast.success(t('delete.success'));
     },
     onError: (error) => {
-      console.error('Erro ao excluir ocorrência:', error);
-      toast.error('Erro ao excluir ocorrência. Tente novamente.');
+      console.error('Erro ao eliminar ocorrência:', error);
+      toast.error(t('delete.error'));
     },
+  });
+}
+
+export function useOccurrencesByDate(companyId: string, date: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['occurrences', 'date', companyId, date],
+    queryFn: async (): Promise<Occorrence[]> => {
+      if (!companyId || !date) return [];
+      const encodedDate = encodeURIComponent(date);
+      const { data } = await api.get(`/occorrence/getByDate/${companyId}/${encodedDate}`);
+      return data?.data ?? data ?? [];
+    },
+    enabled: !!companyId && !!date && (options?.enabled ?? true),
+  });
+}
+
+export function useOccurrencesBySiteId(companyId: string, siteId: string) {
+  return useQuery({
+    queryKey: ['occurrences', 'siteId', companyId, siteId],
+    queryFn: async (): Promise<Occorrence[]> => {
+      if (!companyId || !siteId) return [];
+      const { data } = await api.get(`/occorrence/getBySiteId/${companyId}/${siteId}`);
+      return data?.data ?? data ?? [];
+    },
+    enabled: !!companyId && !!siteId,
+  });
+}
+
+export function useOccurrencesByStatus(companyId: string, status: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['occurrences', 'status', companyId, status],
+    queryFn: async (): Promise<Occorrence[]> => {
+      if (!companyId || !status) return [];
+      const { data } = await api.get(`/occorrence/getByStatus/${companyId}/${status}`);
+      return data?.data ?? data ?? [];
+    },
+    enabled: !!companyId && !!status && (options?.enabled ?? true),
   });
 }
 

@@ -1,42 +1,42 @@
 "use client";
 import React from 'react'
-import { NotificationBell } from './notification-bell'
-import { KeyboardSearch } from './keyboard-search';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import Image from 'next/image';
 import { NavUser } from './nav-user';
 import { Building2 } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 import { ServicesMenu } from './services-menu';
+import BreadcrumbClient from './breadcrumb-routes';
+import NotificationBell from './notification-bell';
+import { useMe } from '@/infrastructure/hooks/useMe';
+
 
 function Header() {
+ 
+  const { data: user } = useMe();
+  
   const sidebarData = {
     user: {
-      name: "Provision",
-      email: "admin@provision.com",
+      name: user?.companyName || "Provision",
+      email: user?.email || "admin@provision.com",
       avatarIcon: Building2,
     },
     teams: [
       {
-        name: "Provision",
+        name: user?.companyName || "Provision",
         logoIcon: Building2,
         plan: "Enterprise",
       },
     ],
   }
 
+
   return (
-    <header className="sticky top-0 flex h-16 md:h-18 shrink-0 bg-gradient-to-r from-[#1d85ed] via-[#3482ef] to-[#1d64ed] dark:from-[#0f172a] dark:via-[#1e293b] dark:to-[#0f172a] text-white py-2 md:py-3 px-3 md:px-6 justify-between items-center gap-2 md:gap-4 w-full border-b border-white/10 dark:border-border/50 z-50 backdrop-blur-md">
-      <div className="flex items-center gap-2 md:gap-4 flex-1">
-        <SidebarTrigger className='md:hidden block' />
-        <div className="hidden md:block">
-          {/* Logo ou título da empresa para desktop */}
-        </div>
+    <header className="sticky top-0 flex h-14 shrink-0 py-2  bg-white dark:bg-[#0f172a] px-3 md:px-6 justify-between items-center gap-2 md:gap-4 w-full border-b border-slate-200 dark:border-border/50 z-20 backdrop-blur-md ">
+      <div className="flex items-center gap-2 flex-1 ">
+        <SidebarTrigger className='block ' variant="outline" />
+        <BreadcrumbClient />
       </div>
-      <div className="flex items-center justify-end gap-2 md:gap-3">
-        <div className="block">
-          <KeyboardSearch />
-        </div>
+      <div className="flex items-center justify-end  gap-4"> 
         <NotificationBell />
         <ThemeToggle />
         <ServicesMenu />

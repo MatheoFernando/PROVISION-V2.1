@@ -1,24 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { DataTableGeneric } from "@/components/common/base-ui/data-table-generic";
-import { useEquipment } from "@/infrastructure/hooks/useEquipment";
-import { Equipment } from "@/infrastructure/schema/schema-equipment";
+import * as React from "react";
+import { Eye, PencilSimple, Trash } from "phosphor-react";
+import { DataTableGeneric } from "@/components/common/base-ui/data-table";
+import {
+  useCreateGrossEquipment,
+  useDeleteEquipment,
+  useEquipment,
+} from "@/infrastructure/hooks/useEquipment";
+import { Equipment } from "@/infrastructure/types/domain";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { EquipmentCreate } from "./equipment-create";
 import { EquipmentView } from "./equipment-view";
 import { DeleteModal } from "@/components/ui/delete-modal";
-import { useDeleteEquipment } from "@/infrastructure/hooks/useEquipment";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { EquipmentDialog } from "./equipment-create";
+import { BulkImportDialog } from "@/components/common/base-ui/bulk-import";
+import {
+  type CreateGrossEquipmentPayload,
+} from "@/infrastructure/schema/schema-equipment";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnDef<Equipment>[] = [
   {
+    accessorKey: "cod",
+    header: "Código",
+    size: 80,
+    cell: ({ row }) => {
+      const cod = row.getValue("cod") as string;
+      return <div>{cod}</div>;
+    },
+  },
+  {
     accessorKey: "serialNumber",
     header: "Número de Série",
+    size: 80,
     cell: ({ row }) => {
       const serialNumber = row.getValue("serialNumber") as string;
       return <div>{serialNumber}</div>;
@@ -44,60 +61,113 @@ const columns: ColumnDef<Equipment>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as boolean;
-      return status ? (
-        <Badge variant="default">Ativo</Badge>
-      ) : (
-        <Badge variant="secondary">Inativo</Badge>
+      const status = (row.getValue("status") as string | undefined) ?? "-";
+      const isActive = status.toUpperCase() === "ACTIVE";
+      return (
+        <Badge
+          variant={isActive ? "default" : "secondary"}
+          className={
+            isActive
+              ? "bg-emerald-500 text-white"
+              : "bg-red-500 text-white"
+          }
+        >
+          {isActive ? "Ativo" : "Inativo"}
+        </Badge>
       );
     },
   },
+
   {
     accessorKey: "siteId",
     header: "Site",
     cell: ({ row }) => {
-      const siteId = row.getValue("siteId") as string;
-      return <div>{siteId}</div>;
+      const siteName = (
+        row.original as { site?: { name?: string } } | undefined
+      )?.site?.name;
+      return <div>{siteName ?? "-"}</div>;
     },
   },
   {
     accessorKey: "typeEquipmentId",
     header: "Tipo de Equipamento",
     cell: ({ row }) => {
-      const typeEquipmentId = row.getValue("typeEquipmentId") as string;
-      return <div>{typeEquipmentId}</div>;
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Data de Criação",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+      const typeEquipmentName = (
+        row.original as { typeEquipment?: { name?: string } } | undefined
+      )?.typeEquipment?.name;
+      return <div>{typeEquipmentName ?? "-"}</div>;
     },
   },
 ];
-
 interface EquipmentTableProps {
-  mockData?: Equipment[];
+  openCreateOnLoad?: boolean;
+  shouldNavigateBack?: boolean;
+  customerId?: string;
+  data?: Equipment[];
+  isLoadingOverride?: boolean;
 }
 
-export function EquipmentTable({ mockData }: EquipmentTableProps) {
-  const { data: equipment = [], isLoading } = useEquipment();
+export function EquipmentTable({
+  openCreateOnLoad = false,
+  shouldNavigateBack = false,
+  customerId,
+  data,
+  isLoadingOverride,
+}: EquipmentTableProps = {}) {
+  const router = useRouter();
+  const shouldFetch = !data;
+  const companyId = useAuthStore((s) => s.companyId) ?? "";
+  const {
+    data: allEquipment = [],
+    isLoading,
+    refetch: refetchEquipment,
+  } = useEquipment(companyId, { enabled: shouldFetch, companyId });
+
+  const equipment = React.useMemo(() => {
+    if (data) return data;
+    if (!customerId) return allEquipment;
+
+    return allEquipment;
+  }, [data, allEquipment, customerId]);
   const deleteEquipment = useDeleteEquipment();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const createGrossEquipment = useCreateGrossEquipment();
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateOnLoad);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | undefined>();
+  const [selectedEquipment, setSelectedEquipment] = useState<
+    Equipment | undefined
+  >();
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
-  const data = mockData || equipment;
+  const resetCreateState = () => {
+    setIsCreateOpen(false);
+    setSelectedEquipment(undefined);
+  };
 
-  const filteredData = data.filter((item) =>
-    item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.mark.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.model.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleReturn = () => {
+    if (shouldNavigateBack) router.back();
+  };
+
+  const handleCreateCancel = () => {
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateSuccess = () => {
+    if (shouldFetch) {
+      void refetchEquipment();
+    }
+    resetCreateState();
+    handleReturn();
+  };
+
+  const handleCreateDialogChange = (open: boolean) => {
+    if (open) {
+      setIsCreateOpen(true);
+      return;
+    }
+    handleCreateCancel();
+  };
 
   const handleView = (equipment: Equipment) => {
     setSelectedEquipment(equipment);
@@ -115,36 +185,35 @@ export function EquipmentTable({ mockData }: EquipmentTableProps) {
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedEquipment) return;
-
+    if (!selectedEquipment?.id) return;
     try {
       await deleteEquipment.mutateAsync(selectedEquipment.id);
-      toast.success("Equipamento excluído com sucesso!");
+    } finally {
       setIsDeleteOpen(false);
       setSelectedEquipment(undefined);
-    } catch (error) {
-      toast.error("Erro ao excluir equipamento");
     }
-  };
-
-  const handleCreate = () => {
-    setSelectedEquipment(undefined);
-    setIsCreateOpen(true);
   };
 
   return (
     <div className="space-y-4">
       <DataTableGeneric
         columns={columns}
-        data={filteredData}
-        isLoading={isLoading}
+        data={equipment ?? []}
+        isLoading={isLoadingOverride ?? isLoading}
         searchKey="serialNumber"
         actionButton={{
           label: "Novo Equipamento",
-          onClick: handleCreate,
+          onClick: () => {
+            setSelectedEquipment(undefined);
+            setIsCreateOpen(true);
+          },
         }}
-        enableRowSelection={true}
-        includeSelection={true}
+        bulkImportButton={{
+          label: "Importar equipamentos",
+          onClick: () => setIsBulkOpen(true),
+        }}
+
+        dateKey="createdAt"
         rowActions={[
           {
             label: "Visualizar",
@@ -153,27 +222,29 @@ export function EquipmentTable({ mockData }: EquipmentTableProps) {
           },
           {
             label: "Editar",
-            icon: <Edit className="h-4 w-4 mr-2" />,
+            icon: <PencilSimple className="h-4 w-4 mr-2" />,
             onClick: (equipment) => handleEdit(equipment),
           },
           {
-            label: "Excluir",
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
+            label: "Eliminar",
+            icon: <Trash className="h-4 w-4 mr-2" />,
             onClick: (equipment) => handleDelete(equipment),
           },
         ]}
-      />
-
-      <EquipmentCreate
-        equipment={selectedEquipment}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
       />
 
       <EquipmentView
         equipment={selectedEquipment}
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
+      />
+
+      <EquipmentDialog
+        open={isCreateOpen}
+        onOpenChange={handleCreateDialogChange}
+        equipmentToEdit={selectedEquipment}
+        customerId={customerId}
+        onSuccess={handleCreateSuccess}
       />
 
       <DeleteModal
@@ -183,9 +254,44 @@ export function EquipmentTable({ mockData }: EquipmentTableProps) {
           setSelectedEquipment(undefined);
         }}
         onConfirm={handleConfirmDelete}
-        title="Excluir Equipamento"
+        title="Eliminar Equipamento"
         message="Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita."
         isLoading={deleteEquipment.isPending}
+      />
+
+      <BulkImportDialog<CreateGrossEquipmentPayload>
+        isOpen={isBulkOpen}
+        onOpenChange={setIsBulkOpen}
+        title="Importação em massa de equipamentos"
+        columns={[
+          { key: "cod", label: "Código", required: true },
+          { key: "serialNumber", label: "Número de Série", required: true },
+          { key: "mark", label: "Marca", required: true },
+          { key: "model", label: "Modelo", required: true },
+          { key: "status", label: "Estado", required: true },
+          { key: "nameSite", label: "Nome do Site registrado", required: true },
+          { key: "nameTypeEquipment", label: "Tipo de Equipamento", required: true },
+        ]}
+        templateFilename="modelo-equipamentos.csv"
+        mapRawToInput={(raw) => {
+          const normalizedStatus = (raw.status ?? "")
+            .trim()
+            .toUpperCase() as CreateGrossEquipmentPayload["status"];
+
+          return {
+            cod: raw.cod?.trim() ?? "",
+            serialNumber: raw.serialNumber?.trim() ?? "",
+            mark: raw.mark?.trim() ?? "",
+            model: raw.model?.trim() ?? "",
+            status: normalizedStatus || "ACTIVE",
+            nameSite: raw.nameSite?.trim() ?? "",
+            nameTypeEquipment: raw.nameTypeEquipment?.trim() ?? "",
+            companyId: (companyId || raw.companyId || "").trim(),
+          };
+        }}
+        onCreate={async (payload) => {
+          await createGrossEquipment.mutateAsync(payload);
+        }}
       />
     </div>
   );
