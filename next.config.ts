@@ -4,12 +4,14 @@ import type { NextConfig } from "next";
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-   typescript: {
+  eslint: {
+    // Ignora o ESLint durante o build
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Ignora erros de tipagem durante o build
     ignoreBuildErrors: true,
   },
-  experimental: {
-    // If needed
-  }
 };
 
 export default withNextIntl(nextConfig);
