@@ -22,21 +22,14 @@ export function DeleteModal({
   message = "Are you sure you want to delete?",
   isLoading = false,
 }: DeleteModalProps) {
-  const { t: tCommon } = { t: (key: string) => key };
   const t = useTranslations("Components.DeleteModal");
-  const [wasLoading, setWasLoading] = React.useState(false);
+  // const [wasLoading, setWasLoading] = React.useState(false);
 
   React.useEffect(() => {
-    if (isLoading) {
-      setWasLoading(true);
-    } else if (wasLoading && !isLoading) {
-      const timer = setTimeout(() => {
-        onClose();
-        setWasLoading(false);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, wasLoading, onClose]);
+    // We only track loading state if needed, but auto-close is dangerous if parent handles it differently.
+    // The parent (PermissionsModal) explicitly calls onClose on success.
+    // So we just need to ensure onConfirm is called and loading state is reflected.
+  }, [isLoading]);
 
   if (!isOpen) return null;
 
@@ -59,9 +52,9 @@ export function DeleteModal({
           <Trash2 className="w-8 h-8 text-red-500" />
 
 
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('title')}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title || t('title')}</h2>
 
-          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('message')}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{message || t('message')}</p>
 
           <div className="flex gap-3 w-full">
             <Button
@@ -81,10 +74,10 @@ export function DeleteModal({
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2 text-sm font-medium">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('deleting')}
+                  {t.has('deleting') ? t('deleting') : "Eliminando..."}
                 </span>
               ) : (
-                t('confirm')
+                t.has('confirm') ? t('confirm') : "Eliminar"
               )}
             </Button>
           </div>

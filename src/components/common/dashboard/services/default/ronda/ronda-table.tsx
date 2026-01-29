@@ -21,7 +21,13 @@ interface RondaTableProps {
 
 export function RondaTable({ onView, onCreate }: RondaTableProps) {
     const t = useTranslations("Ronda");
-    const { companyId } = useAuthStore();
+    const { companyId, canAccess } = useAuthStore();
+
+// Removed local PERMISSIONS constant
+
+    const canCreate = canAccess("round", 2);
+    const canEdit = canAccess("round", 3);
+    const canDelete = canAccess("round", 4);
     
     const [filterDate, setFilterDate] = useState<string>("");
     const [filterNumber, setFilterNumber] = useState<string>("");
@@ -40,11 +46,11 @@ export function RondaTable({ onView, onCreate }: RondaTableProps) {
         { enabled: !!companyId && !!filterNumber && !isNaN(parseInt(filterNumber)) }
     );
 
-    const rounds = filterDate && roundByDate 
+    const rounds = React.useMemo(() => filterDate && roundByDate 
         ? [roundByDate] 
         : filterNumber && roundByNumber 
             ? [roundByNumber] 
-            : allRounds;
+            : allRounds, [filterDate, roundByDate, filterNumber, roundByNumber, allRounds]);
 
     const isLoading = isLoadingAll || isLoadingDate || isLoadingNumber;
     const refetch = refetchAll; 
@@ -171,6 +177,10 @@ export function RondaTable({ onView, onCreate }: RondaTableProps) {
         return rounds;
     }, [rounds, filterDate, roundByDate, filterNumber, roundByNumber]);
 
+    const canView = canAccess("round", 1);
+    
+    if (!canView) return null;
+
     return (
         <>
             <DataTableGeneric
@@ -236,28 +246,29 @@ export function RondaTable({ onView, onCreate }: RondaTableProps) {
                         icon: <Eye className="w-4 h-4" />,
                         onClick: (row) => onView(row),
                     },
-                    {
+                    ...(canEdit ? [{
                         label: "Finalizar",
                         icon: <CheckCircle className="w-4 h-4" />,
-                        onClick: (row) => router.push(`/dashboard/modulos/ronda/${row.id}/checklist`),
-                    },
-                    {
+                        onClick: (row: Round) => router.push(`/dashboard/modulos/ronda/${row.id}/checklist`),
+                    }] : []),
+                    ...(canEdit ? [{
                         label: "Editar",
                         icon: <Pencil className="w-4 h-4" />,
-                        onClick: (row) => handleEdit(row),
-                    },
+                        onClick: (row: Round) => handleEdit(row),
+                    }] : []),
 
-                    {
+                    ...(canDelete ? [{
                         label: "Eliminar",
                         icon: <Trash2 className="w-4 h-4" />,
-                        onClick: (row) => handleDelete(row),
-
-                    },
+                        onClick: (row: Round) => handleDelete(row),
+                    }] : []),
                 ]}
-                actionButton={{
-                    label: t("create.button"),
-                    onClick: onCreate,
-                }}
+                actionButton={
+                    canCreate ? {
+                        label: t("create.button"),
+                        onClick: onCreate,
+                    } : undefined
+                }
             />
 
             {editingRound && (

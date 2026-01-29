@@ -4,6 +4,7 @@ export const roleSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional(),
+  departmentId: z.string().optional(),
   companyId: z.string().min(1, "Empresa é obrigatória"),
   createdAt: z.string(),
   updatedAt: z.string(),

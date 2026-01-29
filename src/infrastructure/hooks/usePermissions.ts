@@ -3,11 +3,13 @@ import { api } from "../utils/api";
 import { toast } from "sonner";
 import { Permission } from "../types/domain";
 
-export function usePermissions(companyId?: string) {
+
+
+export function usePermissions() {
   return useQuery({
-    queryKey: ["permissions", companyId],
+    queryKey: ["permissions", "all"],
     queryFn: async (): Promise<Permission[]> => {
-      const { data } = await api.get("/Permissions/getAllByCompanyId", { params: { companyId } });
+      const { data } = await api.get("/Permissions/getAll");
       return (data?.data ?? data) as Permission[];
     },
   });

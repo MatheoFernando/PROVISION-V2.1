@@ -29,10 +29,10 @@ import {
 } from "lucide-react";
 import { useUsers } from "@/infrastructure/hooks/useUsers";
 import type { User } from "@/infrastructure/types/domain";
-
 import { RoleSelect } from "../../base-ui/selects/role-select";
 import { EmployeeSelect } from "../../base-ui/selects/employee-select";
 import { CustomerSelect } from "../../base-ui/selects/customer-select";
+import { DepartmentSelect } from "../../base-ui/selects/department-select";
 import { userSchema } from "@/infrastructure/schema/schema-user";
 import { z } from "zod";
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
@@ -50,20 +50,9 @@ import {
 import { PhoneField } from "@/components/common/base-ui/phone-field";
 import { toast } from "sonner";
 import { api } from "@/infrastructure/utils/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
+import { RolePermissionsModal } from "./permissions-modal";
 
-const STANDARD_DEPARTMENTS = [
-  { code: "DG", name: "Direcção Geral" },
-  { code: "DO", name: "Deptº Operações" },
-  { code: "DRH", name: "Deptº Recursos Humanos" },
-  { code: "DAF", name: "Deptº Admin. e Finanças" },
-  { code: "DC", name: "Deptº Comercial" },
-  { code: "QHSA", name: "Deptº QHSA (Qualidade, Saúde, Segurança e Ambiente)" },
-  { code: "MAN", name: "Deptº Manutenção" },
-  { code: "DL", name: "Deptº Logística" },
-  { code: "APP", name: "Aplicativo" },
-] as const;
 
 interface UserDialogProps {
   userToEdit?: User | null;
@@ -83,6 +72,7 @@ export function UserDialog({
   const [showPassword, setShowPassword] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = React.useState(false);
 
 
   const { createUser, updateUser, isCreating, isUpdating } = useUsers();
@@ -95,15 +85,6 @@ export function UserDialog({
 
   const getInitialDepartmentValue = React.useCallback(() => {
     if (!userToEdit) return "";
-    
-    if (userToEdit.employee?.department?.name) {
-       const deptName = userToEdit.employee.department.name;
-       const match = STANDARD_DEPARTMENTS.find(d => 
-          d.name === deptName || `${d.code} ${d.name}` === deptName
-       );
-       if (match) return `${match.code} ${match.name}`;
-    }
-
     return userToEdit.departmentId ?? userToEdit.employee?.departmentId ?? "";
   }, [userToEdit]);
 
@@ -114,6 +95,7 @@ export function UserDialog({
       email: "", 
       password: "",
       isGlobalAdmin: userToEdit?.isGlobalAdmin ?? false,
+      isAdmin: userToEdit?.isAdmin ?? false,
       status: userToEdit?.status ?? true,
       companyId: userToEdit?.companyId ?? authCompanyId ?? "",
       departmentId: getInitialDepartmentValue(),
@@ -131,6 +113,7 @@ export function UserDialog({
   
   const watchedPhone = form.watch("phone");
   const watchedPassword = form.watch("password");
+  const watchedDepartmentId = form.watch("departmentId");
   
   const hasInvalidPhone = watchedPhone?.includes("/");
   const hasInvalidPassword = watchedPassword ? watchedPassword.length < 6 && watchedPassword.length > 0 : false;
@@ -161,7 +144,6 @@ export function UserDialog({
         password += allChars[Math.floor(Math.random() * allChars.length)];
       }
       
-      // Shuffle the password
       password = password.split("").sort(() => Math.random() - 0.5).join("");
       
       form.setValue("password", password);
@@ -169,13 +151,15 @@ export function UserDialog({
     }, 300);
   }, [form]);
 
+
+
   const onSubmit = async (data: UserFormSchema) => {
     setIsProcessing(true);
     const normalize = (value?: string | null) =>
       value && value.trim().length > 0 ? value.trim() : undefined;
     
     const company = authCompanyId; 
-    let finalDepartmentId = normalize(data.departmentId);
+    const finalDepartmentId = normalize(data.departmentId);
     const role = normalize(data.roleId);
     const email = normalize(data.email);
     const employeeId = normalize(data.employeeId);
@@ -184,29 +168,12 @@ export function UserDialog({
     const password = data.password ? data.password.trim() : undefined;
 
     try {
-      if (finalDepartmentId && company) {
-        const departmentName = finalDepartmentId;
-        
-        try {
-            const { data: newDept } = await api.post("/department/create", {
-              name: departmentName,
-              companyId: company
-            });
-            const created = newDept?.data ?? newDept;
-            finalDepartmentId = created.id;
-        } catch (err) {
-            console.error("Failed to resolve department", err);
-            toast.error("Erro ao processar departamento.");
-            setIsProcessing(false);
-            return;
-        }
-      }
-
       if (userToEdit?.id) {
         const updatePayload: UpdateUserPayload = {
           id: userToEdit.id,
           phone: data.phone,
           isGlobalAdmin: data.isGlobalAdmin,
+          isAdmin: data.isAdmin,
           status: data.status,
         };
 
@@ -234,10 +201,13 @@ export function UserDialog({
           phone: data.phone,
           password: password, 
           status: data.status,
+          isAdmin: false,
+          isGlobalAdmin: false,
         };
 
         if (canGrantGlobalAdmin) {
           createPayload.isGlobalAdmin = data.isGlobalAdmin;
+          createPayload.isAdmin = data.isAdmin;
         }
 
         if (company) createPayload.companyId = company;
@@ -246,9 +216,8 @@ export function UserDialog({
         if (email) createPayload.email = email;
 
         const result = await createUser(createPayload);
-        const createdUserId = result?.id || result?.data?.id;
+        const createdUserId = result?.id;
         
-        // Link employee to user if employeeId is provided
         if (employeeId && createdUserId) {
           try {
             await api.patch("/employee/update", {
@@ -261,7 +230,6 @@ export function UserDialog({
           }
         }
         
-        // Link customer to user if customerId is provided
         if (customerId && createdUserId) {
           try {
             await api.patch("/customer/update", {
@@ -428,25 +396,12 @@ export function UserDialog({
                         {t("fields.department")}
                       </FormLabel>
                       <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="w-full rounded border-gray-200 bg-white">
-                            <SelectValue placeholder={t("fields.department")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STANDARD_DEPARTMENTS.map((dept) => (
-                              <SelectItem 
-                                key={dept.code} 
-                                value={dept.code} 
-                              >
-                                <span className="font-bold">{dept.code}</span> - {dept.name} {/* Display code in bold */}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <DepartmentSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            companyId={selectedCompanyId}
+                            allowCreate
+                         />
                       </FormControl>
                       <FormMessage className="text-xs text-red-500" />
                     </FormItem>
@@ -463,58 +418,64 @@ export function UserDialog({
                         {t("fields.role")}
                       </FormLabel>
                       <FormControl>
-                        <RoleSelect
-                          value={field.value}
-                          onChange={field.onChange}
-                          companyId={selectedCompanyId}
-                        />
+                          <RoleSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            companyId={selectedCompanyId}
+                            departmentId={watchedDepartmentId}
+                          />
+                         
                       </FormControl>
                       <FormMessage className="text-xs text-red-500" />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="employeeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
-                        <UserCircle className="h-3.5 w-3.5" />
-                        Funcionário
-                      </FormLabel>
-                      <FormControl>
-                        <EmployeeSelect
-                          value={field.value}
-                          onChange={field.onChange}
-                          companyId={selectedCompanyId}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs text-red-500" />
-                    </FormItem>
-                  )}
-                />
+                {!canGrantGlobalAdmin && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="employeeId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                            <UserCircle className="h-3.5 w-3.5" />
+                            Funcionário
+                          </FormLabel>
+                          <FormControl>
+                            <EmployeeSelect
+                              value={field.value}
+                              onChange={field.onChange}
+                              companyId={selectedCompanyId}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs text-red-500" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="customerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
-                        <Users className="h-3.5 w-3.5" />
-                        Cliente
-                      </FormLabel>
-                      <FormControl>
-                        <CustomerSelect
-                          value={field.value}
-                          onChange={field.onChange}
-                          companyId={selectedCompanyId}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs text-red-500" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="customerId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-700 font-medium flex items-center gap-2">
+                            <Users className="h-3.5 w-3.5" />
+                            Cliente
+                          </FormLabel>
+                          <FormControl>
+                            <CustomerSelect
+                              value={field.value}
+                              onChange={field.onChange}
+                              companyId={selectedCompanyId}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs text-red-500" />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
 
                 <FormField
                   control={form.control}
@@ -549,34 +510,65 @@ export function UserDialog({
                 />
 
                 {canGrantGlobalAdmin && (
-                  <FormField
-                    control={form.control}
-                    name="isGlobalAdmin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex flex-row items-center justify-between rounded-xl bg-white p-4 border border-gray-200">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                              <ShieldCheck className="h-3.5 w-3.5" />
-                              {t("fields.isGlobalAdmin")}
-                            </FormLabel>
-                            <p className="text-xs font-medium text-slate-500">
-                              {t("fields.isGlobalAdminDesc")}
-                            </p>
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="isGlobalAdmin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex flex-row items-center justify-between rounded-xl bg-white p-4 border border-gray-200">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                                {t("fields.isGlobalAdmin")}
+                              </FormLabel>
+                              <p className="text-xs font-medium text-slate-500">
+                                {t("fields.isGlobalAdminDesc")}
+                              </p>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
                           </div>
-                          <FormControl>
-                            <Switch
-                              className="cursor-pointer"
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="isAdmin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex flex-row items-center justify-between rounded-xl bg-white p-4 border border-gray-200">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                                Administrador
+                              </FormLabel>
+                              <p className="text-xs font-medium text-slate-500">
+                                Concede acesso administrativo à empresa
+                              </p>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </>
                 )}
               </div>
+
+
+
             </div>
 
             <DialogFooter className=" p-4 border-t border-gray-100 bg-gray-50/50 dark:bg-slate-900/50">
@@ -607,6 +599,14 @@ export function UserDialog({
           </form>
         </Form>
       </DialogContent>
+      
+      <RolePermissionsModal 
+        open={isRoleModalOpen}
+        onOpenChange={setIsRoleModalOpen}
+        roleId={form.getValues('roleId') || undefined}
+        roleName="Selecionada" // Determine name if possible, or just generic
+        companyId={selectedCompanyId}
+      />
     </Dialog>
   );
 }

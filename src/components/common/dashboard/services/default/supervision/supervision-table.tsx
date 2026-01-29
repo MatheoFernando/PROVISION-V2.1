@@ -19,14 +19,20 @@ import { useDeleteSupervisionMutation } from "@/infrastructure/hooks/useSupervis
 import { Supervision } from "@/infrastructure/types/domain"
 import { DeleteModal } from "@/components/ui/delete-modal"
 import { SupervisionDrawer } from "./supervision-view"
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore"
+
+// Removed local PERMISSIONS constant
+
 
 interface ActionsButtonsProps {
   supervision: Supervision
   equipmentCode?: string
   onEdit?: (supervision: Supervision) => void
+  canEdit: boolean
+  canDelete: boolean
 }
 
-function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
+function ActionsButtons({ supervision, onEdit, canEdit, canDelete }: ActionsButtonsProps) {
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
   const [isViewOpen, setIsViewOpen] = React.useState(false)
   const deleteMutation = useDeleteSupervisionMutation()
@@ -57,23 +63,27 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => onEdit?.(supervision)}
-            className="cursor-pointer"
-          >
-            <PencilSimple className="size-4 mr-2" />
-            Editar
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem
+              onClick={() => onEdit?.(supervision)}
+              className="cursor-pointer"
+            >
+              <PencilSimple className="size-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer"
-            variant="destructive"
-            onClick={() => setIsDeleteOpen(true)}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash className="size-4 mr-2" />
-            Eliminar
-          </DropdownMenuItem>
+          {canDelete && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              variant="destructive"
+              onClick={() => setIsDeleteOpen(true)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash className="size-4 mr-2" />
+              Eliminar
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -83,7 +93,7 @@ function ActionsButtons({ supervision, onEdit }: ActionsButtonsProps) {
         onOpenChange={setIsViewOpen}
         onEdit={(sup) => {
           setIsViewOpen(false);
-          onEdit?.(sup);
+          if (sup) onEdit?.(sup);
         }}
       />
 
@@ -140,6 +150,11 @@ export function SupervisionTable({
 
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [selectedSupervision, setSelectedSupervision] = React.useState<Supervision | null>(null)
+  
+  const canAccess = useAuthStore((s) => s.canAccess)
+  const canCreate = canAccess("supervision", 2)
+  const canEdit = canAccess("supervision", 3)
+  const canDelete = canAccess("supervision", 4)
 
   const columns: ColumnDef<Supervision>[] = React.useMemo(() => [
     {
@@ -212,7 +227,7 @@ export function SupervisionTable({
       accessorKey: "department",
       header: "Departamento",
       cell: ({ row }) => {
-        return <div>{row.original.departments?.name || 'N/A'}</div>
+        return <div>{row.original.department?.name || 'N/A'}</div>
       },
     },
     {
@@ -236,6 +251,8 @@ export function SupervisionTable({
           <ActionsButtons
             supervision={row.original}
             equipmentCode={row.original.equipments?.cod}
+            canEdit={canEdit}
+            canDelete={canDelete}
             onEdit={(supervision) => {
               setSelectedSupervision(supervision)
               setIsFormOpen(true)
@@ -244,7 +261,7 @@ export function SupervisionTable({
         )
       },
     },
-  ], []);
+  ], [canEdit, canDelete]);
 
   const handleCreate = () => {
     setSelectedSupervision(null)
@@ -256,6 +273,9 @@ export function SupervisionTable({
     setSelectedSupervision(null)
   }
 
+  const canView = canAccess("supervision", 1);
+  if (!canView) return null;
+
   return (
     <div className="w-full">
       <DataTableGeneric
@@ -266,10 +286,12 @@ export function SupervisionTable({
         isLoading={isLoading}
         dateKey="time"
         onDateRangeChange={onDateRangeChange}
-        actionButton={{
-          label: "Nova Supervisão",
-          onClick: handleCreate,
-        }}
+        actionButton={
+          canCreate ? {
+            label: "Nova Supervisão",
+            onClick: handleCreate,
+          } : undefined
+        }
         statusOptions={[
           { label: "Em andamento", value: "Em andamento" },
           { label: "Finalizado", value: "Finalizado" },

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -30,10 +31,11 @@ interface RoleSelectProps {
   value?: string;
   onChange: (value: string) => void;
   companyId?: string | null;
+  departmentId?: string | null;
   disabled?: boolean;
 }
 
-export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: RoleSelectProps) {
+export function RoleSelect({ value: valueProp, onChange, companyId, departmentId, disabled }: RoleSelectProps) {
   const value = valueProp && valueProp.trim() !== '' ? valueProp : undefined;
 
   const [open, setOpen] = useState(false);
@@ -44,7 +46,7 @@ export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: 
   const { companyId: storeCompanyId } = useAuthStore();
   const normalizedCompanyId = companyId ?? storeCompanyId ?? "";
 
-  const { data: roles = [], isLoading, isFetching, refetch } = useRolesAll();
+  const { data: roles = [], isLoading, isFetching, refetch } = useRolesAll(normalizedCompanyId);
   const createRole = useCreateRole();
   const form = useForm<RoleForm>({
     resolver: zodResolver(createRoleSchema),
@@ -60,8 +62,8 @@ export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: 
   }, [value]);
 
   useEffect(() => {
-    form.reset({ name: "", description: "", companyId: normalizedCompanyId });
-  }, [normalizedCompanyId, form, open]);
+    form.reset({ name: "", description: "", companyId: normalizedCompanyId, departmentId: departmentId ?? undefined });
+  }, [normalizedCompanyId, departmentId, form, open]);
 
   function handleSubmit(data: RoleForm) {
     if (!normalizedCompanyId) return;
@@ -70,6 +72,7 @@ export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: 
       {
         ...data,
         companyId: normalizedCompanyId,
+        departmentId: departmentId ?? undefined,
         description: data.description ?? "",
       },
       {
@@ -222,6 +225,10 @@ export function RoleSelect({ value: valueProp, onChange, companyId, disabled }: 
         open={open}
         onOpenChange={(nextOpen) => {
           if (isCreating) return;
+          if (nextOpen && !departmentId) {
+             toast.error("Por favor, selecione um departamento antes de criar uma função.");
+             return;
+          }
           setOpen(nextOpen);
         }}
       >

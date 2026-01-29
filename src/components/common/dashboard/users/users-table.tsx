@@ -13,10 +13,11 @@ import { useUsers } from '../../../../infrastructure/hooks/useUsers'
 import { useCompaniesQuery } from '@/infrastructure/hooks/useCompanies'
 import { useAuthStore } from '@/infrastructure/hooks/useAuthStore'
 import { SendNotificationDrawer } from './send-notification-drawer'
-import { ChangePermissionsDrawer } from './permissions-drawer'
 import { ViewActivityDrawer } from './view-activity-drawer'
 import { Button } from "@/components/ui/button";
 import { Send } from 'lucide-react'
+import { RolePermissionsModal } from './permissions-modal'
+import { toast } from 'sonner'
 
 const resolveName = (value: unknown) => {
   if (!value) return ''
@@ -28,6 +29,18 @@ const resolveName = (value: unknown) => {
   return ''
 }
 
+const getUserType = (user: User) => {
+  if (user.isGlobalAdmin) return 'Superadmin'
+  if (user.isAdmin) return 'Admin'
+  return 'Utilizador'
+}
+
+const getUserTypeBadgeVariant = (user: User): 'default' | 'secondary' | 'outline' => {
+  if (user.isGlobalAdmin) return 'default'
+  if (user.isAdmin) return 'secondary'
+  return 'outline'
+}
+
 function buildColumns(companyById: Record<string, Company | undefined>): ColumnDef<User, unknown>[] {
   return [
 
@@ -37,13 +50,19 @@ function buildColumns(companyById: Record<string, Company | undefined>): ColumnD
         return <div>{phone}</div>
       }
     },
+ 
     {
-      accessorKey: 'role',
-      header: 'Função',
+      accessorKey: 'userType',
+      header: 'Tipo de utilizador',
       cell: ({ row }) => {
-        const roleValue = row.getValue('role')
-        const roleLabel = resolveName(roleValue)
-        return <div>{roleLabel || 'N/A'}</div>
+        const user = row.original
+        const userType = getUserType(user)
+        const variant = getUserTypeBadgeVariant(user)
+        return (
+          <Badge variant={variant}>
+            {userType}
+          </Badge>
+        )
       }
     },
     {
@@ -89,8 +108,11 @@ function ListUsers() {
 
   const companyId = useAuthStore((state) => state.companyId) || ""
   const isGlobalAdmin = useAuthStore((state) => state.isGlobalAdmin)
-  const { users, isLoading, deleteUser, isDeleting } = useUsers(companyId)
+  const isAdmin = useAuthStore((state) => state.isAdmin)
+  const { users, isLoading, deleteUser, isDeleting } = useUsers(companyId, !!isGlobalAdmin)
   const companiesQuery = useCompaniesQuery()
+
+  const canManagePermissions = !!isAdmin && !isGlobalAdmin
 
   const companyById = React.useMemo<Record<string, Company | undefined>>(() => {
     const map: Record<string, Company | undefined> = {}
@@ -128,6 +150,16 @@ function ListUsers() {
   }
 
   const handleDeleteClick = (user: User) => {
+    if (user.isGlobalAdmin) {
+      toast.error('Não é possível eliminar um utilizador do tipo Superadmin')
+      return
+    }
+
+    if (isAdmin && !isGlobalAdmin && user.isAdmin) {
+      toast.error('Administradores não podem eliminar outros administradores')
+      return
+    }
+    
     setSelectedUser(user)
     setUsersToDelete([user])
     setIsDeleteDialogOpen(true)
@@ -164,18 +196,21 @@ function ListUsers() {
         variant: 'ghost' as const
       },
       {
-        label: 'Alterar permissões',
-        icon: <ShieldCheck className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
-        onClick: handleChangePermissions,
-        variant: 'ghost' as const
-      },
-      {
         label: 'Enviar notificação',
         icon: <Send className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
         onClick: handleSendNotification,
         variant: 'ghost' as const
       }
     ]
+
+    if (canManagePermissions) {
+      actions.splice(2, 0, {
+        label: 'Alterar permissões',
+        icon: <ShieldCheck className="h-2.5 w-2.5 text-gray-600 dark:text-gray-100" />,
+        onClick: handleChangePermissions,
+        variant: 'ghost' as const
+      })
+    }
 
     if (!isGlobalAdmin) {
       actions.push(
@@ -189,7 +224,15 @@ function ListUsers() {
     }
 
     return actions
-  }, [isGlobalAdmin])
+  }, [
+    isGlobalAdmin, 
+    canManagePermissions, 
+    handleEdit, 
+    handleDeleteClick, 
+    handleChangePermissions, 
+    handleSendNotification,
+    handleViewActivity
+  ])
 
   const handleConfirmDelete = async () => {
     if (usersToDelete.length === 0) {
@@ -225,6 +268,21 @@ function ListUsers() {
           label: 'Ações',
           component: (
             <div className="flex flex-wrap gap-2">
+
+              {canManagePermissions && (
+                <Button
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setIsPermissionsDrawerOpen(true);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer h-11"
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Gerenciar Permissões
+                </Button>
+              )}
               <Button
                 onClick={() => {
                   setSelectedUser(null);
@@ -262,8 +320,10 @@ function ListUsers() {
         open={isNotificationDrawerOpen}
         onOpenChange={setIsNotificationDrawerOpen}
       />
-      <ChangePermissionsDrawer
-        user={selectedUser}
+      <RolePermissionsModal
+        roleId={selectedUser?.roleId || undefined}
+        roleName={resolveName(selectedUser?.role)}
+        companyId={selectedUser?.companyId || companyId}
         open={isPermissionsDrawerOpen}
         onOpenChange={setIsPermissionsDrawerOpen}
       />
