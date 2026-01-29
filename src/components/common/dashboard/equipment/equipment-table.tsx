@@ -22,7 +22,10 @@ import {
 import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
 import { useRouter } from "next/navigation";
 
+// Removed local PERMISSIONS constant
+
 const columns: ColumnDef<Equipment>[] = [
+
   {
     accessorKey: "cod",
     header: "Código",
@@ -117,11 +120,19 @@ export function EquipmentTable({
   const router = useRouter();
   const shouldFetch = !data;
   const companyId = useAuthStore((s) => s.companyId) ?? "";
+  const canAccess = useAuthStore((s) => s.canAccess);
+
+  const canView = canAccess("equipment", 1);
+  const canCreate = canAccess("equipment", 2);
+  const canEdit = canAccess("equipment", 3);
+  const canDelete = canAccess("equipment", 4);
+
   const {
     data: allEquipment = [],
     isLoading,
     refetch: refetchEquipment,
-  } = useEquipment(companyId, { enabled: shouldFetch, companyId });
+  } = useEquipment(companyId, { enabled: shouldFetch && canView, companyId });
+
 
   const equipment = React.useMemo(() => {
     if (data) return data;
@@ -194,6 +205,8 @@ export function EquipmentTable({
     }
   };
 
+  if (!canView) return null;
+
   return (
     <div className="space-y-4">
       <DataTableGeneric
@@ -201,13 +214,17 @@ export function EquipmentTable({
         data={equipment ?? []}
         isLoading={isLoadingOverride ?? isLoading}
         searchKey="serialNumber"
-        actionButton={{
-          label: "Novo Equipamento",
-          onClick: () => {
-            setSelectedEquipment(undefined);
-            setIsCreateOpen(true);
-          },
-        }}
+        actionButton={
+          canCreate
+            ? {
+                label: "Novo Equipamento",
+                onClick: () => {
+                  setSelectedEquipment(undefined);
+                  setIsCreateOpen(true);
+                },
+              }
+            : undefined
+        }
         bulkImportButton={{
           label: "Importar equipamentos",
           onClick: () => setIsBulkOpen(true),
@@ -220,16 +237,24 @@ export function EquipmentTable({
             icon: <Eye className="h-4 w-4 mr-2" />,
             onClick: (equipment) => handleView(equipment),
           },
-          {
-            label: "Editar",
-            icon: <PencilSimple className="h-4 w-4 mr-2" />,
-            onClick: (equipment) => handleEdit(equipment),
-          },
-          {
-            label: "Eliminar",
-            icon: <Trash className="h-4 w-4 mr-2" />,
-            onClick: (equipment) => handleDelete(equipment),
-          },
+          ...(canEdit
+            ? [
+                {
+                  label: "Editar",
+                  icon: <PencilSimple className="h-4 w-4 mr-2" />,
+                  onClick: (equipment: Equipment) => handleEdit(equipment),
+                },
+              ]
+            : []),
+          ...(canDelete
+            ? [
+                {
+                  label: "Eliminar",
+                  icon: <Trash className="h-4 w-4 mr-2" />,
+                  onClick: (equipment: Equipment) => handleDelete(equipment),
+                },
+              ]
+            : []),
         ]}
       />
 

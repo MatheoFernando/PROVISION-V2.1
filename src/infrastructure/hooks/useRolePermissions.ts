@@ -1,15 +1,29 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api";
 import { toast } from "sonner";
 import { RolePermission } from "../types/domain";
 
-export function useRolePermissions() {
+export function useRolePermissionsByRoleId(roleId?: string) {
   return useQuery({
-    queryKey: ["role-permissions"],
+    queryKey: ["role-permissions", "role", roleId],
     queryFn: async (): Promise<RolePermission[]> => {
-      const { data } = await api.get("/rolesPermissions/getAll");
+      if (!roleId) return [];
+      const { data } = await api.get(`/rolesPermissions/getAllRolePermissionsByRoleId/${roleId}`);
       return (data?.data ?? data) as RolePermission[];
     },
+    enabled: !!roleId
+  });
+}
+
+export function useRolePermissionsByUserId(userId?: string) {
+  return useQuery({
+    queryKey: ["role-permissions", "user", userId],
+    queryFn: async (): Promise<RolePermission[]> => {
+      if (!userId) return [];
+      const { data } = await api.get(`/rolesPermissions/getAllRolePermissionsByUserId/${userId}`);
+      return (data?.data ?? data) as RolePermission[];
+    },
+    enabled: !!userId
   });
 }
 
@@ -29,38 +43,3 @@ export function useCreateRolePermission() {
     },
   });
 }
-
-export function useUpdateRolePermission() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: Partial<Omit<RolePermission, 'createdAt' | 'updatedAt'>> & { id: string }): Promise<RolePermission> => {
-      const { data } = await api.put("/rolesPermissions", payload);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["role-permissions"] });
-      toast.success("Vínculo atualizado!");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao atualizar vínculo");
-    },
-  });
-}
-
-export function useDeleteRolePermission() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/rolesPermissions/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["role-permissions"] });
-      toast.success("Vínculo removido!");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Erro ao remover vínculo");
-    },
-  });
-}
-
-

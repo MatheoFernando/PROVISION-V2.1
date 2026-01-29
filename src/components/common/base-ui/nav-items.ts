@@ -25,7 +25,7 @@ import {
   ShieldCheck,
   HardDrives,
 } from "phosphor-react";
-import { getNavData, type NavItemData } from "@/config/nav-data";
+import { type NavItemData, adminNavItems, globalAdminNavItems } from "@/config/nav-data";
 
 export interface BaseNavItem extends Omit<NavItemData, "items" | "iconKey"> {
   icon?: Icon;
@@ -68,9 +68,20 @@ function mapNavItem(item: NavItemData): BaseNavItem {
   };
 }
 
-export const getAllNavItems = (isGlobalAdmin: boolean): BaseNavItem[] =>
-  getNavData(isGlobalAdmin).map(mapNavItem);
+export const getAllNavItems = (isGlobalAdmin: boolean, isAdmin: boolean = true): BaseNavItem[] => {
+  if (isGlobalAdmin) {
+    return globalAdminNavItems.map(mapNavItem);
+  }
+
+  if (isAdmin) {
+    return adminNavItems.map(mapNavItem);
+  }
+
+  return adminNavItems
+    .filter(item => item.title === "Sidebar.modules")
+    .map(mapNavItem);
+};
 
 export const allNavItems: BaseNavItem[] = getAllNavItems(false);
 
-export { adminOnlyPaths } from "@/config/nav-data";
+export { adminNavItems, globalAdminNavItems } from "@/config/nav-data";

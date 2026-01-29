@@ -29,16 +29,15 @@ export function useRoles(name?: string, options: UseRolesOptions = {}) {
   });
 }
 
-export function useRolesAll(options: UseRolesAllOptions = {}) {
+export function useRolesAll(companyId?: string, options: UseRolesAllOptions = {}) {
   return useQuery({
-    queryKey: ["roles"],
+    queryKey: ["roles", companyId],
     queryFn: async (): Promise<Role[]> => {
-      const { data } = await api.get("/roles/getAll");
-      return (data?.data) as Role[];
+      const url = `/roles/getAll/${companyId}` 
+      const { data } = await api.get(url);
+      return (data?.data ?? data) as Role[];
     },
     enabled: options.enabled ?? true,
- 
-
   });
 }
 

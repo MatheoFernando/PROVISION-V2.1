@@ -115,6 +115,7 @@ export interface User {
     status: boolean;
     companyId?: string;
     isGlobalAdmin: boolean;
+    isAdmin: boolean;
     createdAt?: string;
     updatedAt?: string;
     roleId?: string;
@@ -130,6 +131,7 @@ export interface CreateUserPayload {
     password: string;
     email?: string;
     isGlobalAdmin?: boolean;
+    isAdmin?: boolean;
     status: boolean;
     companyId?: string;
     departmentId?: string;
@@ -141,6 +143,7 @@ export interface UpdateUserPayload {
     phone: string;
     password?: string;
     isGlobalAdmin: boolean;
+    isAdmin: boolean;
     status: boolean;
     companyId?: string;
     departmentId?: string;
@@ -181,6 +184,7 @@ export interface Customer {
 
 export interface Department {
     id?: string;
+    cod?: string;
     name: string;
     companyId: string;
     createdAt?: string;
@@ -291,18 +295,23 @@ export interface Occorrence {
 
 export interface Permission {
     id?: string;
+    code?: string;
     name: string;
-    description: string;
-    companyId: string;
+    description?: string; // Optional in response?
+    companyId?: string; // Not in getAll response
     createdAt?: string;
     updatedAt?: string;
+    rolesPermissions?: RolePermission[]; // Added from response
 }
 
 export interface RolePermission {
     id?: string;
-    rolesId: string;
-    permissionsId: string;
+    roleId: string;
+    permissionId: string;
+    moduleId: string;
     companyId: string;
+    permissionLevel: number; // Changed from level to permissionLevel
+    module?: Module;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -311,6 +320,7 @@ export interface Role {
     id?: string;
     name: string;
     description: string;
+    departmentId?: string;
     companyId: string;
     createdAt?: string;
     updatedAt?: string;

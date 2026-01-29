@@ -27,15 +27,19 @@ import { RsuDialog } from "./rsu-create";
 import { RsuDrawer } from "./rsu-view";
 import { ContainerCreateDialog } from "./container-create-dialog";
 import { useDeleteRsuMutation } from "@/infrastructure/hooks/useRsu";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+// Removed local PERMISSIONS constant
 
 
 
 interface ActionsButtonsProps {
   rsu: Rsu;
   onEdit?: (rsu: Rsu) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-function ActionsButtons({ rsu, onEdit }: ActionsButtonsProps) {
+function ActionsButtons({ rsu, onEdit, canEdit, canDelete }: ActionsButtonsProps) {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const deleteMutation = useDeleteRsuMutation();
@@ -66,22 +70,26 @@ function ActionsButtons({ rsu, onEdit }: ActionsButtonsProps) {
             <Eye className="mr-2 size-4" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => onEdit?.(rsu)}
-          >
-            <Edit className="mr-2 size-4" />
-            Editar
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => onEdit?.(rsu)}
+            >
+              <Edit className="mr-2 size-4" />
+              Editar
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer text-red-600 focus:text-red-600"
-            onClick={() => setIsDeleteOpen(true)}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 className="mr-2 size-4" />
-            Eliminar
-          </DropdownMenuItem>
+          {canDelete && (
+            <DropdownMenuItem
+              className="cursor-pointer text-red-600 focus:text-red-600"
+              onClick={() => setIsDeleteOpen(true)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="mr-2 size-4" />
+              Eliminar
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -125,6 +133,12 @@ export function RsuTable({
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [selectedRsu, setSelectedRsu] = React.useState<Rsu | null>(null);
   const [isContainerDialogOpen, setIsContainerDialogOpen] = React.useState(false);
+  const canAccess = useAuthStore((s) => s.canAccess);
+
+  const canView = canAccess("rsu", 1);
+  const canCreate = canAccess("rsu", 2);
+  const canEdit = canAccess("rsu", 3);
+  const canDelete = canAccess("rsu", 4);
 
   const columns: ColumnDef<Rsu>[] = React.useMemo(
     () => [
@@ -188,6 +202,8 @@ export function RsuTable({
         cell: ({ row }) => (
           <ActionsButtons
             rsu={row.original}
+            canEdit={canEdit}
+            canDelete={canDelete}
             onEdit={(rsu) => {
               setSelectedRsu(rsu);
               setIsFormOpen(true);
@@ -196,7 +212,7 @@ export function RsuTable({
         ),
       },
     ],
-    []
+    [canEdit, canDelete]
   );
 
   const handleCreate = () => {
@@ -209,6 +225,7 @@ export function RsuTable({
     setSelectedRsu(null);
   };
 
+  if (!canView) return null;
 
   return (
     <div className="space-y-4">
@@ -221,10 +238,14 @@ export function RsuTable({
         isLoading={isLoading}
         dateKey="createdAt"
         onDateRangeChange={onDateRangeChange}
-        actionButton={{
-          label: "Novo RSU",
-          onClick: handleCreate,
-        }}
+        actionButton={
+          canCreate
+            ? {
+                label: "Novo RSU",
+                onClick: handleCreate,
+              }
+            : undefined
+        }
         secondaryActionButton={{
           label: "Contentor",
           onClick: () => setIsContainerDialogOpen(true)

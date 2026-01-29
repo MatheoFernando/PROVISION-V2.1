@@ -6,6 +6,7 @@ const baseUserSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }).optional(),
   isGlobalAdmin: z.boolean(),
+  isAdmin: z.boolean(),
   status: z.boolean(),
   companyId: z.string().optional(),
   departmentId: z.string().optional(),

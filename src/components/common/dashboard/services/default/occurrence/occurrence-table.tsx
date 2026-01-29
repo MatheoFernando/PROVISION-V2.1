@@ -21,12 +21,18 @@ import type { Occurrence } from "@/infrastructure/schema/schema-occurrence";
 import { DeleteModal } from "@/components/ui/delete-modal";
 import { Trash } from "phosphor-react";
 import type { DateRange } from "react-day-picker";
+import { useAuthStore } from "@/infrastructure/hooks/useAuthStore";
+
+// Removed local PERMISSIONS constant
+
 
 interface ActionsButtonsProps {
   occurrence: Occurrence;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-function ActionsButtons({ occurrence }: ActionsButtonsProps) {
+function ActionsButtons({ occurrence, canEdit, canDelete }: ActionsButtonsProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
@@ -60,23 +66,27 @@ function ActionsButtons({ occurrence }: ActionsButtonsProps) {
             <Eye className="size-4 mr-2" />
             Visualizar
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setIsEditOpen(true)}
-            className="cursor-pointer"
-          >
-            <Edit className="size-4 mr-2 " />
-            Editar
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem
+              onClick={() => setIsEditOpen(true)}
+              className="cursor-pointer"
+            >
+              <Edit className="size-4 mr-2 " />
+              Editar
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer"
-            variant="destructive"
-            onClick={() => setIsDeleteOpen(true)}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash className="size-4 mr-2" />
-            Eliminar
-          </DropdownMenuItem>
+          {canDelete && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              variant="destructive"
+              onClick={() => setIsDeleteOpen(true)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash className="size-4 mr-2" />
+              Eliminar
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -133,7 +143,12 @@ interface OccurrenceWithNames extends Occurrence {
   siteName?: string;
 }
 
-const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
+interface CreateColsProps {
+    canEdit: boolean;
+    canDelete: boolean;
+}
+
+const createOccurrenceColumns = ({ canEdit, canDelete }: CreateColsProps): ColumnDef<OccurrenceWithNames>[] => [
   {
     accessorKey: "cod",
     header: "Código",
@@ -225,7 +240,7 @@ const createOccurrenceColumns = (): ColumnDef<OccurrenceWithNames>[] => [
   {
     id: "actions",
     header: "Ações",
-    cell: ({ row }) => <ActionsButtons occurrence={row.original} />,
+    cell: ({ row }) => <ActionsButtons occurrence={row.original} canEdit={canEdit} canDelete={canDelete} />,
   },
 ];
 
@@ -248,6 +263,12 @@ export function OccurrenceTable({
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [isTypeOccurrenceDialogOpen, setIsTypeOccurrenceDialogOpen] = React.useState(false);
 
+  const canAccess = useAuthStore((s) => s.canAccess);
+
+  const canCreate = canAccess("occurrence", 2);
+  const canEdit = canAccess("occurrence", 3);
+  const canDelete = canAccess("occurrence", 4);
+
   const transformedData: OccurrenceWithNames[] = React.useMemo(() => {
     return data.map((occurrence) => ({
       ...occurrence,
@@ -261,19 +282,24 @@ export function OccurrenceTable({
     setIsCreateOpen(true);
   };
 
+  const canView = canAccess("occurrence", 1);
+  if (!canView) return null;
+
   return (
     <div className="w-full">
       <DataTableGeneric
         data={transformedData}
-        columns={createOccurrenceColumns()}
+        columns={createOccurrenceColumns({ canEdit, canDelete })}
         searchKey="cod"
         placeholder="Pesquisar..."
         dateKey="createdAt"
         isLoading={isLoading}
-        actionButton={{
-          label: "Nova Ocorrência",
-          onClick: handleCreateClick
-        }}
+        actionButton={
+          canCreate ? {
+            label: "Nova Ocorrência",
+            onClick: handleCreateClick
+          } : undefined
+        }
         secondaryActionButton={{
           label: "Tipo de Ocorrência",
           onClick: () => setIsTypeOccurrenceDialogOpen(true)

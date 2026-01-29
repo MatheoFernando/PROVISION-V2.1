@@ -1,25 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { superAdminOnlyPaths, blockedForSuperAdminPaths } from '@/config/nav-data';
+import { globalAdminAllowedPaths } from '@/config/nav-data';
 
-function isBlockedForSuperAdmin(pathname: string, isGlobalAdmin: boolean): boolean {
+function isAccessDeniedForGlobalAdmin(pathname: string, isGlobalAdmin: boolean): boolean {
   if (!isGlobalAdmin) return false;
   
   // Dashboard principal é acessível para todos
   if (pathname === '/dashboard') return false;
   
-  // Super admin só pode acessar rotas permitidas
-  const isAllowedPath = superAdminOnlyPaths.some(
-    (path) => pathname === path || pathname.startsWith(path + '/')
+  // Verifica se a rota está na allowlist
+  const isAllowed = globalAdminAllowedPaths.some(
+    (allowedPath) => pathname === allowedPath || pathname.startsWith(allowedPath + '/')
   );
   
-  // Se é rota permitida, não bloquear
-  if (isAllowedPath) return false;
-  
-  // Se não é rota permitida, verifica se está na lista de bloqueadas
-  return blockedForSuperAdminPaths.some(
-    (path) => pathname === path || pathname.startsWith(path + '/')
-  );
+  // Se não estiver na allowlist, bloqueia
+  return !isAllowed;
 }
 
 export default function middleware(request: NextRequest) {
@@ -50,8 +45,8 @@ export default function middleware(request: NextRequest) {
   if (pathname.startsWith('/dashboard')) {
     if (!token) return NextResponse.redirect(new URL('/login', request.url));
     
-    // Bloquear rotas para super admin
-    if (isBlockedForSuperAdmin(pathname, isGlobalAdmin)) {
+    // Bloquear rotas não permitidas para Global Admin
+    if (isAccessDeniedForGlobalAdmin(pathname, isGlobalAdmin)) {
       return NextResponse.redirect(new URL('/dashboard/acesso-negado', request.url));
     }
   }

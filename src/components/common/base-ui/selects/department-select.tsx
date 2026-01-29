@@ -23,6 +23,18 @@ import { Label } from "@/components/ui/label";
 
 type DepartmentForm = z.infer<typeof departmentSchema>;
 
+const STANDARD_DEPARTMENTS = [
+    { code: "DG", name: "Direcção Geral" },
+    { code: "DO", name: "Deptº Operações" },
+    { code: "DRH", name: "Deptº Recursos Humanos" },
+    { code: "DAF", name: "Deptº Admin. e Finanças" },
+    { code: "DC", name: "Deptº Comercial" },
+    { code: "QHSA", name: "Deptº QHSA (Qualidade, Saúde, Segurança e Ambiente)" },
+    { code: "MAN", name: "Deptº Manutenção" },
+    { code: "DL", name: "Deptº Logística" },
+    { code: "APP", name: "Aplicativo" },
+  ] as const;
+
 interface DepartmentSelectProps {
   value?: string;
   onChange: (value: string) => void;
@@ -68,8 +80,14 @@ export function DepartmentSelect({
   function handleSubmit(data: DepartmentForm) {
     if (isCompanyUnavailable) return;
 
+    const payload = {
+        ...data,
+        cod: data.cod || data.name.substring(0, 3).toUpperCase(),
+        companyId: normalizedCompanyId
+    };
+
     createDepartment.mutate(
-      { ...data, companyId: normalizedCompanyId },
+      payload,
       {
         onSuccess: (created: Department) => {
           setOpen(false);
@@ -87,46 +105,58 @@ export function DepartmentSelect({
               return [normalizedDepartment, ...prev];
             });
 
+            // Trigger change
             setTimeout(() => {
               setSelectedDepartmentId(created.id!);
               onChange(created.id!);
             }, 0);
           }
           form.reset({ name: "", companyId: normalizedCompanyId });
-        
         },
       }
     );
   }
 
-  const departmentsList = useMemo<Department[]>(() => {
+  const departmentsList = useMemo(() => {
     const baseList = Array.isArray(departments) ? departments : [];
-    const merged: Array<Department & { createdAt?: string }> = [
+    
+    // Merge created ones
+    const mergedWithCreated = [
       ...createdDepartments,
       ...baseList,
     ];
+    
+ 
     const map = new Map<string, Department & { createdAt?: string }>();
-    merged.forEach((dept) => {
-      if (!dept?.id) return;
-      map.set(dept.id, {
-        ...dept,
-        id: dept.id,
-        name: dept.name ?? "",
-        createdAt:
-          (dept as Department & { createdAt?: string }).createdAt ??
-          new Date().toISOString(),
-      });
+    mergedWithCreated.forEach((dept) => {
+        if (!dept?.id) return;
+        map.set(dept.id, {
+            ...dept,
+            id: dept.id,
+            name: dept.name ?? "",
+            createdAt: (dept as any).createdAt ?? new Date().toISOString(),
+        });
     });
-    return Array.from(map.values()).sort((a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
+  const existingNames = Array.from(map.values()).map(d => d.name.toLowerCase().trim());
+    
+    const standardToAdd = STANDARD_DEPARTMENTS.filter(std => !existingNames.includes(std.name.toLowerCase().trim()));
+    
+
+    const finalStandard = standardToAdd.map(std => ({
+        id: `STANDARD:${std.code}`, // Temporary ID
+        name: std.name,
+        companyId: normalizedCompanyId,
+        createdAt: new Date().toISOString()
+    } as Department));
+
+    return [...Array.from(map.values()), ...finalStandard].sort((a, b) => {
+         return a.name.localeCompare(b.name);
     });
-  }, [createdDepartments, departments]);
+  }, [createdDepartments, departments, normalizedCompanyId]);
 
   const filtered = useMemo(
     () =>
-      departmentsList.filter((department: Department) =>
+      departmentsList.filter((department) =>
         String(department?.name ?? "")
           .toLowerCase()
           .includes(query.toLowerCase())
@@ -143,30 +173,66 @@ export function DepartmentSelect({
     }
   }, [value, departmentsList, selectedDepartmentId]);
 
+  const handleValueChange = (val: string) => {
+      if (val.startsWith('STANDARD:')) {
+          // It's a standard one, check if exists (double check) and create
+          const code = val.split(':')[1];
+          const standard = STANDARD_DEPARTMENTS.find(s => s.code === code);
+          if (standard) {
+             // Create it
+             if (isCompanyUnavailable) {
+                 // Should not happen as select is disabled if no company?
+                 // Wait, select is disabled if isLoadingOptions, but might be enabled if standard depts are there
+               return; 
+             }
+             
+             // Check if already exists in REAL list (race condition?)
+             const realExists = departments.find(d => d.name === standard.name);
+             if (realExists && realExists.id) {
+                 onChange(realExists.id);
+                 return;
+             }
+
+             // Create
+             createDepartment.mutate({
+                 name: standard.name,
+                 cod: standard.code,
+                 companyId: normalizedCompanyId
+             } as any, { // Cast as any if type mismatch persists temporarily, but domain update should fix it
+                 onSuccess: (created) => {
+                     setCreatedDepartments(prev => [...prev, created]);
+                     onChange(created.id!);
+                 }
+             })
+          }
+      } else {
+          setSelectedDepartmentId(val);
+          onChange(val);
+      }
+  }
+
   const isSaving = createDepartment.status === "pending";
   const isLoadingOptions = isLoading || isFetching;
 
+  // Adjusted displayValue to handle STANDARD IDs if persisted locally for visual feedback before creation?
+  // Only real IDs should be passed up. The standard selection triggers creation -> real ID passed up.
+  // So displayValue should match valueProp which should contain a REAL ID.
+  // Standard items in list are transient. 
+  
   const displayValue = useMemo(() => {
-    const normalizedValue = value && value.trim() !== '' ? value : undefined;
-
-    if (!normalizedValue) {
-      return undefined;
-    }
-
-    const exists = departmentsList.some(dept => dept.id === normalizedValue);
-    return exists ? normalizedValue : undefined;
+    if (!value) return undefined;
+    const found = departmentsList.find(d => d.id === value);
+    return found ? value : undefined;
   }, [value, departmentsList]);
+
 
   return (
     <div className={`flex items-end gap-2 w-full ${!allowCreate ? "flex-col" : ""}`}>
       <div className="flex-1 min-w-0 relative w-full">
         <Select
           value={displayValue}
-          onValueChange={(selected) => {
-            setSelectedDepartmentId(selected);
-            onChange(selected);
-          }}
-          disabled={isLoadingOptions}
+          onValueChange={handleValueChange}
+          disabled={isLoadingOptions && departmentsList.length === 0} // Allow if standard list is available?
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione o departamento" />
@@ -181,7 +247,6 @@ export function DepartmentSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrar departamentos..."
                 className="w-full placeholder:text-xs"
-                disabled={isLoadingOptions || departmentsList.length === 0}
               />
             </div>
             {filtered.length === 0 ? (
@@ -239,7 +304,7 @@ export function DepartmentSelect({
             }}
           >
             <div className="space-y-3">
-              <Label htmlFor="name" className="block">
+              <Label htmlFor="name" className="block text-sm font-medium">
                 Nome do departamento
               </Label>
               <Input
@@ -259,7 +324,28 @@ export function DepartmentSelect({
                   {form.formState.errors.name.message}
                 </span>
               )}
-              <div className="flex justify-end gap-2">
+
+              <Label htmlFor="cod" className="block text-sm font-medium">
+                 Código (Opcional)
+              </Label>
+              <Input
+                id="cod"
+                {...form.register("cod")}
+                className="w-full"
+                placeholder="Ex: RH"
+                maxLength={10}
+                disabled={isSaving}
+              />
+              {form.formState.errors.cod && (
+                <span className="text-red-500 text-xs">
+                  {form.formState.errors.cod.message}
+                </span>
+              )}
+              <p className="text-[10px] text-gray-400">
+                  Se vazio, será gerado automaticamente (ex: DRE).
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   type="button"
                   variant="outline"

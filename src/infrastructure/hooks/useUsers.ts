@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { resolveApiErrorPayload } from "../utils/api-response";
 
-const usersKey = (companyId?: string) => ["users", companyId] as const;
+const usersKey = (companyId?: string, isGlobalAdmin?: boolean) => ["users", companyId, isGlobalAdmin] as const;
 
 
 export function useCreateUser(options?: { showToast?: boolean }) {
@@ -79,16 +79,25 @@ export function useDeleteUser(options?: { showToast?: boolean }) {
   });
 }
 
-export function useUsers(companyId?: string) {
 
-  const query = useQuery({
-    queryKey: usersKey(companyId),
-    enabled: Boolean(companyId),
-    queryFn: async (): Promise<User[]> => {
-      const response = await api.get(`/users/getAllByCompanyId/${companyId}`);
-      const data = response.data?.data ?? response.data ?? [];
-      return Array.isArray(data) ? data : [];
+
+
+export function useUsers(companyId?: string, isGlobalAdmin?: boolean) {
+  
+  const { data: users, isLoading, isError, error } = useQuery({
+    queryKey: usersKey(companyId, isGlobalAdmin),
+    queryFn: async () => {
+        let response;
+        if (isGlobalAdmin) {
+          // Superadmin: fetch all users
+          response = await api.get("/users/getAll");
+        } else {
+          // Admin: fetch users by company ID
+          response = await api.get(`/users/getAllByCompanyId/${companyId}`);
+        }
+        return response.data?.data ?? response.data ?? [];
     },
+    enabled: true 
   });
 
   const createUserMutation = useCreateUser();
@@ -96,9 +105,10 @@ export function useUsers(companyId?: string) {
   const deleteUserMutation = useDeleteUser();
 
   return {
-    users: query.data,
-    isLoading: query.isLoading,
-    refetch: query.refetch,
+    users: (users as User[]) ?? [],
+    isLoading,
+    isError,
+    error,
     createUser: createUserMutation.mutateAsync,
     isCreating: createUserMutation.isPending,
     updateUser: updateUserMutation.mutateAsync,

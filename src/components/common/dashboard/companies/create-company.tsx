@@ -241,6 +241,7 @@ function CompanyFormPage() {
               password: values.admin.password,
               email: values.admin.email || undefined,
               isGlobalAdmin: false,
+              isAdmin: true,
               status: true,
               companyId: companyResponse.data.id,
             });
@@ -257,7 +258,7 @@ function CompanyFormPage() {
       const shouldReturnToUserCreate = sessionStorage.getItem('returnToUserCreate');
       if (shouldReturnToUserCreate === 'true') {
         sessionStorage.removeItem('returnToUserCreate');
-        router.push('/dashboard/configuracoes/utilizadores-permissoes');
+        router.push('/dashboard/utilizadores-permissoes');
       } else {
         router.back();
       }

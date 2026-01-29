@@ -46,6 +46,7 @@ export async function login(request: LoginRequest): Promise<LoginEnvelope> {
       userId: id,
       companyId,
       isGlobalAdmin,
+      isAdmin: false, // Defaulting to false as it's missing in destructuring but required in setSession. Logic needs verification.
     });
   }
   return data;

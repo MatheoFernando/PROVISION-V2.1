@@ -58,7 +58,9 @@ export const meResponseSchema = z.object({
   companyStatus: z.boolean().nullable(),
   companyStatusMessage: z.string().nullable(),
   hasCompany: z.boolean(),
-  phoneNumber: z.string(),
+  isAdmin: z.boolean(), 
+  phoneNumber: z.string().optional(),
+  permissions: z.array(z.string()).optional().default([]), 
 });
 
 export type MeResponseEntity = z.infer<typeof meResponseSchema>;
