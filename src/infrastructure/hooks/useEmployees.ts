@@ -29,11 +29,11 @@ export function useEmployees(
     queryKey: employeesKey(companyId),
     enabled: (options?.enabled ?? true) && Boolean(companyId),
     queryFn: async (): Promise<Employee[]> => {
-      const response = await api.get("/employee/getByCompanyId", {
-        params: { companyId },
-      });
+      const response = await api.get(`/employee/getByCompanyId/${companyId}`);
       
       const rawData = response.data.data
+
+      console.log('rawData: ', rawData);
       if (Array.isArray(rawData)) return rawData;
       
     
